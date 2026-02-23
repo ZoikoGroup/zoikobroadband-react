@@ -1,23 +1,3 @@
-// "use client";
-
-// import dynamic from "next/dynamic";
-
-// const Testemonials = dynamic(
-//   () => import("./Testemonials"),
-//   {
-//     ssr: false,
-//     loading: () => (
-//       <div className="w-full py-20 text-center text-gray-500">
-//         Loading customer reviews...
-//       </div>
-//     ),
-//   }
-// );
-
-// export default function TestimonialLoader() {
-//   return <Testemonials />;
-// }
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
