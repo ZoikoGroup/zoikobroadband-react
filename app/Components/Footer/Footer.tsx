@@ -49,7 +49,7 @@ export default function Footer() {
         { name: "Our Sustainability Promise", href: "/our-sustainability" },
         { name: "Careers at Zoiko", href: "/careers" },
         { name: "Zoiko Group", href: "/zoiko-group" },
-        { name: "Partners & Affiliations", href: "/partners-affiliations" },
+        { name: "Partners & Affiliations", href: "/partnership" },
       ],
     },
   ];
