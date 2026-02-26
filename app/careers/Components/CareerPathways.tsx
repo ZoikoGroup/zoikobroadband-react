@@ -7,7 +7,6 @@ const pathways = [
     positions: "24 Open Positions",
     salary: "£45K - £85K",
     icon: "/Images/Careers/gear.png",
-    featured: true,
     tags: ["Software Engineer", "Network Engineer", "DevOps Specialist", "Data Analyst"],
   },
   {
@@ -16,7 +15,6 @@ const pathways = [
     positions: "12 Open Positions",
     salary: "£28K - £65K + Commission",
     icon: "/Images/Careers/briefcase.png",
-    featured: false,
     tags: ["Account Manager", "Digital Marketing", "Sales Executive", "Brand Manager"],
   },
   {
@@ -25,7 +23,6 @@ const pathways = [
     positions: "18 Open Positions",
     salary: "£22K - £35K",
     icon: "/Images/Careers/headset.png",
-    featured: false,
     tags: ["Customer Advisor", "Technical Support", "Team Leader", "Training Specialist"],
   },
   {
@@ -34,7 +31,6 @@ const pathways = [
     positions: "8 Open Positions",
     salary: "£32K - £70K",
     icon: "/Images/Careers/building.png",
-    featured: false,
     tags: ["Finance Analyst", "HR Business Partner", "Operations Manager", "Legal Counsel"],
   },
   {
@@ -43,7 +39,6 @@ const pathways = [
     positions: "15 Open Positions",
     salary: "£18K - £25K + Training",
     icon: "/Images/Careers/graduate.png",
-    featured: false,
     tags: ["Tech Apprentice", "Customer Service", "Engineering Trainee", "Business Admin"],
   },
 ];
@@ -67,13 +62,8 @@ export default function CareerPathways() {
               key={i}
               className={`
               rounded-2xl p-8 flex flex-col justify-between text-left
+              hover:border-2 hover:border-amber-400 hover:bg-white
               transition-all duration-300
-
-              ${
-                item.featured
-                  ? "border-2 border-amber-400 shadow-xl bg-white"
-                  : "border border-gray-200 bg-white hover:shadow-lg"
-              }
               `}
             >
               {/* TOP */}

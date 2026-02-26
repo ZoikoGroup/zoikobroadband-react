@@ -100,11 +100,7 @@ export default function CurrentOpenings() {
           {filteredJobs.map((job) => (
             <div
               key={job.id}
-              className={`p-6 rounded-2xl shadow-sm border ${
-                job.featured
-                  ? "bg-[#FFF4D8] border-amber-200"
-                  : "bg-white border-gray-200"
-              }`}
+              className={`p-6 rounded-2xl shadow-sm border hover:bg-[#FFF4D8] hover:border-amber-200 transition-all duration-300`}
             >
               <div className="flex flex-col md:flex-row md:justify-between">
                 <h3 className="text-xl font-bold text-[#10446C]">

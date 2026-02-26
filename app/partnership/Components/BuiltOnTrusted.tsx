@@ -6,9 +6,9 @@ export default function BuiltOnTrusted() {
       <section className="w-full bg-white py-16 px-4 sm:px-6 lg:px-8 lg:py-18">
         <div className="max-w-6xl mx-auto text-center">
           {/* Heading */}
-          <h1 className="text-[#16213E] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight">
+          <h2 className="text-[#16213E] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight">
             Built on Trusted Networks
-          </h1>
+          </h2>
           {/* Description */}
           <p className="mt-6 text-base md:text-lg lg:text-xl text-[#555555] leading-relaxed md:leading-8 max-w-4xl mx-auto">
             As an authorised reseller of BT Wholesale, Zoiko Broadband delivers
@@ -16,11 +16,11 @@ export default function BuiltOnTrusted() {
             crystal-clear digital lines and future-proof broadband services.
           </p>
         </div>
-        <div className="relative mt-10 bg-[#10446C] flex flex-col justify-center items-center text-white p-8 md:px-28 md:py-22 rounded-xl max-w-fit mx-auto">
-            <button className="absolute top-[-20]  bg-[#f5c241] text-[#10446C] px-10 py-2 rounded-2xl text-base font-semibold hover:bg-[#0C3A5A] transition-colors">
+        <div className="relative mt-10 bg-[#10446C] flex flex-col justify-center items-center text-white px-8 py-10 md:px-8 md:py-18 rounded-xl max-w-lg mx-auto">
+            <button className="absolute -top-5  bg-[#f5c241] text-[#10446C] px-10 py-2 rounded-2xl text-base font-semibold">
                 Authorised Reseller
               </button>
-            <h2 className="text-4xl font-bold">
+            <h2 className="text-2xl md:text-4xl font-bold">
                 BT Wholesale
             </h2>
           </div>

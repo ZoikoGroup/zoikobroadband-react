@@ -9,7 +9,7 @@ export const jobs = [
     description:
       "Lead development of our next-generation broadband platform using modern technologies and agile methodologies.",
     skills: ["Python", "React", "AWS", "Docker"],
-    featured: true,
+    
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ export const jobs = [
     description:
       "Manage key business accounts and drive revenue growth through relationship building and strategic partnerships.",
     skills: ["CRM", "B2B Sales", "Negotiation", "Analysis"],
-    featured: false,
+  
   },
   {
     id: 3,
@@ -33,6 +33,5 @@ export const jobs = [
     description:
       "Start your technical career with hands-on learning and structured mentorship.",
     skills: ["Networking", "Support", "Troubleshooting"],
-    featured: false,
   },
 ];
