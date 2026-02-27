@@ -45,7 +45,7 @@ const pathways = [
 
 export default function CareerPathways() {
   return (
-    <section className="py-16 px-4 bg-[#F4F8FC]">
+    <section className="py-16 px-4 bg-[#ffffff]">
       <div className="max-w-7xl mx-auto text-center">
         <h2 className="text-2xl md:text-4xl font-bold text-[#10446C]">
           Career Pathways
@@ -61,8 +61,9 @@ export default function CareerPathways() {
             <div
               key={i}
               className={`
-              rounded-2xl p-8 flex flex-col justify-between text-left
-              hover:border-2 hover:border-amber-400 hover:bg-white
+              rounded-2xl p-8 flex flex-col justify-between
+              bg-[#f8f9fa] text-left border-2
+              border-gray-200 hover:border-gray-400 hover:shadow-sm hover:bg-white
               transition-all duration-300
               `}
             >

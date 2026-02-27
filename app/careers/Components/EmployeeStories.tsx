@@ -39,7 +39,7 @@ export default function EmployeeStories() {
               className={`
               rounded-2xl flex flex-col justify-between text-left
               transition-all duration-300
-              border-2 border-gray-200 bg-white hover:shadow-lg hover:border-2 hover:border-amber-300
+              border-2 border-gray-200 bg-white hover:shadow-lg 
               }
               `}
             >
