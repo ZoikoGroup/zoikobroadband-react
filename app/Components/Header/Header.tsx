@@ -22,19 +22,16 @@ export default function Header() {
         <div className="nav-items">
           <ul className="hidden min-[1150px]:flex items-center gap-10 md:gap-14 bg-gray-100 rounded-full px-6 py-4 md:px-7 md:py-6 md:text-base max-w-fit">
             <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
-              <Link href="/home-broadband">Home Broadband</Link>
+              <Link href="/fibre-packages">Fibre Packages</Link>
             </li>
             <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
               <Link href="/business-broadband">Business Broadband</Link>
             </li>
             <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
-              <Link href="/smart-bundles">Smart Bundles</Link>
+              <Link href="/bundles">Bundles</Link>
             </li>
             <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
-              <Link href="/digital-lines">Digital Lines</Link>
-            </li>
-            <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
-              <Link href="/all-plans">All Plans</Link>
+              <Link href="/check-my-postcode">Check My Postcode</Link>
             </li>
             <li className="hover:text-blue-900 dark:hover:text-blue-500 cursor-pointer">
               <Link href="/why-zoiko">Why Zoiko</Link>

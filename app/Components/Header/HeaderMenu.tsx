@@ -21,11 +21,10 @@ export default function HeaderMenu() {
       {/* Mobile Menu */}
       <div className={`absolute top-full left-0 w-full min-[1150px]:hidden z-50 transition-all duration-300 ${isOpen ? "max-h-screen opacity-100" : "max-h-0 opacity-0 overflow-hidden"}`}>
         <ul className="space-y-4 text-md bg-white p-6 text-gray-700 shadow-lg border-t border-gray-200">
-          <li onClick={() => setIsOpen(false)}><Link href="/home-broadband">Home Broadband</Link></li>
+          <li onClick={() => setIsOpen(false)}><Link href="/fibre-packages">Fibre Packages</Link></li>
           <li onClick={() => setIsOpen(false)}><Link href="/business-broadband">Business Broadband</Link></li>
-          <li onClick={() => setIsOpen(false)}><Link href="/smart-bundles">Smart Bundles</Link></li>
-          <li onClick={() => setIsOpen(false)}><Link href="/digital-lines">Digital Lines</Link></li>
-          <li onClick={() => setIsOpen(false)}><Link href="/all-plans">All Plans</Link></li>
+          <li onClick={() => setIsOpen(false)}><Link href="/bundles">Bundles</Link></li>
+          <li onClick={() => setIsOpen(false)}><Link href="/check-my-postcode">Check My Postcode</Link></li>
           <li onClick={() => setIsOpen(false)}><Link href="/why-zoiko">Why Zoiko</Link></li>
         </ul>
       </div>
