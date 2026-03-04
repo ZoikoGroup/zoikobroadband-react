@@ -18,7 +18,7 @@ export default function HeroSection() {
                       className="h-10 sm:h-12 w-auto"
                     />
                     <h1 className="text-[#F5C241] font-bold text-2xl sm:text-3xl md:text-4xl">
-                      Built on
+                      Built on1
                     </h1>
                   </div>
         
