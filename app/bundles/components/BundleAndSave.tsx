@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 export default function BundleAndSave() {
-  const targetDate = new Date("2026-12-31T23:59:59").getTime();
+  const targetDate = new Date("2026-04-09T23:59:59").getTime();
 
   const [mounted, setMounted] = useState(false);
   const [timeLeft, setTimeLeft] = useState({
