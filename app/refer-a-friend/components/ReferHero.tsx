@@ -1,8 +1,11 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+interface Props {
+  openModal: () => void;
+}
 
-export default function ReferHero() {
+export default function ReferHero({ openModal }: Props) {
   return (
     <>
       <section
@@ -27,7 +30,9 @@ export default function ReferHero() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/bundle"
+                  href="?showReferral=true"
+                  scroll={false}
+                  onClick={openModal}
                   className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 transition"
                 >
                   Get My Referral Link
