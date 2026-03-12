@@ -1,12 +1,9 @@
-"use client";
+import React from 'react'
 
-interface Props {
-  onClose: () => void;
-}
-
-export default function MyReferralLink({ onClose }: Props) {
+export default function LeaderboardModal({onClose}: {onClose: () => void}) {
   return (
-    <div
+    <>
+      <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}
     >
@@ -24,7 +21,7 @@ export default function MyReferralLink({ onClose }: Props) {
         </button>
 
         <h2 className="text-2xl font-bold text-center mb-4">
-          Referrals
+          Leaderboard...
         </h2>
 
         <p className="text-gray-600 text-center mb-6">
@@ -56,5 +53,6 @@ export default function MyReferralLink({ onClose }: Props) {
         </div>
       </div>
     </div>
-  );
+    </>
+  )
 }

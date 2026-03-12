@@ -1,11 +1,11 @@
+"use client";
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-interface Props {
-  openModal: () => void;
-}
+import { useModal } from "./modal-system/ModalContext";
 
-export default function ReferHero({ openModal }: Props) {
+export default function ReferHero() {
+ const { openModal } = useModal();
   return (
     <>
       <section
@@ -32,7 +32,7 @@ export default function ReferHero({ openModal }: Props) {
                 <Link
                   href="?showReferral=true"
                   scroll={false}
-                  onClick={openModal}
+                  onClick={() => openModal("referral")}
                   className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 transition"
                 >
                   Get My Referral Link
@@ -48,6 +48,7 @@ export default function ReferHero({ openModal }: Props) {
                   alt="Customer using Zoiko services"
                   width={500}
                   height={600}
+                  fetchPriority="high"
                   className="w-full h-full object-cover rounded-xl"
                 />
               </div>
