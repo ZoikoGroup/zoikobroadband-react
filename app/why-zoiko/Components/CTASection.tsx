@@ -41,7 +41,7 @@ export default function CTASection() {
             {/* RIGHT SIDE BUTTON */}
             <div className="w-full lg:w-auto flex justify-center">
               <Link
-                href={"/home-broadband"}
+                href={"/fibre-packages"}
                 aria-label="Apply Now"
                 className="
                   bg-white

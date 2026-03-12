@@ -4,11 +4,19 @@ export default function FindYourPlan() {
   return (
     <div>
         {/* Find your plan .. */}
+<<<<<<< HEAD
       <section className="w-full bg-[#E5F0FF] py-16 px-4">
         <div className="max-w-6xl mx-auto bg-white border-t-4 border-[#10446C] rounded-3xl p-6 md:p-10">
           {/* Header */}
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#10446C]">
             Let’s find your perfect plan
+=======
+      <section className="w-full bg-[#E5F0FF] dark:bg-gray-600 py-16 px-4">
+        <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900  border-t-4 border-[#10446C] rounded-3xl p-6 md:p-10">
+          {/* Header */}
+          <h2 className="text-2xl md:text-3xl font-bold text-center text-[#10446C] dark:text-white">
+            Let’s find your perfect plan 2
+>>>>>>> b193574799f95bf29e43501bd4336c374a7d4c23
           </h2>
           <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto">
             Answer a few quick questions to get a personalised recommendation
