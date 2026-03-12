@@ -8,7 +8,7 @@ export default function FindYourPlan() {
         <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900  border-t-4 border-[#10446C] rounded-3xl p-6 md:p-10">
           {/* Header */}
           <h2 className="text-2xl md:text-3xl font-bold text-center text-[#10446C] dark:text-white">
-            Let's find your perfect plan 10
+            Let's find your perfect plan 1
           </h2>
           <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto">
             Answer a few quick questions to get a personalised recommendation
