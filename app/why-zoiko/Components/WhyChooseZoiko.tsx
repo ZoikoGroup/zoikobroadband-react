@@ -45,7 +45,7 @@ export default function WhyChooseZoiko() {
         className="bg-[#fafbff] w-full py-12 px-5 sm:px-10 border-t border-gray-200"
         aria-labelledby="why-zoiko-features"
       >
-        <div className="max-w-7xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center">
           <h2
             id="why-zoiko-features"
             className="text-2xl md:text-3xl font-semibold text-gray-900"
