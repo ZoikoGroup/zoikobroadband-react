@@ -1,9 +1,9 @@
 import TestimonialLoader from "./Components/TestimonialLoader";
-import HeroSection from "./(home)/Components/HeroSection";
-import FindYourPlan from "./(home)/Components/FindYourPlan";
-import WhyZoiko from "./(home)/Components/WhyZoiko";
-import ExploreBundles from "./(home)/Components/ExploreBundles";
-import CheckYourPostcode from "./(home)/Components/CheckYourPostcode";
+import HeroSection from "./home/Components/HeroSection";
+import FindYourPlan from "./home/Components/FindYourPlan";
+import WhyZoiko from "./home/Components/WhyZoiko";
+import ExploreBundles from "./home/Components/ExploreBundles";
+import CheckYourPostcode from "./home/Components/CheckYourPostcode";
 import PlansWrapper from "./Components/PlansWrapper";
 
 export default function Home() {
