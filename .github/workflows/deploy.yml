@@ -16,11 +16,13 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: 22
+          script_stop: true
           script: |
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
             cd /var/www/html/zoikobroadband-react
-            git pull origin main
+            git fetch origin
+            git reset --hard origin/main
             npm install
             npm run build
             pm2 restart zoikobroadband
