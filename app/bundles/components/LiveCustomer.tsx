@@ -30,17 +30,17 @@ export default function LiveCustomer() {
   return (
     <section
       aria-labelledby="live-customer-savings-counter-heading"
-      className="w-full py-14 px-6 sm:px-10 bg-[#e9f3f9]"
+      className="w-full py-14 px-6 sm:px-10 bg-[#e9f3f9] dark:bg-gray-900"
     >
       <div className="max-w-7xl mx-auto text-center">
         <h2
           id="live-customer-savings-counter-heading"
-          className="text-xl md:text-2xl font-semibold text-[#10446C]"
+          className="text-xl md:text-2xl font-semibold text-[#10446C] dark:text-white"
         >
           Live Customer Savings Counter
         </h2>
 
-        <p className="text-gray-500 text-base md:text-lg mt-3">
+        <p className="text-gray-500 dark:text-gray-300 text-base md:text-lg mt-3">
           Annual Total Saved
         </p>
 
