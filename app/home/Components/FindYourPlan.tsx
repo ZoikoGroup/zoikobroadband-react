@@ -44,7 +44,7 @@ export default function FindYourPlan() {
                     className="w-full py-3 rounded-xl border-2 border-gray-200 bg-white
                 hover:border-[#10446C] hover:bg-[#F0F6FF]
                 transition-all text-sm"
-                  >
+                  > 
                     {item}
                   </button>
                 ))}
