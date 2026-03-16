@@ -7,12 +7,12 @@ import SpecialOffer from './components/SpecialOffer'
 
 export default function page() {
   return (
-    <>
+    <div className="dark:bg-gray-950 ">
     <CheckMyPostHero/>
     <BroadbandSolutions/>
     <CheckYourPost/>
     <BenefitsOfZB/>
     <SpecialOffer/>
-    </>
+    </div>
   )
 }
