@@ -145,24 +145,28 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
   return (
     <>
       <div>
-        <section className="w-full bg-[#F5FAFF] py-16 px-4">
+        <section className="w-full bg-[#F5FAFF] py-16 px-4 dark:bg-gray-950  dark:text-white">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-[#10446C]">
+            <h2 className="text-2xl md:text-3xl font-bold text-center dark:bg-gray-950  dark:text-[#63a7db]
+ text-[#10446C]">
               Choose Your Perfect Fibre Plan
             </h2>
 
-            <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto">
+            <p className="text-center text-gray-600 mt-2 max-w-2xl mx-auto dark:bg-gray-950  dark:text-white
+">
               Superfast broadband packages designed for modern British homes
             </p>
 
             {/* Tabs - Filtering Buttons */}
-            <div className="mt-8 flex gap-1 sm:gap-2 justify-center items-center bg-gray-100 rounded-full p-1.5 sm:p-2 w-full max-w-[95%] sm:max-w-fit mx-auto overflow-x-auto">
+            <div className="mt-8 flex gap-1 sm:gap-2 justify-center items-center dark:bg-gray-950  dark:text-white
+   bg-gray-100 rounded-full p-1.5 sm:p-2 w-full max-w-[95%] sm:max-w-fit mx-auto overflow-x-auto">
               {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap shrink-0
+                  className={` dark:bg-gray-950  dark:text-white
+ px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap shrink-0
       ${
         activeTab === tab
           ? "bg-[#F5C241] text-[#10446C] shadow-sm"
@@ -175,11 +179,13 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
             </div>
 
             {/* Plans Grid */}
-            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 dark:bg-gray-950  dark:text-white
+">
               {sortedPlans.map((plan: Plan) => (
                 <div
                   key={plan.title}
-                  className="bg-white rounded-2xl p-6 flex flex-col justify-between border-2 border-gray-100 hover:border-[#F5C241] hover:shadow-xl transition-all relative"
+                  className="bg-white rounded-2xl p-6 flex flex-col justify-between border-2 dark:bg-gray-950  dark:text-white
+   border-gray-100 hover:border-[#F5C241] hover:shadow-xl transition-all relative"
                 >
                   {/* Badge if exists */}
                   {plan.badge && (
@@ -190,7 +196,7 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
 
                   <div>
                     {/* Plan Title */}
-                    <h3 className="font-bold text-lg text-[#10446C] pr-20">
+                    <h3 className="font-bold text-lg dark:text-[#63a7db] text-[#10446C] pr-20">
                       {plan.title}
                     </h3>
 
@@ -199,18 +205,22 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
                       {plan.speed}
                     </p>
 
-                    <p className="mt-1 text-sm text-gray-500">{plan.desc}</p>
+                    <p className="mt-1 text-sm dark:text-white text-gray-500">{plan.desc}</p>
 
                     {/* Price */}
                     <div className="mt-6">
-                      <p className="text-4xl font-bold text-[#10446C]">
+                      <p className="text-4xl font-bold 
+dark:text-[#63a7db]
+
+ text-[#10446C]">
                         {plan.priceDisplay}
                       </p>
-                      <p className="text-sm text-gray-500 mt-1">per month</p>
+                      <p className="text-sm text-gray-500 mt-1 dark:text-white">per month</p>
                     </div>
 
                     {/* Features */}
-                    <ul className="mt-6 space-y-3 text-sm text-gray-700">
+                    <ul className="mt-6 space-y-3 text-sm text-gray-700 dark:text-white
+">
                       {plan.features.map((feature: string, index: number) => (
                         <li key={index} className="flex items-start gap-2">
                           <span className="text-green-600 mt-0.5">✓</span>
@@ -230,7 +240,8 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
 
             {/* View All Button */}
             <div className="mt-12 flex justify-center">
-              <button className="px-8 py-3 rounded-full border-2 border-[#10446C] text-[#10446C] font-semibold hover:bg-[#10446C] hover:text-white transition-all">
+              <button className="px-12 py-5 rounded-full border-2 dark:text-white
+ border-[#10446C] text-[#10446C] font-semibold hover:bg-[#10446C] hover:text-white transition-all">
                 View All
               </button>
             </div>
