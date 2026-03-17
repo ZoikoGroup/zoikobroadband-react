@@ -3,6 +3,7 @@ import GetHelpHero from "./sections/GetHelpHero";
 import HowWeHelp from "./sections/HowWeHelp";
 import SelectCustomerType from "./sections/SelectCustomerType";
 import FAQ from "../Components/FAQs/FAQ";
+import NeedMoreSupport from "./sections/NeedMoreSupport";
 
 const gethelpfaqs = [
   {
@@ -102,6 +103,7 @@ export default function page() {
       <HowWeHelp />
       <SelectCustomerType />
       <FAQ faqs={gethelpfaqs} />
+      <NeedMoreSupport/>
     </>
   );
 }

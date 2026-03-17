@@ -33,7 +33,7 @@ export default function BusinessBroadbandHero() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/contact"
+                  href="#business-quote-heading"
                   className="border-2 border-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-[#10446C] transition"
                 >
                   Get Custom Quote

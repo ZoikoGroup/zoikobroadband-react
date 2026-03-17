@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function ExploreBundles() {
   return (
@@ -38,14 +39,14 @@ export default function ExploreBundles() {
                         Zoiko Mobile
                       </h3>
         
-                      <p className="text-sm text-white mt-2">
+                      <p className="text-sm text-white mt-2 mb-4">
                         Dual SIM plans with international roaming. Perfect for British
                         expats and frequent travellers.
                       </p>
         
-                      <button className="mt-4 px-6 py-2 rounded-full bg-[#F5C241] text-[#10446C] text-sm font-semibold hover:bg-[#E6B93A] transition">
+                      <Link href="https://zoikomobile.com" className="mt-4 px-6 py-2 rounded-full bg-[#F5C241] text-[#10446C] text-sm font-semibold hover:bg-[#E6B93A] transition">
                         View Mobile
-                      </button>
+                      </Link>
                     </div>
         
                     {/* Connector – Dashed Line (desktop only) */}
@@ -72,22 +73,22 @@ export default function ExploreBundles() {
                         Zoiko Orbit
                       </h3>
         
-                      <p className="text-sm text-white mt-2">
+                      <p className="text-sm text-white mt-2 mb-4">
                         Global travel eSIMs for seamless connectivity. Stay connected
                         from London to Lisbon and beyond.
                       </p>
         
-                      <button className="mt-4 px-6 py-2 rounded-full bg-[#F5C241] text-[#10446C] text-sm font-semibold hover:bg-[#E6B93A] transition">
+                      <Link href="https://zoikoorbit.com" className="mt-4 px-6 py-2 rounded-full bg-[#F5C241] text-[#10446C] text-sm font-semibold hover:bg-[#E6B93A] transition">
                         View Orbit
-                      </button>
+                      </Link>
                     </div>
                   </div>
         
                   {/* CTA Button */}
                   <div className="mt-10">
-                    <button className="px-8 py-3 rounded-full bg-[#F5C241] text-[#10446C] font-semibold hover:scale-105 transition-transform">
+                    <Link href={"/bundles"} className="px-8 py-3 rounded-full bg-[#F5C241] text-[#10446C] font-semibold hover:scale-105 transition-transform">
                       Explore Bundles
-                    </button>
+                    </Link>
                   </div>
                 </div>
               </section>

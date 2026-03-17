@@ -24,14 +24,14 @@ export default function SelectCustomerType() {
       label: "Welcome Pack",
       description: "Everything you need to get started",
       btn: "Report an Issue",
-      btnlink: "/report-fault",
+      btnlink: "/report-a-fault",
     },
     {
       src: "/Images/Gethelp/sec2-icon2.png",
       label: "Activation Questions",
       description: "Help with setting up your new service",
       btn: "Wi-Fi Help",
-      btnlink: "/wifi-help",
+      btnlink: "/setup-installation",
     },
     {
       src: "/Images/Gethelp/sec2-icon3.png",

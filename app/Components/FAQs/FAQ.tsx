@@ -12,7 +12,7 @@ type FAQProps = {
 };
 
 export default function FAQ({ faqs }: FAQProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+  const [activeIndex, setActiveIndex] = useState<number | null>();
 
   const toggleFAQ = (index: number) => {
     setActiveIndex(activeIndex === index ? null : index);

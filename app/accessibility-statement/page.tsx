@@ -125,7 +125,7 @@ export default function page() {
             Some older PDFs may not meet current accessibility guidelines
           </p>
           <div className="bg-[#0C3A5A] text-xs md:text-base text-white font-semibold px-6 py-4 rounded-md shadow-sm w-fit">
-            <Link href="/speed-check">Let Us Know If You Encounter a Problem</Link>
+            <Link href="/report-a-fault">Let Us Know If You Encounter a Problem</Link>
           </div>
         </div>
       </section>

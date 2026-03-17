@@ -125,7 +125,7 @@ export default function page() {
           </p>
         </div>
         <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-6 md:px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
-          <Link href="/speed-check">Run a Speed Check at Your Address</Link>
+          <Link href="/report-a-fault">Run a Speed Check at Your Address</Link>
         </div>
       </section>
 
@@ -167,7 +167,7 @@ export default function page() {
           </div>
         </div>
         <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
-          <Link href="/report-speed-issue">Report a Speed Issue</Link>
+          <Link href="/report-a-fault">Report a Speed Issue</Link>
         </div>
       </section>
 
