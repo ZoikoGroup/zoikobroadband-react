@@ -5,15 +5,17 @@ import Link from "next/link";
 import { useModal } from "./modal-system/ModalContext";
 
 export default function ReferHero() {
- const { openModal } = useModal();
+  const { openModal } = useModal();
+
   return (
     <>
       <section
         aria-labelledby="bundle-services"
-        className="bg-[#10446C] text-white w-full py-12"
+        className="bg-[#10446C] dark:bg-black text-white w-full py-12"
       >
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-5">
+            
             {/* LEFT CONTENT */}
             <div className="flex flex-col justify-center">
               <h2
@@ -23,7 +25,7 @@ export default function ReferHero() {
                 Friends Deserve Great Internet. You Deserve Rewards.
               </h2>
 
-              <p className="text-base sm:text-lg md:text-xl text-gray-200 max-w-xl mb-6">
+              <p className="text-base sm:text-lg md:text-xl text-gray-200 dark:text-gray-300 max-w-xl mb-6">
                 £50 credit for them | £50 credit for you <br /> Unlimited
                 referral
               </p>
@@ -33,16 +35,16 @@ export default function ReferHero() {
                   href="?showReferral=true"
                   scroll={false}
                   onClick={() => openModal("referral")}
-                  className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 transition"
+                  className="bg-white text-[#10446C] dark:bg-gray-200 dark:text-black px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 dark:hover:bg-gray-300 transition"
                 >
                   Get My Referral Link
                 </Link>
               </div>
             </div>
 
+            {/* RIGHT IMAGE */}
             <div className="grid">
-              {/* Large image */}
-              <div className="">
+              <div>
                 <Image
                   src="/Images/ReferFriend/refer-hero.png"
                   alt="Customer using Zoiko services"
@@ -53,6 +55,7 @@ export default function ReferHero() {
                 />
               </div>
             </div>
+
           </div>
         </div>
       </section>

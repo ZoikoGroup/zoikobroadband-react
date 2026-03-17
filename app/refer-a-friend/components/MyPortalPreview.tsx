@@ -5,19 +5,21 @@ export default function MyPortalPreview() {
     <>
       <section
         aria-labelledby="portal-preview-heading"
-        className="bg-white w-full py-16"
+        className="bg-white dark:bg-black w-full py-16"
       >
         <div className="max-w-4xl mx-auto">
+          
           {/* Section Title */}
           <h2
             id="portal-preview-heading"
-            className="text-center text-xl md:text-2xl font-semibold text-[#10446C] mb-6"
+            className="text-center text-xl md:text-2xl font-semibold text-[#10446C] dark:text-white mb-6"
           >
             My Zoiko Portal Preview
           </h2>
 
           {/* Dashboard Card */}
-          <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-gray-700">
+            
             {/* Header */}
             <div className="bg-[#10446C] flex items-center justify-between px-6 py-4">
               <h3 className="text-white font-semibold text-base md:text-lg">
@@ -32,12 +34,13 @@ export default function MyPortalPreview() {
 
             {/* Stats Section */}
             <dl className="grid grid-cols-3 text-center px-8 py-10">
+              
               {/* Active Referrals */}
               <div className="flex flex-col items-center">
                 <dd className="text-4xl md:text-5xl font-bold text-amber-400">
                   7
                 </dd>
-                <dt className="text-gray-600 text-sm md:text-base mt-2">
+                <dt className="text-gray-600 dark:text-gray-300 text-sm md:text-base mt-2">
                   Active Referrals
                 </dt>
               </div>
@@ -47,7 +50,7 @@ export default function MyPortalPreview() {
                 <dd className="text-4xl md:text-5xl font-bold text-amber-400">
                   £350
                 </dd>
-                <dt className="text-gray-600 text-sm md:text-base mt-2">
+                <dt className="text-gray-600 dark:text-gray-300 text-sm md:text-base mt-2">
                   Total Earned
                 </dt>
               </div>
@@ -57,10 +60,11 @@ export default function MyPortalPreview() {
                 <dd className="text-4xl md:text-5xl font-bold text-amber-400">
                   3
                 </dd>
-                <dt className="text-gray-600 text-sm md:text-base mt-2">
+                <dt className="text-gray-600 dark:text-gray-300 text-sm md:text-base mt-2">
                   Pending (30 days)
                 </dt>
               </div>
+
             </dl>
           </div>
         </div>
