@@ -1,4 +1,3 @@
-
 import Link from "next/link";
 import React from "react";
 
@@ -105,14 +104,9 @@ export default function page() {
           </p>
 
         </div>
-<<<<<<< ours
 
         <div className="mt-8 bg-[#0C3A5A] dark:bg-gray-800 text-white font-semibold px-6 md:px-8 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
           <Link href="/speed-check">Run a Speed Check at Your Address</Link>
-=======
-        <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-6 md:px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
-          <Link href="/report-a-fault">Run a Speed Check at Your Address</Link>
->>>>>>> theirs
         </div>
 
       </section>
@@ -156,14 +150,9 @@ export default function page() {
           </div>
 
         </div>
-<<<<<<< ours
 
         <div className="mt-8 bg-[#0C3A5A] dark:bg-gray-800 text-white font-semibold px-8 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
           <Link href="/report-speed-issue">Report a Speed Issue</Link>
-=======
-        <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
-          <Link href="/report-a-fault">Report a Speed Issue</Link>
->>>>>>> theirs
         </div>
 
       </section>

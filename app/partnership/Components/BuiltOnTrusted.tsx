@@ -3,14 +3,16 @@ import React from "react";
 export default function BuiltOnTrusted() {
   return (
     <>
-      <section className="w-full bg-white py-16 px-4 sm:px-6 lg:px-8 lg:py-18">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="w-full bg-white py-16 px-4 sm:px-6 lg:px-8 lg:py-18  dark:bg-gray-950  dark:text-white
+">
+        <div className="max-w-6xl mx-auto text-center ">
           {/* Heading */}
-          <h2 className="text-[#16213E] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight">
+          <h2 className="  dark:bg-gray-950  dark:text-white
+ text-[#16213E] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight">
             Built on Trusted Networks
           </h2>
           {/* Description */}
-          <p className="mt-6 text-base md:text-lg lg:text-xl text-[#555555] leading-relaxed md:leading-8 max-w-4xl mx-auto">
+          <p className="mt-6 text-base md:text-lg lg:text-xl dark:text-white text-[#555555] leading-relaxed md:leading-8 max-w-4xl mx-auto">
             As an authorised reseller of BT Wholesale, Zoiko Broadband delivers
             nationwide coverage and Tier-1 reliability. This foundation ensures
             crystal-clear digital lines and future-proof broadband services.
