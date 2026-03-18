@@ -84,13 +84,12 @@ export default function BundleBuilders() {
                 </div>
                 <p className="text-xl font-bold text-[#F5C241]"><span className="text-lg text-gray-500 line-through mr-2">{item.oldprice}</span>{item.price}</p>
 
-                <Link
-                  href="/plans"
+                <button
                   aria-label={`Add ${item.label} to bundle`}
                   className="bg-[#10446C] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#0d3a5a] transition"
                 >
                   Choose Bundle
-                </Link>
+                </button>
               </article>
             ))}
           </div>

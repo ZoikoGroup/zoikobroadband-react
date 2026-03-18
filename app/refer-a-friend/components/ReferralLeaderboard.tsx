@@ -1,6 +1,9 @@
+"use client";
 import React from "react";
+import { useModal } from "./modal-system/ModalContext";
 
 export default function ReferralLeaderboard() {
+  const { openModal } = useModal();
   return (
     <>
       <section
@@ -53,6 +56,7 @@ export default function ReferralLeaderboard() {
             <div className="bg-gray-50 pb-8 pt-8 flex justify-center border border-gray-50 rounded-b-xl">
               <button
                 aria-label="View the full referral leaderboard"
+                onClick={() => openModal("other")}
                 className="bg-[#10446C] text-white px-8 py-3 rounded-lg font-semibold transition-transform duration-200 hover:scale-105 active:scale-95"
               >
                 View Full Leaderboard

@@ -60,7 +60,7 @@ export default function JoinOurNetwork() {
         {/* CTA */}
         <div className="mt-10">
           <Link
-            href="/home-broadband"
+            href="/fibre-packages"
             className="inline-block bg-[#f5c241] text-[#10446C] px-12 py-3 rounded-3xl text-base md:text-lg font-semibold hover:bg-[#e6b63b] focus:outline-none focus:ring-4 focus:ring-amber-300 transition"
           >
             View Plans

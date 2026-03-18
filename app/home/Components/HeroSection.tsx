@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function HeroSection() {
   return (
@@ -37,12 +38,12 @@ export default function HeroSection() {
         
                   {/* Row 4 */}
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button className="bg-[#F6C140] text-blue-950 px-8 py-3 rounded-3xl font-medium">
+                    <Link href="/check-my-postcode" className="bg-[#F6C140] text-blue-950 px-8 py-3 rounded-3xl font-medium">
                       Check Your Postcode
-                    </button>
-                    <button className="bg-white text-blue-950 px-8 py-3 rounded-3xl font-medium">
+                    </Link>
+                    <Link href="/fibre-packages" className="bg-white text-blue-950 px-8 py-3 rounded-3xl font-medium">
                       View Fibre Plans
-                    </button>
+                    </Link>
                   </div>
                 </div>
         
