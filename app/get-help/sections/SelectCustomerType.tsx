@@ -46,16 +46,16 @@ export default function SelectCustomerType() {
     <>
       <section
         aria-labelledby="select-your-customer-type-heading"
-        className="bg-[#f8fafc] py-12 flex flex-col items-center"
+        className="bg-[#f8fafc] py-12 flex flex-col items-center dark:bg-gray-950  dark:text-white"
       >
         <h2
           id="select-your-customer-type-heading"
-          className="text-xl md:text-2xl font-semibold text-gray-800 mb-6 text-center"
+          className="text-xl md:text-2xl font-semibold dark:bg-gray-950  dark:text-white text-gray-800 mb-6 text-center"
         >
           Select your customer type for tailored help
         </h2>
 
-        <div className="bg-white rounded-full p-1 md:p-2 flex gap-1 md:gap-3 shadow-sm">
+        <div className="bg-white rounded-full p-1 md:p-2 flex gap-1 md:gap-3 shadow-sm dark:bg-gray-950  dark:text-white">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -79,7 +79,7 @@ export default function SelectCustomerType() {
           {CardItems.map((item, i) => (
             <li key={i}>
               <article
-                className="h-full bg-white rounded-2xl border border-gray-200 px-5 py-10
+                className="h-full bg-white rounded-2xl border dark:bg-gray-950  dark:text-white border-gray-200 px-5 py-10
                   flex flex-col items-center text-center
                   transition-all duration-300 hover:shadow-md hover:-translate-y-1"
               >
@@ -92,16 +92,16 @@ export default function SelectCustomerType() {
                     height={80}
                     className="object-contain"
                     sizes="80px"
-                  />
+                  />s
                 </div>
 
                 {/* Title */}
-                <h3 className="mt-5 text-lg lg:text-2xl font-bold text-[#10446C]">
+                <h3 className="mt-5 text-lg lg:text-1xl font-bold  dark:text-[#63a7db] text-[#10446C]">
                   {item.label}
                 </h3>
 
                 {/* Description */}
-                <p className="mt-4 text-base text-[#555555] leading-relaxed">
+                <p className="mt-4 text-base text-[#555555] leading-relaxed dark:bg-gray-950  dark:text-white">
                   {item.description}
                 </p>
                 <Link
@@ -123,12 +123,12 @@ export default function SelectCustomerType() {
       >
         <h2
           id="how-we-help-heading"
-          className="text-black text-center text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+          className="text-black text-center text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight dark:bg-gray-950  dark:text-white"
         >
           Search our help centre
         </h2>
 
-        <p className="mt-3 mb-4 text-center text-base md:text-lg text-[#555555] leading-relaxed max-w-2xl mx-auto">
+        <p className="mt-3 mb-4 text-center text-base md:text-lg dark:bg-gray-950  dark:text-white text-[#555555] leading-relaxed max-w-2xl mx-auto">
           Can't find what you're looking for? Try searching below
         </p>
         <input
@@ -148,13 +148,13 @@ export default function SelectCustomerType() {
       </div>
 
       {/* Popular Searches */}
-      <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 text-base text-gray-500">
+      <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 text-base dark:bg-gray-950  dark:text-white text-gray-500">
         <span className="mr-1">Popular searches:</span>
 
         {popularSearches.map((item, index) => (
           <button
             key={index}
-            className=" bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-sm md:text-base hover:bg-gray-300 transition"
+            className=" bg-gray-200dark:bg-gray-950  dark:text-white text-gray-600 px-3 py-1 rounded-full text-sm md:text-base hover:bg-gray-300 transition"
           >
             {item}
           </button>

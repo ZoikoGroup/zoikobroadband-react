@@ -313,7 +313,7 @@ export default function page() {
       <section className="w-full bg-[#f9f9f9] py-16 px-4 sm:px-6 lg:px-18 dark:bg-gray-950 dark:text-white">
         <div className="max-w-7xl mx-auto">
           {/* Section Heading */}
-          <h2 className="text-xl sm:text-2xl font-semibold text-[#10446C] mb-8 dark:bg-gray-950 dark:text-white">
+          <h2 className="text-xl sm:text-4xl font-semibold text-[#10446C] mb-8 dark:bg-gray-950 dark:text-white">
             Key Highlights
           </h2>
 

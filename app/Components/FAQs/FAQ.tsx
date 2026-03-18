@@ -61,19 +61,11 @@ export default function FAQ({ faqs }: FAQProps) {
 
                   {/* Answer */}
                   <div
-<<<<<<< HEAD
                     className={`px-6 overflow-hidden transition-all duration-400 dark:bg-gray-950 dark:text-white ${
                       isOpen ? "max-h-40 pb-4" : "max-h-0"
                     }`}
                   >
                     <p className="text-gray-600 text-sm md:text-base leading-relaxed dark:bg-gray-950 dark:text-white">
-=======
-                    className={`px-6 overflow-hidden transition-all duration-500 ${
-                      isOpen ? "pb-4" : "max-h-0"
-                    }`}
-                  >
-                    <p className="whitespace-pre-line text-gray-600 text-sm md:text-base leading-relaxed">
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
                       {faq.answer}
                     </p>
                   </div>

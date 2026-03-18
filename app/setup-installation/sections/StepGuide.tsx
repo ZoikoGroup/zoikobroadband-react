@@ -108,12 +108,14 @@ export default function StepGuide({
       {/* Section Title */}
       <h2
         id="select-your-setup-type-heading"
-        className="text-xl md:text-2xl font-semibold text-[#10446C] mb-2 text-center"
+        className="text-xl md:text-2xl font-semibold dark:text-[#63a7db]
+ text-[#10446C] mb-2 text-center"
       >
         Step-by-Step Setup Guide
       </h2>
 
-      <p className="mb-6 text-center text-sm md:text-base text-[#555555] leading-relaxed max-w-2xl mx-auto">
+      <p className="mb-6 text-center text-sm md:text-base dark:bg-gray-950  dark:text-white
+ text-[#555555] leading-relaxed max-w-2xl mx-auto">
         Follow these steps to get your broadband up and running
       </p>
 
@@ -123,7 +125,8 @@ export default function StepGuide({
         return (
           <div
             key={step.id}
-            className="w-full bg-white rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
+            className="w-full dark:bg-gray-950  dark:text-white
+ bg-white rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
           >
             {/* Header */}
             <button
@@ -136,9 +139,10 @@ export default function StepGuide({
                   {step.id}
                 </div>
 
-                <h3 className="text-lg md:text-xl font-semibold text-blue-900">
+                <h2 className="text-lg md:text-xl font-semibold dark:text-[#63a7db]
+ text-blue-900">
                   {step.title}
-                </h3>
+                </h2>
               </div>
 
               {/* Arrow */}
@@ -165,7 +169,7 @@ export default function StepGuide({
                 isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
               }`}
             >
-              <p className="text-gray-600 text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
+              <p className= " text-gray-600 text-sm md:text-base ml-12 pb-4 whitespace-pre-line  ">{step.description}</p>
             </div>
           </div>
         );
