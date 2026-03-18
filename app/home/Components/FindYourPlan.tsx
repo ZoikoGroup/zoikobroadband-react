@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import React from 'react'
 
 export default function FindYourPlan() {
@@ -123,12 +124,13 @@ export default function FindYourPlan() {
                   </p>
                 </div>
 
-                <button
+                <Link
+                  href="/fibre-packages"
                   className="bg-[#F5C241] text-[#10446C] py-3 rounded-full font-semibold
             hover:scale-105 transition-transform"
                 >
                   View This Plan
-                </button>
+                </Link>
               </div>
             </div>
           </div>

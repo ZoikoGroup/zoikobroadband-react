@@ -28,14 +28,14 @@ export default function BundlesHero() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/bundle"
+                  href="/bundles"
                   className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 transition"
                 >
                   Build Your Bundle
                 </Link>
 
                 <Link
-                  href="/plans"
+                  href="/all-plans"
                   className="bg-[#F6C140] text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-[#eab530] transition"
                 >
                   See All Plans

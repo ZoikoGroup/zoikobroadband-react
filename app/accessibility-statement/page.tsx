@@ -142,11 +142,16 @@ export default function page() {
           <p className="md:text-lg sm:text-base text-gray-700 dark:text-gray-300 sm:leading-relaxed md:leading-8 mb-6">
             Some older PDFs may not meet current accessibility guidelines
           </p>
+<<<<<<< HEAD
 
           <div className="bg-[#0C3A5A] dark:bg-[#07283f] text-xs md:text-base text-white font-semibold px-6 py-4 rounded-md shadow-sm w-fit">
             <Link href="/speed-check">
               Let Us Know If You Encounter a Problem
             </Link>
+=======
+          <div className="bg-[#0C3A5A] text-xs md:text-base text-white font-semibold px-6 py-4 rounded-md shadow-sm w-fit">
+            <Link href="/report-a-fault">Let Us Know If You Encounter a Problem</Link>
+>>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
           </div>
 
         </div>
