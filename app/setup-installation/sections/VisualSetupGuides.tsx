@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import React from 'react'
 
 export default function VisualSetupGuides() {
@@ -15,6 +16,7 @@ export default function VisualSetupGuides() {
         </div>
       ),
       button: "Watch Video",
+      buttonLink: "https://www.youtube.com/watch?v=D3Rw_ykAPJc",
       buttonStyle: "bg-[#1f4f73] text-white",
     },
     {
@@ -30,6 +32,7 @@ export default function VisualSetupGuides() {
         </div>
       ),
       button: "View Diagram",
+      buttonLink: "#",
       buttonStyle: "bg-[#1f4f73] text-white",
     },
     {
@@ -46,6 +49,7 @@ export default function VisualSetupGuides() {
         </ul>
       ),
       button: "Download PDF",
+      buttonLink: "http://https//zoikobroadband.com/wp-content/uploads/2025/10/PDF-1-file.pdf",
       buttonStyle: "bg-yellow-400 text-black",
     },
   ];
@@ -92,11 +96,12 @@ export default function VisualSetupGuides() {
               <div className="w-full mb-6">{guide.content}</div>
 
               {/* Button */}
-              <button
+              <Link
+                href={guide.buttonLink}
                 className={`px-5 py-2 rounded-md text-sm font-medium ${guide.buttonStyle}`}
               >
                 {guide.button}
-              </button>
+              </Link>
 
             </div>
           ))}
