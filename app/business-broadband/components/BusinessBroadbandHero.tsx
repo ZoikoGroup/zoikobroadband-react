@@ -4,7 +4,7 @@ import Link from "next/link";
 
 export default function BusinessBroadbandHero() {
   return (
-<<<<<<< HEAD
+<<<<<<< ours
     <section
       aria-labelledby="business-broadband-heading"
       className="bg-[#10446C] dark:bg-gray-950 text-white w-full py-8 lg:py-10"
@@ -17,6 +17,9 @@ export default function BusinessBroadbandHero() {
             <h1
               id="business-broadband-heading"
               className="text-[#F5C241] font-bold text-2xl sm:text-3xl lg:text-[40px] leading-relaxed mb-4 max-w-xl"
+            >
+              Business Broadband That Works as Hard as You Do
+            </h1>
 =======
     <>
       <section
@@ -72,19 +75,7 @@ export default function BusinessBroadbandHero() {
                 priority
                 className="w-full h-auto object-cover rounded-xl"
               />
-
-              {/* Stats Overlay */}
-              {/* <div className="absolute bottom-4 left-4 grid grid-cols-2 gap-3 bg-[#1b4f73]/90 p-4 rounded-xl backdrop-blur">
-
-          {stats.map((item) => (
-
-            <div
-              key={item.label}
-              className="text-center text-white"
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
-            >
-              Business Broadband That Works as Hard as You Do
-            </h1>
+>>>>>>> theirs
 
             <p className="text-lg sm:text-xl text-blue-200 dark:text-blue-300 max-w-xl mb-4">
               High-performance fibre designed for UK businesses of all sizes.

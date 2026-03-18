@@ -105,14 +105,14 @@ export default function page() {
           </p>
 
         </div>
-<<<<<<< HEAD
+<<<<<<< ours
 
         <div className="mt-8 bg-[#0C3A5A] dark:bg-gray-800 text-white font-semibold px-6 md:px-8 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
           <Link href="/speed-check">Run a Speed Check at Your Address</Link>
 =======
         <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-6 md:px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
           <Link href="/report-a-fault">Run a Speed Check at Your Address</Link>
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
+>>>>>>> theirs
         </div>
 
       </section>
@@ -156,14 +156,14 @@ export default function page() {
           </div>
 
         </div>
-<<<<<<< HEAD
+<<<<<<< ours
 
         <div className="mt-8 bg-[#0C3A5A] dark:bg-gray-800 text-white font-semibold px-8 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
           <Link href="/report-speed-issue">Report a Speed Issue</Link>
 =======
         <div className="mt-8 bg-[#0C3A5A] text-white font-semibold px-8 py-4 rounded-xl  shadow-sm max-w-fit mx-auto">
           <Link href="/report-a-fault">Report a Speed Issue</Link>
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
+>>>>>>> theirs
         </div>
 
       </section>

@@ -4,7 +4,7 @@ export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div
-<<<<<<< HEAD
+<<<<<<< ours
       className=" dark:bg-gray-950 dark:text-white fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}
     >
@@ -18,13 +18,13 @@ export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
         aria-modal="true"
         aria-labelledby="leaderboard-title"
         onClick={onClose}
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
+>>>>>>> theirs
       >
         <div
           className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden relative"
           onClick={(e) => e.stopPropagation()}
         >
-<<<<<<< HEAD
+<<<<<<< ours
           ✕
         </button>
 
@@ -54,10 +54,10 @@ export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
             className="absolute top-3 right-3 text-white z-10"
           >
             ✕
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
+>>>>>>> theirs
           </button>
 
-<<<<<<< HEAD
+<<<<<<< ours
         {/* Share link */}
         <div className="mt-6 text-center">
           <h3 className="font-semibold mb-3 dark:bg-gray-950 dark:text-white">
@@ -69,7 +69,7 @@ export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
             <h2 id="leaderboard-title" className="font-semibold">
               Leaderboard
             </h2>
->>>>>>> 09eb8e629925198f7cd67b27bb8315772e503e8d
+>>>>>>> theirs
 
             {/* Top 3 */}
             <div className="flex justify-center items-end gap-4 mt-4">
