@@ -1,6 +1,6 @@
 import React from "react";
 import Image from "next/image";
-import { title } from "process";
+
 const Items = [
   {
     src: "/Images/Dashboard/dash_icon1.png",
@@ -85,7 +85,7 @@ export default function DashboardHero() {
       </div>
 
       <div className="bg-white text-center md:text-left py-8 px-6 sm:px-8 lg:px-20 lg:py-12">
-        <ul className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <ul className=" grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {Items2.map((item, i) => (
             <li key={i}>
               <article className="h-full px-6 py-6 flex flex-col items-center justify-center gap-3 border border-[#f5c241]/40 bg-[#fefbf4] text-white rounded-2xl ">

@@ -1,14 +1,6 @@
 "use client";
 import React, { useState } from "react";
 const stepData = {
-  overview: [
-    {
-      id: 1,
-      title: "View/Download Bills",
-      description: "Access and download your bills in PDF format",
-      buttonText: "Download Bills",
-    },
-  ],
   billing: [
     {
       id: 1,
@@ -144,8 +136,6 @@ export default function DashboardOptions() {
     "overview" | "billing" | "broadband" | "account" | "security" | "support"
   >("overview");
 
-//   const [openStep, setOpenStep] = useState<number | null>();
-
   const tabs = [
     { id: "overview", label: "Overview", style: "hidden sm:block" },
     { id: "billing", label: "Billing" },
@@ -180,10 +170,10 @@ export default function DashboardOptions() {
               className={`px-1 md:px-4 
         py-2 md:py-5
         text-xs md:text-base lg:text-base
-        rounded-sm font-medium md:font-bold transition whitespace-nowrap ${tab.style}
+        rounded-md font-medium md:font-bold transition whitespace-nowrap ${tab.style}
               ${
                 activeTab === tab.id
-                  ? "border-b-2 border-[#ffd300] text-[#10446C]"
+                  ? "bg-[#fefbf4] border-b-2 border-[#ffd300] text-[#10446C]"
                   : "text-gray-600"
               }`}
             >
@@ -192,23 +182,149 @@ export default function DashboardOptions() {
           ))}
         </div>
 
-        <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stepData[activeTab].map((item) => (
-            <li key={item.id}>
-              <div className="h-full bg-white rounded-xl shadow-md p-5 border border-gray-200 hover:shadow-lg transition">
-                <h3 className="text-sm font-semibold text-gray-800">
-                  {item.title}
+        {activeTab === "overview" ? (
+          <div className="mt-5 p-4 md:p-8">
+            {/* Section Title */}
+            <h2 className="text-[#10446C] font-semibold text-lg mb-4">
+              Account Overview
+            </h2>
+
+            {/* Grid Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 ">
+              {/* 🔹 Recent Activity */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+                <h3 className="text-[#10446C] font-semibold text-sm mb-4">
+                  Recent Activity
                 </h3>
 
-                <p className="text-sm text-gray-500 mt-2">{item.description}</p>
+                <div className="divide-y divide-gray-200">
+                  {/* Item */}
+                  <div className="flex gap-3 py-4">
+                    <div className="w-9 h-9 flex items-center justify-center rounded-full bg-[#F5C241]/20">
+                      🧾
+                    </div>
+                    <div>
+                      <p className="text-sm md:text-base font-medium text-[#10446C]">
+                        Payment Processed
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Monthly payment of £34.99 processed successfully
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        2 days ago
+                      </p>
+                    </div>
+                  </div>
 
-                <button className="mt-4 px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-100">
-                  {item.buttonText}
-                </button>
+                  <div className="flex gap-3 py-4">
+                    <div className="w-9 h-9 flex items-center justify-center rounded-full bg-[#F5C241]/20">
+                      🔧
+                    </div>
+                    <div>
+                      <p className="text-sm md:text-base font-medium text-[#10446C]">
+                        Router Restart
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Router was restarted remotely
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        5 days ago
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 py-4">
+                    <div className="w-9 h-9 flex items-center justify-center rounded-full bg-[#F5C241]/20">
+                      📄
+                    </div>
+                    <div>
+                      <p className="text-sm md:text-base font-medium text-[#10446C]">
+                        Bill Generated
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Your August bill is now available
+                      </p>
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        1 week ago
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </li>
-          ))}
-        </ul>
+
+              {/* 🔹 Data Usage */}
+              <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+                <h3 className="text-[#10446C] font-semibold text-sm mb-4">
+                  Data Usage This Month
+                </h3>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
+                  <div className="bg-[#F5C241] h-2 rounded-full w-[45%]" />
+                </div>
+
+                <div className="flex justify-between text-xs text-gray-500 mb-4">
+                  <span className="text-[#10446C] font-medium">
+                    45.2 GB used
+                  </span>
+                  <span>Unlimited</span>
+                </div>
+
+                {/* Chart Bars */}
+                <div className="flex items-end justify-between h-40 gap-2 md:gap-6">
+                  {[
+                    { day: "Mon", h: "40%" },
+                    { day: "Tue", h: "70%" },
+                    { day: "Wed", h: "30%" },
+                    { day: "Thu", h: "85%" },
+                    { day: "Fri", h: "55%" },
+                    { day: "Sat", h: "80%" },
+                    { day: "Sun", h: "60%" },
+                  ].map((item) => (
+                    <div
+                      key={item.day}
+                      className="flex flex-col items-center w-full h-full"
+                    >
+                      {/*  IMPORTANT WRAPPER */}
+                      <div className="flex items-end h-full w-full">
+                        <div
+                          className="w-full bg-[#F5C241] rounded-sm transition-all duration-300"
+                          style={{ height: item.h }}
+                        />
+                      </div>
+
+                      {/* Label */}
+                      <span className="text-[10px] md:text-sm text-gray-500 mt-1">
+                        {item.day}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ul className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stepData[activeTab].map((item) => (
+              <li key={item.id}>
+                <div className="h-full bg-white rounded-xl shadow-md p-5 border border-gray-200 hover:shadow-lg transition">
+                  <h3 className="text-base md:text-lg font-semibold text-[#10446C]">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-sm md:text-base text-gray-500 mt-2">
+                    {item.description}
+                  </p>
+
+                  <button className="mt-4 px-4 py-2 text-sm border border-gray-300 rounded-md text-[#10446C] font-medium hover:bg-gray-100">
+                    {item.buttonText}
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* Cards ... */}
       </section>
     </>
   );
