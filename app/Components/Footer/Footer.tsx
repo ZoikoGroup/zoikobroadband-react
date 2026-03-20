@@ -25,7 +25,7 @@ export default function Footer() {
         { name: "Setup & Installation", href: "/setup-installation" },
         { name: "Manage My Account", href: "/dashboard" },
         { name: "Payments & Billing", href: "/payments-billing" },
-        { name: "Report a Fault", href: "/report-fault" },
+        { name: "Report a Fault", href: "/report-a-fault" },
       ],
     },
     {
