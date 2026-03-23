@@ -43,6 +43,36 @@ export default function ReportAFaultHero() {
           </div>
         </div>
       </section>
+
+      {/* Check your postcode */}
+      <section className="w-full bg-[#F4F8FC] py-20 px-4">
+        <div className="max-w-3xl mx-auto flex flex-col justify-center items-center">
+          {/* Card */}
+          <div className="w-full text-center border border-gray-200 p-5 ">
+            {/* Text */}
+            <h2 className="text-xl sm:text-2xl font-bold text-[#10446C]">
+              Check Service Status in Your Area
+            </h2>
+
+            {/* Form */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 ">
+              <input
+                type="text"
+                placeholder="Enter your postcode (e.g. SW1A 1AA)"
+                className="flex-1 px-4 py-3 rounded-xl border border-gray-300
+            focus:outline-none focus:ring-2 focus:ring-[#F5C241]"
+              />
+
+              <button
+                className="px-6 py-4 rounded-xl bg-[#F5C241] text-[#10446C]
+            font-semibold hover:bg-[#E6B93A] transition"
+              >
+                Check Status
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   );
 }
