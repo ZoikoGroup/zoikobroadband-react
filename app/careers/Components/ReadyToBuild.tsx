@@ -1,3 +1,4 @@
+import Link from "next/link";
 import React from "react";
 
 export default function ReadyToBuild() {
@@ -23,7 +24,8 @@ export default function ReadyToBuild() {
 
           {/* RIGHT CTA */}
           <div className="lg:w-1/3 w-full flex justify-center">
-            <button
+            <Link
+            href={"/join-the-zoiko-team"}
               className="
           w-full sm:w-auto
           bg-[#F5C241]
@@ -36,7 +38,7 @@ export default function ReadyToBuild() {
           transition-transform duration-200"
             >
               Apply Now
-            </button>
+            </Link>
           </div>
         </div>
       </section>

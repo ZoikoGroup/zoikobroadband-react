@@ -4,6 +4,22 @@ import { useState } from "react";
 export default function ReportFault() {
   const [step, setStep] = useState(1);
   const [selectedProblem, setSelectedProblem] = useState<string | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    accountNumber: "",
+    serviceAddress: "",
+    district: "",
+    propertyType: "",
+    problemDescription: "",
+    issueTypes: [],
+    additionalNotes: "",
+    priority: "Standard",
+    confirmAccuracy: false,
+    confirmContact: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const problems = [
     "No Internet",
@@ -153,52 +169,250 @@ export default function ReportFault() {
 
           {/* STEP 3 */}
           {step === 3 && (
-            <>
+            <div>
               <h3 className="font-semibold text-[#10446C] dark:text-white mb-6">
                 Step 3/3: Submit Your Report
               </h3>
 
-              {/* Section */}
+              {/* Contact Information */}
               <div className="border-l-4 border-[#F6C140] pl-4 mb-6">
+                <h4 className="text-base md:text-lg font-semibold text-[#10446C] mb-3">
+                  Contact Information
+                </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      placeholder="Enter your full name"
+                      className="border border-gray-300 rounded-md p-2 text-sm w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="yourname@example.com"
+                      className="border border-gray-300 rounded-md p-2 text-sm w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      className="border border-gray-300 rounded-md p-2 text-sm w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Account Number (Optional)
+                    </label>
+                    <input
+                      placeholder="0000-000-000"
+                      className="border border-gray-300 rounded-md p-2 text-sm w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Service Address */}
+              <div className="border-l-4 border-[#F6C140] pl-4 mb-6">
+                <h4 className="text-base md:lg font-semibold text-[#10446C] mb-3">
+                  Service Address
+                </h4>
+                <div className="mb-4">
+                  <label className="text-sm md:text-base text-gray-600 block mb-1">
+                    Address
+                  </label>
                   <input
-                    className="border p-2 rounded-md"
-                    placeholder="Full Name"
-                  />
-                  <input
-                    className="border p-2 rounded-md"
-                    placeholder="Contact Number"
-                  />
-                  <input
-                    className="border p-2 rounded-md"
-                    placeholder="Address"
-                  />
-                  <input
-                    className="border p-2 rounded-md"
-                    placeholder="Postcode"
+                    placeholder="Enter the address where the fault exists"
+                    className="border border-gray-300 rounded-md p-2 text-sm w-full"
                   />
                 </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      District
+                    </label>
+                    <input
+                      placeholder="District"
+                      className="border border-gray-300 rounded-md p-2 text-sm w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Property Type
+                    </label>
+                    <select className="border border-gray-300 rounded-md p-2 text-sm w-full">
+                      <option value="">Select a Property Type</option>
+                      <option>Residential</option>
+                      <option>Commercial</option>
+                      <option>Industrial</option>
+                      <option>Public Building</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
 
-                <textarea
-                  className="border p-2 rounded-md w-full mt-4"
-                  placeholder="Describe your issue"
-                />
+              {/* Problem Details */}
+              <div className="border-l-4 border-[#F6C140] pl-4 mb-6">
+                <h4 className="text-base md:text-lg font-semibold text-[#10446C] mb-1">
+                  Problem Details
+                </h4>
+                <p className="text-xs text-gray-500 mb-3">
+                  Describe the issue in as much detail as possible.
+                </p>
+                <div className="mb-4">
+                  <label className="text-sm md:text-base text-gray-600 block mb-1">
+                    Describe the Problem
+                  </label>
+                  <textarea
+                    placeholder="Describe what you have noticed..."
+                    rows={4}
+                    className="border border-gray-300 rounded-md p-2 text-sm w-full resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm md:text-base text-gray-600 block mb-2">
+                    Relate to an Issue
+                  </label>
+                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                    {[
+                      "All Areas",
+                      "Coupled Spray",
+                      "Distribution",
+                      "Safety",
+                      "Standpipe",
+                      "Drinking Meter",
+                    ].map((issue) => (
+                      <label
+                        key={issue}
+                        className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          className="accent-[#10446C] w-4 h-4"
+                        />
+                        {issue}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional Information */}
+              <div className="border-l-4 border-[#F6C140] pl-4 mb-6">
+                <h4 className="text-base md:text-lg font-semibold text-[#10446C] mb-3">
+                  Additional Information
+                </h4>
+                <div className="mb-4">
+                  <label className="text-sm md:text-base text-gray-600 block mb-1">
+                    Additional Notes (Optional)
+                  </label>
+                  <textarea
+                    placeholder="Any other information..."
+                    rows={3}
+                    className="border border-gray-300 rounded-md p-2 text-sm w-full resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Preferred Contact Method
+                    </label>
+                    <select className="border border-gray-300 rounded-md p-2 text-sm w-full">
+                      <option>Select Contact Addition</option>
+                      <option>Email</option>
+                      <option>Phone</option>
+                      <option>Post</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm md:text-base text-gray-600 block mb-1">
+                      Survey Needed
+                    </label>
+                    <select className="border border-gray-300 rounded-md p-2 text-sm w-full">
+                      <option>Any Note</option>
+                      <option>Required</option>
+                      <option>Not Required</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Priority */}
+              <div className="border-l-4 border-[#F6C140] pl-4 mb-6">
+                <h4 className="text-base md:text-lg font-semibold text-[#10446C] mb-3">
+                  Priority & Special Requirements
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="border-2 border-gray-200 rounded-md p-4">
+                    <p className="font-semibold text-sm text-[#10446C]">
+                      Standard Priority
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Standard response time for non-urgent reports.
+                    </p>
+                  </div>
+                  <div className="border-2 border-gray-200 rounded-md p-4">
+                    <p className="font-semibold text-sm text-red-600">
+                      Mark as Urgent
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      For immediate safety concerns or critical disruptions.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Declarations */}
+              <div className="bg-gray-50 rounded-md p-4 border border-gray-200 mb-6 flex flex-col gap-3">
+                <label className="flex items-start gap-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 accent-[#10446C] w-4 h-4"
+                  />
+                  <span>
+                    I confirm this Fault Report is accurate to the best of my
+                    knowledge and I am aware of the{" "}
+                    <a href="#" className="text-[#10446C] underline">
+                      Privacy Policy
+                    </a>
+                    .
+                  </span>
+                </label>
+                <label className="flex items-start gap-2 text-sm text-gray-600 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5 accent-[#10446C] w-4 h-4"
+                  />
+                  <span>
+                    I confirm the contact details above are correct and I can be
+                    contacted about this report if required.
+                  </span>
+                </label>
               </div>
 
               {/* Buttons */}
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(2)}
-                  className="border px-4 py-2 rounded-md"
+                  className="border border-gray-300 px-5 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition"
                 >
                   Previous
                 </button>
-
-                <button className="bg-[#10446C] text-white px-4 py-2 rounded-md">
-                  Submit Report
+                <button className="bg-[#10446C] text-white px-5 py-2 rounded-md text-sm hover:bg-[#0d3a5e] transition">
+                  Submit Fault Report
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
