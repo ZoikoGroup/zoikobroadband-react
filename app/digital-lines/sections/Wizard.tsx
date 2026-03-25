@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-// import ChoosePlan from "./steps/ChoosePlan";
-// import NumbersAndPorting from "./steps/NumbersAndPorting";
-// import Equipment from "./steps/Equipment";
-// import AddOns from "./steps/AddOns";
-// import ChargeChanges from "./steps/ChargeChanges";
-// import Checkout from "./steps/Checkout";
+import ChoosePlan from "../steps/ChoosePlan";
+import NumbersAndPorting from "../steps/NumbersAndPorting";
+import Equipment from "../steps/Equipment";
+import AddOns from "../steps/AddOns";
+import ChargeChanges from "../steps/ChargeChanges";
+import Checkout from "../steps/Checkout";
 
 // ── Step Labels ──────────────────────────────────────────────────────────────
 const STEPS = [
@@ -120,7 +120,7 @@ export default function Wizard() {
       </div>
 
       {/* ── Step Content ──────────────────────────────────────────── */}
-      {/* <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto">
 
         {step === 1 && (
           <ChoosePlan
@@ -158,7 +158,7 @@ export default function Wizard() {
           />
         )}
 
-      </div> */}
+      </div>
 
       {/* ── Back / Continue Buttons ───────────────────────────────── */}
       <div className="max-w-4xl mx-auto mt-8 flex gap-3">

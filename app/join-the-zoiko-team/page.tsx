@@ -3,7 +3,7 @@ import React from "react";
 export default function page() {
   return (
     <>
-      <section className="w-full">
+      <section className="w-full py-10 md:py-14">
         <div className="max-w-7xl mx-auto lg:col-span-2 bg-white border border-gray-200 dark:bg-gray-800 rounded-2xl shadow-sm p-8">
           <h2 className="text-2xl md:text-4xl font-bold text-[#1f2d3d] dark:text-white">
             Join the Zoiko Team
