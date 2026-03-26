@@ -61,48 +61,46 @@ export default function ReportFault() {
               </h3>
 
               {/* Cards Container */}
-              <div className="bg-[#f8f9fa] dark:bg-gray-700 p-6 rounded-xl">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                  {problems.map((item) => (
-                    <button
-                      key={item}
-                      onClick={() => setSelectedProblem(item)}
-                      className={`flex flex-col items-center justify-center gap-2
-            border rounded-lg p-5 text-sm font-medium transition
-            ${
-              selectedProblem === item
-                ? "border-2 border-[#10446C] bg-blue-100 dark:bg-gray-600"
-                : "border-gray-200 dark:border-gray-600 hover:border-[#10446C]"
-            }`}
-                    >
-                      {/* Placeholder Icon */}
-                      <div className="text-xl">📶</div>
+              <div className="bg-[#f8f9fa] dark:bg-gray-900 p-6 rounded-xl transition-colors duration-300">
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+    {problems.map((item) => (
+      <button
+        key={item}
+        onClick={() => setSelectedProblem(item)}
+        className={`flex flex-col items-center justify-center gap-2
+          border-2 rounded-lg p-5 text-sm font-medium transition-all duration-200
+          ${
+            selectedProblem === item
+              ? "border-[#10446C] bg-blue-100 dark:border-blue-400 dark:bg-gray-800 dark:text-white"
+              : "border-gray-300 dark:border-gray-700 dark:text-gray-400 dark:hover:border-white dark:hover:text-white"
+          }`}
+      >
+        <div className="text-xl">📶</div>
+        <span className="text-center dark:text-white">{item}</span>
+      </button>
+    ))}
+  </div>
 
-                      <span className="text-center">{item}</span>
-                    </button>
-                  ))}
-                </div>
+  {/* Business Dropdown */}
+  <div className="mt-6">
+    <label className="block text-sm font-semibold text-[#10446C] dark:text-gray-300">
+      Are you a business customer?
+    </label>
 
-                {/* Business Dropdown */}
-                <div className="mt-6">
-                  <label className="text-sm text-[#10446C] dark:text-gray-300">
-                    Are you a business customer?
-                  </label>
+    <select className="w-full mt-2 border border-gray-300 dark:border-gray-700 rounded-md p-2 bg-white dark:bg-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+      <option>No</option>
+      <option>Yes</option>
+    </select>
+  </div>
 
-                  <select className="w-full mt-2 border rounded-md p-2 bg-white dark:bg-gray-800">
-                    <option>No</option>
-                    <option>Yes</option>
-                  </select>
-                </div>
-
-                {/* Button */}
-                <button
-                  onClick={() => setStep(2)}
-                  className="mt-6 bg-[#10446C] text-white px-5 py-2 rounded-md"
-                >
-                  Next Step
-                </button>
-              </div>
+  {/* Next Step Button */}
+  <button
+    onClick={() => setStep(2)}
+    className="mt-6 w-full sm:w-auto bg-[#10446C] hover:bg-[#0a2e4a] dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-8 py-2 rounded-md transition-colors"
+  >
+    Next Step
+  </button>
+</div>
             </>
           )}
 

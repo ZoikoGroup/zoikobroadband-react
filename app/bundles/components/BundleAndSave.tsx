@@ -14,7 +14,6 @@ export default function BundleAndSave() {
   });
 
   useEffect(() => {
-    // Mark component mounted
     setMounted(true);
 
     const timer = setInterval(() => {
@@ -34,22 +33,22 @@ export default function BundleAndSave() {
     return () => clearInterval(timer);
   }, []);
 
-  // Prevent hydration mismatch
   if (!mounted) return null;
 
   return (
-    <section className="px-4 py-14 sm:py-16 bg-gray-50">
-      <div className="bg-[#f4c03e] mx-auto max-w-7xl rounded-2xl shadow-lg p-8 sm:p-12 lg:p-16">
+    <section className="px-4 py-14 sm:py-16 bg-gray-50 dark:bg-gray-900">
+      <div className="bg-[#f4c03e] dark:bg-[#c99b27] mx-auto max-w-7xl rounded-2xl shadow-lg p-8 sm:p-12 lg:p-16">
         <div className="text-center max-w-2xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-[#10446C]">
+
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4 text-[#10446C] dark:text-white">
             Bundle & Save Today
           </h2>
 
-          <p className="text-base sm:text-lg text-[#10446C]">
+          <p className="text-base sm:text-lg text-[#10446C] dark:text-gray-200">
             Limited time offer - save up to 30% on bundles
           </p>
 
-          <p className="text-sm sm:text-base text-[#10446C] mt-5">
+          <p className="text-sm sm:text-base text-[#10446C] dark:text-gray-300 mt-5">
             Offer expires in:
           </p>
 
@@ -59,6 +58,7 @@ export default function BundleAndSave() {
             <TimerBox value={timeLeft.minutes} label="Minutes" />
             <TimerBox value={timeLeft.seconds} label="Seconds" />
           </div>
+
         </div>
       </div>
     </section>
@@ -67,7 +67,7 @@ export default function BundleAndSave() {
 
 function TimerBox({ value, label }: { value: number; label: string }) {
   return (
-    <div className="bg-white text-[#10446C] font-bold px-4 py-5 rounded-lg shadow-md min-w-20">
+    <div className="bg-white dark:bg-gray-800 text-[#10446C] dark:text-white font-bold px-4 py-5 rounded-lg shadow-md min-w-20">
       <span className="block text-xl">{String(value).padStart(2, "0")}</span>
       <span className="text-sm font-normal">{label}</span>
     </div>

@@ -1,163 +1,233 @@
-import React from "react";
+"use client"
+type FormDataType = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  position: string;
+  location: string;
+  statement: string;
+  consent: boolean;
+  file: File | null;
+  role?: string;
+  experience?: number;
+  skills?: string;
+};
+type ErrorType = {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  position?: string;
+  location?: string;
+  file?: string;
+  consent?: string;
+};
+import React, { useState } from "react";
 
-export default function page() {
+export default function CareerForm() {
+  const [formData, setFormData] = useState<FormDataType>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    position: "",
+    location: "",
+    statement: "",
+    consent: false,
+    file: null,
+  });
+
+  const [errors, setErrors] = useState<ErrorType>({});
+
+  // Reusable styles
+  const inputClass =
+    "mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-800 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-400";
+
+  const labelClass =
+    "text-sm font-medium text-gray-700 dark:text-gray-300";
+
+  // Handle change
+  const handleChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+) => {
+  const { name, value, type, checked, files } = e.target as HTMLInputElement;
+
+  setFormData((prev) => ({
+    ...prev,
+    [name]:
+      type === "checkbox"
+        ? checked
+        : type === "file"
+        ? files?.[0] || null
+        : type === "number"
+        ? Number(value)
+        : value,
+  }));
+};
+
+  // Basic validation
+ const validate = () => {
+  let newErrors: ErrorType = {};
+
+  if (!formData.firstName) newErrors.firstName = "Required";
+  if (!formData.lastName) newErrors.lastName = "Required";
+
+  if (!formData.email) {
+    newErrors.email = "Required";
+  } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    newErrors.email = "Invalid email";
+  }
+
+  if (!formData.phone) newErrors.phone = "Required";
+  if (!formData.position) newErrors.position = "Required";
+  if (!formData.location) newErrors.location = "Required";
+  if (!formData.file) newErrors.file = "CV required";
+  if (!formData.consent) newErrors.consent = "Required";
+
+  setErrors(newErrors);
+  return Object.keys(newErrors).length === 0;
+};
+
+  // Submit
+  const handleSubmit = (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+    if (validate()) {
+      console.log("Form Submitted:", formData);
+      alert("Form submitted successfully!");
+    }
+  };
+
   return (
-    <>
-      <section className="w-full py-10 md:py-14">
-        <div className="max-w-7xl mx-auto lg:col-span-2 bg-white border border-gray-200 dark:bg-gray-800 rounded-2xl shadow-sm p-8">
-          <h2 className="text-2xl md:text-4xl font-bold text-[#1f2d3d] dark:text-white">
-            Join the Zoiko Team
-          </h2>
+    <section className="w-full py-10 md:py-14 px-4 dark:bg-gray-800 ">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-6 md:p-8">
 
-          <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-400">
-            Complete your application below to build the future with us.
-          </p>
+        {/* Header */}
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
+          Join the Zoiko Team
+        </h2>
+        <p className="mt-2 text-sm md:text-base text-gray-600 dark:text-gray-400">
+          Complete your application below to build the future with us.
+        </p>
 
-          {/* FORM */}
-          <form className="mt-6 space-y-5">
-            <div>
-              <p className="text-2xl md:text-3xl font-bold text-[#1f2d3d] dark:text-white">
-                1. Personal Details
-              </p>
-            </div>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Name */}
+          {/* 1. Personal Details */}
+          <div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+              1. Personal Details
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="text-sm font-medium dark:text-gray-300">
-                  First Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="John"
-                  className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
+                <label className={labelClass}>First Name *</label>
+                <input name="firstName" onChange={handleChange} className={inputClass} />
+                {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
               </div>
 
               <div>
-                <label className="text-sm font-medium dark:text-gray-300">
-                  Last Name *
-                </label>
-                <input
-                  type="text"
-                  placeholder="Doe"
-                  className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Email */}
-              <div>
-                <label className="text-sm font-medium dark:text-gray-300">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  placeholder="Email Address"
-                  className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
-              </div>
-              {/* Phone */}
-              <div>
-                <label className="text-sm font-medium dark:text-gray-300">
-                  Phone Number *
-                </label>
-                <input
-                  type="text"
-                  placeholder="07123 456789"
-                  className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
-                />
+                <label className={labelClass}>Last Name *</label>
+                <input name="lastName" onChange={handleChange} className={inputClass} />
+                {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName}</p>}
               </div>
             </div>
 
-            <div>
-              <p className="text-2xl md:text-3xl font-bold text-[#1f2d3d] dark:text-white mb-4">
-                2. Position & Availability
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+              <div>
+                <label className={labelClass}>Email *</label>
+                <input name="email" type="email" onChange={handleChange} className={inputClass} />
+                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              </div>
+
+              <div>
+                <label className={labelClass}>Phone *</label>
+                <input name="phone" onChange={handleChange} className={inputClass} />
+                {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
+              </div>
             </div>
-            {/* Subject */}
-            <div>
-              <label className="text-sm font-medium dark:text-gray-300">
-                Position Applying For *
-              </label>
-              <select className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600">
-                <option>Select a career pathway...</option>
-                <option>Software Developer</option>
-                <option>DevOps Engineer</option>
+          </div>
+
+          {/* 2. Position */}
+          <div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+              2. Position & Availability
+            </h3>
+
+            <div className="mt-4">
+              <label className={labelClass}>Position *</label>
+              <select name="position" onChange={handleChange} className={inputClass}>
+                <option value="">Select role</option>
                 <option>Frontend Developer</option>
                 <option>Backend Developer</option>
-                <option>Full stack</option>
-                <option>Java developer</option>
+                <option>Full Stack Developer</option>
+                <option>DevOps Engineer</option>
               </select>
+              {errors.position && <p className="text-red-500 text-sm">{errors.position}</p>}
             </div>
 
-            <div>
-              <label className="text-sm font-medium dark:text-gray-300">
-                Preferred Location *
-              </label>
-              <select className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600">
-                <option>Select preferred work location...</option>
+            <div className="mt-4">
+              <label className={labelClass}>Location *</label>
+              <select name="location" onChange={handleChange} className={inputClass}>
+                <option value="">Select location</option>
                 <option>London</option>
-                <option>Barmingam</option>
-                <option>US</option>
-                <option>Menchester</option>
+                <option>Birmingham</option>
+                <option>Manchester</option>
                 <option>Remote</option>
-                <option>Hybrid/Any</option>
               </select>
+              {errors.location && <p className="text-red-500 text-sm">{errors.location}</p>}
             </div>
+          </div>
 
-            <div>
-              <p className="text-2xl md:text-3xl font-bold text-[#1f2d3d] dark:text-white mb-4">
-                3. Documents & Statement
-              </p>
-            </div>
+          {/* 3. Documents */}
+          <div>
+            <h3 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white">
+              3. Documents & Statement
+            </h3>
 
-            <div>
-              <label className="text-sm font-medium dark:text-gray-300">
-                Upload Your CV (Curriculum Vitae) *
-              </label>
-              <br />
+            <div className="mt-4">
+              <label className={labelClass}>Upload CV *</label>
               <input
                 type="file"
-                className="mt-1 max-w-lg inline-block border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
+                name="file"
+                accept=".pdf,.doc,.docx"
+                onChange={handleChange}
+                className={inputClass}
               />
-            </div>
-            <p className="w-full text-base md:text-lg font-medium mt-4">
-              Maximum file size: 5MB. Accepted formats: PDF, DOC, DOCX
-            </p>
-
-            {/* Supporting Statement (Optional) */}
-            <div>
-              <label className="text-sm font-medium dark:text-gray-300">
-                Supporting Statement (Optional)
-              </label>
-              <textarea
-                rows={5}
-                placeholder="Tell us why you're a great fit for Zoiko, referencing our values and the role's requirements..."
-                className="mt-1 w-full border border-gray-300 rounded-md p-3 bg-white dark:bg-gray-700 dark:border-gray-600"
-              />
-            </div>
-
-            {/* Checkbox */}
-            <div className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" />
-              <p className="text-black dark:text-gray-400">
-                I confirm that the information I have provided is accurate and I
-                consent to Zoiko processing my data for this application Your
-                information will be handled in line with our{" "}
-                <span className="text-[#10446C] dark:text-[#F6C140] font-medium cursor-pointer">
-                  Privacy Policy
-                </span>
+              {errors.file && <p className="text-red-500 text-sm">{errors.file}</p>}
+              <p className="text-sm text-gray-500 mt-1">
+                Max 5MB (PDF, DOC, DOCX)
               </p>
             </div>
 
-            {/* Button */}
-            <button className="w-fit bg-[#F6C140] text-[#10446C] font-semibold p-3 rounded-md hover:bg-[#eab530] transition">
-              Submit Form
-            </button>
-          </form>
-        </div>
-      </section>
-    </>
+            <div className="mt-4">
+              <label className={labelClass}>Supporting Statement</label>
+              <textarea
+                name="statement"
+                rows={5}
+                onChange={handleChange}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          {/* Consent */}
+          <div className="flex items-start gap-2">
+            <input type="checkbox" name="consent" onChange={handleChange} />
+            <p className="text-sm text-gray-700 dark:text-gray-400">
+              I confirm that the information is accurate and agree to the privacy policy.
+            </p>
+          </div>
+          {errors.consent && <p className="text-red-500 text-sm">{errors.consent}</p>}
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="w-full md:w-fit bg-yellow-400 text-gray-900 font-semibold px-6 py-3 rounded-md hover:bg-yellow-500 transition"
+          >
+            Submit Form
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

@@ -45,25 +45,28 @@ const pathways = [
 
 export default function CareerPathways() {
   return (
-    <section className="py-16 px-4 bg-[#ffffff]">
+    <section className="py-16 px-4 bg-[#ffffff] dark:bg-gray-950
+">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C]">
+        <h2 className="text-2xl md:text-4xl font-bold  dark:text-white text-[#10446C]">
           Career Pathways
         </h2>
 
-        <p className="text-gray-500 mt-2 mb-12">
+        <p className="text-gray-500 mt-2 mb-12 dark:text-white">
           Explore opportunities across our diverse teams and find your perfect fit
         </p>
 
         {/* GRID */}
-        <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 dark:bg-gray-950 ">
           {pathways.map((item, i) => (
             <div
               key={i}
               className={`
+                dark:bg-gray-950
               rounded-2xl p-8 flex flex-col justify-between
               bg-[#f8f9fa] text-left border-2
-              border-gray-200 hover:border-gray-400 hover:shadow-sm hover:bg-white
+              border-gray-200 hover:border-gray-400 hover:shadow-sm dark:hover:bg-gray-900
+               hover:bg-white
               transition-all duration-300
               `}
             >
@@ -79,16 +82,16 @@ export default function CareerPathways() {
                   />
                 </div>
 
-                <h3 className="text-xl font-bold text-[#10446C]">
+                <h3 className="text-xl font-bold dark:bg-gray-950 dark:text-white text-[#10446C]">
                   {item.title}
                 </h3>
 
-                <p className="text-gray-600 mt-3">
+                <p className="text-gray-600 mt-3 dark:bg-gray-950 dark:text-white">
                   {item.desc}
                 </p>
 
                 {/* meta */}
-                <div className="flex justify-between text-sm text-gray-500 mt-4">
+                <div className="flex justify-between text-sm dark:bg-gray-950 dark:text-white text-gray-500 mt-4">
                   <span>{item.positions}</span>
                   <span>{item.salary}</span>
                 </div>
@@ -99,7 +102,7 @@ export default function CareerPathways() {
                 {item.tags.map((tag, index) => (
                   <span
                     key={index}
-                    className="text-xs bg-gray-100 px-3 py-1 rounded-full text-[#10446C]"
+                    className="text-xs dark:bg-gray-950 dark:text-white bg-gray-100 px-3 py-1 rounded-full text-[#10446C]"
                   >
                     {tag}
                   </span>

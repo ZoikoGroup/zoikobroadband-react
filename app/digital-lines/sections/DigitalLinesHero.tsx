@@ -12,7 +12,7 @@ export default function DigitalLinesHero() {
     <>
       <section
         aria-labelledby="digital-lines-heading"
-        className="w-full bg-[#10446C] dark:bg-gray-950 py-12 px-4 sm:px-6 lg:px-8 lg:py-20"
+        className="w-full bg-[#10446C] dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 lg:py-20"
       >
         <div className="max-w-5xl mx-auto text-center text-white dark:text-gray-100">
           {/* Heading */}

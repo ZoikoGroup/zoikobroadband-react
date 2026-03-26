@@ -17,7 +17,7 @@ export default function GetHelpHero() {
             Need help with your broadband? We've got you covered.
           </h1>
 
-          <p className="mt-4 text-base md:text-xl font-semibold text-white/90 max-w-4xl mx-auto">
+          <p className="mt-4 text-base md:text-xl font-semibold text-white/90 max-w-4xl mx-auto  ">
             From setup to troubleshooting, get quick answers and real-time
             support — all in one place.
           </p>

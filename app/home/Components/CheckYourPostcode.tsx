@@ -1,13 +1,16 @@
+
 import React from 'react'
 
 export default function CheckYourPostcode() {
   return (
-    <div>
-        {/* Check your postcode */}
-      <section className="w-full bg-[#F4F8FC] py-20 px-4">
+    <div className="dark:bg-gray-950 dark:text-white">
+      {/* Check your postcode */}
+      <section className="w-full bg-[#F4F8FC] dark:bg-gray-950 py-20 px-4">
         <div className="max-w-4xl mx-auto flex justify-center">
+
           {/* Card */}
-          <div className="w-full max-w-xl bg-white border-t-4 border-b-blue-900 rounded-2xl shadow-lg p-6 sm:p-8 text-center">
+          <div className="w-full max-w-xl bg-white border-t-4 border-b-blue-900 rounded-2xl shadow-lg p-6 sm:p-8 text-center dark:bg-gray-900 dark:text-white">
+
             {/* Icon */}
             <div className="w-14 h-14 mx-auto rounded-full bg-[#F5C241] flex items-center justify-center mb-4">
               <svg
@@ -20,11 +23,11 @@ export default function CheckYourPostcode() {
             </div>
 
             {/* Text */}
-            <h2 className="text-lg sm:text-xl font-bold text-[#10446C]">
+            <h2 className="text-lg sm:text-xl font-bold text-[#10446C] dark:text-white">
               Let’s see if we’re in your area
             </h2>
 
-            <p className="text-sm text-gray-600 mt-2">
+            <p className="text-sm text-gray-600 mt-2 dark:text-gray-300">
               Enter your postcode to check availability and get results in
               seconds
             </p>
@@ -35,19 +38,22 @@ export default function CheckYourPostcode() {
                 type="text"
                 placeholder="Enter your postcode (e.g. SW1A 1AA)"
                 className="flex-1 px-4 py-3 rounded-xl border border-gray-300
-            focus:outline-none focus:ring-2 focus:ring-[#F5C241]"
+                focus:outline-none focus:ring-2 focus:ring-[#F5C241]
+                dark:bg-gray-950 dark:text-white dark:border-gray-700"
               />
 
               <button
                 className="px-6 py-3 rounded-xl bg-[#F5C241] text-[#10446C]
-            font-semibold hover:bg-[#E6B93A] transition"
+                font-semibold hover:bg-[#E6B93A] transition"
               >
                 Check Now
               </button>
             </div>
+
           </div>
         </div>
       </section>
     </div>
   )
 }
+

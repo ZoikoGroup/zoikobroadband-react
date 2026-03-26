@@ -128,43 +128,42 @@ export default function StepGuide({
   };
 
   return (
-    <section className="w-full">
-      <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12">
-        {/* Section Title */}
-        <h2
-          id="select-your-setup-type-heading"
-          className="text-xl md:text-2xl font-semibold text-[#10446C] mb-2 text-center"
-        >
-          Step-by-Step Setup Guide
-        </h2>
+    <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12">
+      {/* Section Title */}
+      <h2
+        id="select-your-setup-type-heading"
+        className="text-xl md:text-2xl font-semibold text-[#10446C] mb-2 text-center"
+      >
+        Step-by-Step Setup Guide
+      </h2>
 
-        <p className="mb-6 text-center text-sm md:text-base text-[#555555] leading-relaxed max-w-2xl mx-auto">
-          Follow these steps to get your broadband up and running
-        </p>
+      <p className="mb-6 text-center text-sm md:text-base text-[#555555] leading-relaxed max-w-2xl mx-auto">
+        Follow these steps to get your broadband up and running
+      </p>
 
         {steps.map((step) => {
           const isOpen = openStep === step.id;
 
-          return (
-            <div
-              key={step.id}
-              className="w-full bg-white rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
+        return (
+          <div
+            key={step.id}
+            className="w-full bg-white rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
+          >
+            {/* Header */}
+            <button
+              onClick={() => toggleStep(step.id)}
+              className="w-full flex items-center justify-between  text-left"
             >
-              {/* Header */}
-              <button
-                onClick={() => toggleStep(step.id)}
-                className="w-full flex items-center justify-between  text-left"
-              >
-                <div className="flex items-center gap-4">
-                  {/* Step Number */}
-                  <div className="bg-yellow-400 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full font-bold">
-                    {step.id}
-                  </div>
-
-                  <h3 className="text-lg md:text-xl font-semibold text-blue-900">
-                    {step.title}
-                  </h3>
+              <div className="flex items-center gap-4">
+                {/* Step Number */}
+                <div className="bg-yellow-400 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full font-bold">
+                  {step.id}
                 </div>
+
+                <h3 className="text-lg md:text-xl font-semibold text-blue-900">
+                  {step.title}
+                </h3>
+              </div>
 
                 {/* Arrow */}
                 <svg
@@ -184,76 +183,17 @@ export default function StepGuide({
                 </svg>
               </button>
 
-              {/* Content */}
-              <div
-                className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                  isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
-                }`}
-              >
-                <p className="text-gray-600 text-sm md:text-base ml-12 pb-4 whitespace-pre-line">
-                  {step.description}
-                </p>
-              </div>
+            {/* Content */}
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
+              }`}
+            >
+              <p className="text-gray-600 text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
             </div>
-          );
-        })}
-      </div>
-      <div
-        className="w-full bg-[#D2ECFF] py-16 px-6 sm:px-8 lg:px-12"
-        aria-labelledby="device-setup-heading"
-      >
-        {/* Header */}
-        <div className="max-w-5xl mx-auto text-center">
-          <h2
-            id="device-setup-heading"
-            className="text-[#10446C] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
-          >
-            Device Setup Support
-          </h2>
-
-          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto">
-            Get your devices connected quickly with our step-by-step guides
-          </p>
-        </div>
-
-        {/* Cards */}
-        <ul className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {Items.map((item, i) => (
-            <li key={i}>
-              <article
-                className="h-full bg-white shadow-md rounded-2xl border border-gray-100 px-6 py-10
-                        flex flex-col items-center text-center
-                        transition-all duration-300 hover:shadow-md"
-              >
-                {/* Icon wrapper (important for layout stability) */}
-                <div className="w-12 h-12 flex items-center justify-center rounded-full">
-                  <Image
-                    src={item.src}
-                    alt={item.label}
-                    width={48}
-                    height={48}
-                    className="object-contain"
-                    sizes="48px"
-                  />
-                </div>
-
-                {/* Title */}
-                <h3 className="mt-6 text-base lg:text-lg font-bold text-black">
-                  {item.label}
-                </h3>
-
-                {/* Description */}
-                <p className="mt-3 text-sm text-[#555555] leading-relaxed">
-                  {item.description}
-                </p>
-                <button className="mt-5 bg-[#fcd108] text-[#10446C] px-6 py-3 rounded-md font-semibold text-center hover:bg-[#e6b800] transition">
-                  {item.btn}
-                </button>
-              </article>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
+          </div>
+        );
+      })}
+    </div>
   );
 }

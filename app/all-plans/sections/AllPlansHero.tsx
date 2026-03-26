@@ -14,7 +14,7 @@ export default function AllPlansHero() {
     <>
       <section
         aria-labelledby="broadband-heading"
-        className="w-full bg-[#10446C] dark:bg-blue-950 py-14 sm:py-16 px-4 sm:px-6 lg:px-8"
+        className="w-full bg-[#10446C] dark:bg-gray-900 py-14 sm:py-16 px-4 sm:px-6 lg:px-8"
       >
         <div className="max-w-5xl mx-auto text-center text-white">
           {/* Heading */}
@@ -60,26 +60,6 @@ export default function AllPlansHero() {
           </div>
         </div>
       </section>
-
-      {/* <section className="py-4">
-        <div className="flex justify-center items-center gap-2 min-h-20 p-6 flex-wrap">
-          {DURATIONS.map((d) => (
-            <button
-              key={d}
-              onClick={() => setSelected(d)}
-              className={`px-4 py-2 rounded-xl text-base font-medium transition 
-                ${
-                  selected === d
-                    ? "bg-[#10446C] text-white"
-                    : "bg-gray-100 border border-gray-800 text-gray-500 hover:bg-gray-200"
-                }
-            `}
-            >
-              {d}
-            </button>
-          ))}
-        </div>
-      </section> */}
     </>
   );
 }

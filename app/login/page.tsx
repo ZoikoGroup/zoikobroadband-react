@@ -10,10 +10,10 @@ export default function page() {
   return (
     <section
       aria-labelledby="benefits-heading"
-      className="w-full bg-[#f2f4f5] py-12"
+      className="w-full bg-[#f2f4f5] py-12 dark:bg-gray-950  dark:text-white"
     >
       <div className=" max-w-6xl mx-auto px-6 sm:px-10 lg:px-16">
-        <div className="bg-white rounded-lg border-gray-50 grid grid-cols-1 lg:grid-cols-2 gap-10 ">
+        <div className="bg-white rounded-lg border-gray-50 grid grid-cols-1 lg:grid-cols-2 gap-10 dark:bg-gray-950  dark:text-white ">
           {/* LEFT IMAGE */}
           <div className="flex justify-center">
             <Image

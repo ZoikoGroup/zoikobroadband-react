@@ -51,29 +51,29 @@ export default function HowWeHelp() {
   return (
     <>
       <section
-        className="w-full bg-white py-16 px-6 sm:px-8 lg:px-12"
+        className="w-full bg-white py-16 px-6 sm:px-8 lg:px-12 dark:bg-gray-950  dark:text-white"
         aria-labelledby="how-we-help-heading"
       >
         {/* Header */}
-        <div className="max-w-6xl mx-auto text-center">
+        <div className="max-w-6xl mx-auto text-center dark:bg-gray-950  dark:text-white">
           <h2
             id="how-we-help-heading"
-            className="text-black text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+            className="text-black text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight dark:bg-gray-950  dark:text-white"
           >
             How can we help you today?
           </h2>
 
-          <p className="mt-6 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto">
+          <p className="mt-6 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto dark:bg-gray-950  dark:text-white">
             Choose from the most common support topics below
           </p>
         </div>
 
         {/* Cards */}
-        <ul className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <ul className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto dark:bg-gray-950  dark:text-white">
           {complianceItems.map((item, i) => (
             <li key={i}>
               <article
-                className="h-full bg-[#f8f9fa] rounded-2xl border border-gray-100 px-6 py-10
+                className="h-full bg-[#f8f9fa] rounded-2xl border dark:bg-gray-950  dark:text-white border-gray-100 px-6 py-10
                   flex flex-col items-center text-center
                   transition-all duration-300 hover:shadow-md hover:-translate-y-1"
               >
@@ -90,12 +90,13 @@ export default function HowWeHelp() {
                 </div>
 
                 {/* Title */}
-                <h3 className="mt-5 text-lg lg:text-2xl font-bold text-[#10446C]">
+                <h3 className="mt-5 text-lg lg:text-2xl font-bold  dark:text-[#63a7db]
+ text-[#10446C]">
                   {item.label}
                 </h3>
 
                 {/* Description */}
-                <p className="mt-4 text-base text-[#555555] leading-relaxed">
+                <p className="mt-4 text-base text-[#555555] leading-relaxed dark:bg-gray-950  dark:text-white">
                   {item.description}
                 </p>
                 <Link

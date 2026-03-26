@@ -9,15 +9,14 @@ export default function VisualSetupGuides() {
       title: "Video Tutorial",
       subtitle: "Full walkthrough with captions",
       content: (
-        <div className="bg-gray-100 rounded-lg p-6 text-center text-sm text-gray-500">
+        <div className="bg-gray-100 rounded-lg p-6 text-center text-sm text-gray-500 dark:bg-gray-950  dark:text-white">
           Setup Video Tutorial (2–3 minutes)
           <br />
           Click to play with subtitles
         </div>
       ),
       button: "Watch Video",
-      buttonLink: "https://www.youtube.com/watch?v=D3Rw_ykAPJc",
-      buttonStyle: "bg-[#1f4f73] text-white",
+      buttonStyle: "bg-[#1f4f73] text-white ",
     },
     {
       id: 2,
@@ -25,7 +24,7 @@ export default function VisualSetupGuides() {
       title: "Router Diagram",
       subtitle: "Visual guide with labels and descriptions",
       content: (
-        <div className="border rounded-lg p-10 text-center text-sm text-gray-500">
+        <div className="border rounded-lg p-10 text-center text-sm text-gray-500 dark:bg-gray-950  dark:text-white">
           Router Connection Diagram
           <br />
           Power / Ethernet / Phone Line
@@ -55,15 +54,15 @@ export default function VisualSetupGuides() {
   ];
 
   return (
-    <section className="bg-gray-100 py-16">
+    <section className="bg-gray-100 py-16 dark:bg-gray-950  dark:text-white">
       <div className="max-w-6xl mx-auto px-6">
 
         {/* Title */}
         <div className="text-center mb-12">
-          <h2 className="text-2xl font-semibold text-[#10446C]">
+          <h2 className="text-2xl font-semibold dark:text-[#3374a6] text-[#10446C]">
             Visual Setup Guides
           </h2>
-          <p className="text-gray-500 mt-2">
+          <p className="text-gray-500 mt-2 dark:bg-gray-950  dark:text-white">
             Watch, read, or download our comprehensive setup resources
           </p>
         </div>
@@ -74,7 +73,7 @@ export default function VisualSetupGuides() {
           {guides.map((guide) => (
             <div
               key={guide.id}
-              className="bg-white rounded-xl shadow-sm p-8 flex flex-col items-center text-center"
+              className="bg-white rounded-xl shadow-sm p-8 flex flex-col items-center text-center dark:bg-gray-950  dark:text-white"
             >
 
               {/* Icon */}
@@ -83,12 +82,12 @@ export default function VisualSetupGuides() {
               </div>
 
               {/* Title */}
-              <h3 className="font-semibold text-[#10446C]">
+              <h3 className="font-semibold dark:text-[#63a7db] text-[#10446C]">
                 {guide.title}
               </h3>
 
               {/* Subtitle */}
-              <p className="text-sm text-gray-500 mb-6">
+              <p className="text-sm dark:bg-gray-950  dark:text-white text-gray-500 mb-6">
                 {guide.subtitle}
               </p>
 
@@ -97,7 +96,7 @@ export default function VisualSetupGuides() {
 
               {/* Button */}
               <Link
-                href={guide.buttonLink}
+                href={guide.buttonLink || "#"}
                 className={`px-5 py-2 rounded-md text-sm font-medium ${guide.buttonStyle}`}
               >
                 {guide.button}

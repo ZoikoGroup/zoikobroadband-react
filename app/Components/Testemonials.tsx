@@ -34,12 +34,16 @@ export default function Testemonials() {
 
   return (
     <div>
-      <section className="w-full border-t-2 border-amber-200 bg-[#F8FAFF] py-20 px-4">
+      <section className="w-full border-t-2 border-amber-200 bg-[#F8FAFF] py-20 px-4 dark:bg-gray-950  dark:text-white
+">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-[#10446C]">
+          <h2 className="text-2xl font-bold 
+dark:text-[#63a7db] text-[#10446C]">
             What they say about us
           </h2>
-          <p className="text-sm text-gray-500 mt-2">Choose your package</p>
+          <p className="text-sm dark:text-white
+
+ text-gray-500 mt-2">Choose your package</p>
 
           {/* SLIDER */}
           <div className="mt-12 relative overflow-hidden">
@@ -51,12 +55,12 @@ export default function Testemonials() {
                   className={`w-full max-w-sm transition-transform duration-300
                   ${
                     index === active
-                      ? "bg-[#0F3D5E] text-white scale-100"
-                      : "bg-white text-gray-600 opacity-60"
+                      ? "bg-[#0F3D5E] dark:bg-gray-800 text-white scale-100"
+                      : "bg-white dark:bg-gray-900 text-gray-600 opacity-60"
                   } rounded-2xl p-6`}
                 >
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+                    <div className="w-10 h-10 rounded-full  bg-gray-300"></div>
                     <div className="text-left">
                       <h4 className="font-semibold">{item.name}</h4>
                       <p className="text-xs opacity-70">{item.role}</p>

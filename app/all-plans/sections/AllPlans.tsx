@@ -76,7 +76,7 @@ export default function AllPlans() {
       : plans.filter((p) => p.type === activeTab);
 
   return (
-    <section className="w-full bg-[#f3f5f7] dark:bg-gray-900 py-12 px-4">
+    <section className="w-full bg-[#f3f5f7] dark:bg-gray-800 py-12 px-4">
       <div className="max-w-6xl mx-auto">
 
         {/* 🔹 Tabs */}
