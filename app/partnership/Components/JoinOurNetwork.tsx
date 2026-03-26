@@ -44,7 +44,7 @@ export default function JoinOurNetwork() {
           {partners.map((item, i) => (
             <article
               key={i}
-              className="  dark:bg-gray-950  dark:text-[#63a7db]
+              className="  dark:bg-gray-900  dark:text-[#63a7db]
 
  bg-white p-6 md:px-8 md:py-10 rounded-xl shadow-sm border-l-4 border-amber-400 hover:shadow-md transition-shadow duration-300 text-left"
             >

@@ -4,7 +4,7 @@ import React from "react";
 export default function ZoikoGroupHero() {
   return (
     <>
-      <section className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8 lg:py-22">
+      <section className="w-full bg-[#10446C] dark:bg-gray-950 py-16 px-4 sm:px-6 lg:px-8 lg:py-22">
         <div className="max-w-6xl mx-auto text-white text-center">
           {/* Heading */}
           <h1 className="text-2xl sm:text-3xl lg:text-5xl font-semibold leading-tight">

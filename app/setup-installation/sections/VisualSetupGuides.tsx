@@ -73,7 +73,7 @@ export default function VisualSetupGuides() {
           {guides.map((guide) => (
             <div
               key={guide.id}
-              className="bg-white rounded-xl shadow-sm p-8 flex flex-col items-center text-center dark:bg-gray-950  dark:text-white"
+              className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-8 flex flex-col items-center text-center  dark:text-white"
             >
 
               {/* Icon */}
@@ -87,7 +87,7 @@ export default function VisualSetupGuides() {
               </h3>
 
               {/* Subtitle */}
-              <p className="text-sm dark:bg-gray-950  dark:text-white text-gray-500 mb-6">
+              <p className="text-sm dark:bg-gray-900  dark:text-white text-gray-500 mb-6">
                 {guide.subtitle}
               </p>
 

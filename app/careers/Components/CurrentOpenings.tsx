@@ -135,10 +135,11 @@ export default function CurrentOpenings() {
                   </span>
                 ))}
               </div>
-
+              <Link href={"/join-the-zoiko-team"}>
               <button className="mt-5 bg-[#F5C241] text-[#10446C] px-6 py-2 rounded-lg font-semibold hover:scale-105 transition">
                 Apply Now
               </button>
+              </Link>
             </div>
           ))}
         </div>

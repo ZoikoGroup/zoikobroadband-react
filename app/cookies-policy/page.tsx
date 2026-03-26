@@ -10,10 +10,10 @@ export default function page() {
   const [targeting, setTargeting] = useState(false);
 
   return (
-    <div className="dark:bg-gray-950 dark:text-white">
+    <div className="dark:bg-gray-900 dark:text-white">
 
       {/* Hero Section */}
-      <section className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8">
+      <section className="w-full bg-[#10446C] dark:bg-gray-950 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center text-white">
 
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight">
@@ -25,7 +25,7 @@ export default function page() {
             and how you can manage your preferences at any time.
           </p>
 
-          <div className="mt-8 bg-white text-black px-6 py-4 rounded-xl border-l-4 border-amber-400 shadow-sm max-w-5xl mx-auto dark:bg-gray-950 dark:text-white">
+          <div className="mt-8 bg-white text-black px-6 py-4 rounded-xl border-l-4 border-amber-400 shadow-sm max-w-5xl mx-auto dark:bg-gray-900 dark:text-white">
             We use cookies to personalise content, improve user experience, and
             analyse website traffic.
 

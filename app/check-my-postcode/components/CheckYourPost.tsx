@@ -5,7 +5,7 @@ export default function CheckYourPost() {
     <>
       <section
         aria-labelledby="postcode-heading"
-        className="w-full bg-[#f6f9ff] py-16 px-4 dark:bg-gray-950 dark:text-white"
+        className="w-full bg-[#f6f9ff] py-16 px-4 dark:bg-gray-900 dark:text-white"
       >
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-2xl shadow-md p-8 sm:p-10 text-center dark:bg-gray-950 dark:text-white">
@@ -42,7 +42,7 @@ export default function CheckYourPost() {
 
               <button
                 type="submit"
-                className=" dark:bg-gray-950 dark:text-white mx-auto px-8 py-3 rounded-full bg-[#10446C] text-white font-semibold hover:bg-[#0d3555] transition-all duration-300"
+                className=" dark:bg-gray-800 dark:text-white mx-auto px-8 py-3 rounded-full bg-[#10446C] text-white font-semibold hover:bg-[#0d3555] transition-all duration-300"
               >
                 Check Availability Now
               </button>

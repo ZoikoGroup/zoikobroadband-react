@@ -4,7 +4,7 @@ export default function AboutusHero() {
   return (
     <>
     {/* Hero section */}
-      <section className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8 dark:border-gray-800">
+      <section className="w-full bg-[#10446C] dark:bg-gray-950 py-16 px-4 sm:px-6 lg:px-8 dark:border-gray-800">
         <div className="max-w-5xl mx-auto text-center  dark:text-white text-white">
           {/* Heading */}
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight">

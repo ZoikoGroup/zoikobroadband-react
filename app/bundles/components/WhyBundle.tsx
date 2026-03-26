@@ -41,7 +41,7 @@ export default function WhyBundle() {
           <ul className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {features.map((item) => (
               <li key={item.label}>
-                <div className="flex flex-col items-center text-center px-4 transition-transform duration-300 hover:-translate-y-1">
+                <div className="flex flex-col items-center text-center px-4 transition-transform duration-300 hover:-translate-y-1 dark:bg-gray-800 rounded-2xl py-6 md:py-8">
                   
                   <Image
                     src={item.src}

@@ -128,7 +128,8 @@ export default function StepGuide({
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12">
+    <section className="w-full dark:bg-gray-950 dark:text-white">
+    <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12 dark:bg-gray-950 dark:text-white">
       {/* Section Title */}
       <h2
         id="select-your-setup-type-heading"
@@ -147,7 +148,7 @@ export default function StepGuide({
         return (
           <div
             key={step.id}
-            className="w-full bg-white rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
+            className="w-full bg-white dark:bg-gray-900  rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
           >
             {/* Header */}
             <button
@@ -160,7 +161,7 @@ export default function StepGuide({
                   {step.id}
                 </div>
 
-                <h3 className="text-lg md:text-xl font-semibold text-blue-900">
+                <h3 className="text-lg md:text-xl font-semibold text-blue-900 dark:text-white">
                   {step.title}
                 </h3>
               </div>
@@ -189,11 +190,12 @@ export default function StepGuide({
                 isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
               }`}
             >
-              <p className="text-gray-600 text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
+              <p className="text-gray-600 dark:text-white text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
             </div>
           </div>
         );
       })}
     </div>
+    </section>
   );
 }

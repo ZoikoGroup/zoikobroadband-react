@@ -56,13 +56,13 @@ export default function WhyBusinessChooseUs() {
   return (
     <section
       aria-labelledby="business-types-heading"
-      className="bg-white w-full py-16 px-5 sm:px-10"
+      className="bg-white w-full py-16 px-5 sm:px-10 dark:bg-gray-900 "
     >
       <div className="max-w-6xl mx-auto text-center">
         {/* Heading */}
         <h2
           id="business-types-heading"
-          className="text-2xl md:text-3xl font-semibold text-gray-900"
+          className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white"
         >
           Perfect for Every Business Type
         </h2>
@@ -77,7 +77,7 @@ export default function WhyBusinessChooseUs() {
         <ul className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
           {features.map((item) => (
             <li key={item.label}>
-              <article className="h-full bg-slate-100 rounded-2xl border border-gray-200 p-8 flex flex-col items-center text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <article className="h-full bg-slate-100 dark:bg-gray-800  rounded-2xl border border-gray-200 p-8 flex flex-col items-center text-center transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                 
                 {/* Icon */}
                 <div className="bg-yellow-400 rounded-full p-4 mb-4">
@@ -91,12 +91,12 @@ export default function WhyBusinessChooseUs() {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {item.label}
                 </h3>
 
                 {/* Description */}
-                <p className="text-sm text-gray-600 leading-relaxed mt-3">
+                <p className="text-sm text-gray-600 dark:text-white leading-relaxed mt-3">
                   {item.description}
                 </p>
 
@@ -105,7 +105,7 @@ export default function WhyBusinessChooseUs() {
                   {item.subfeatures.map((subfeature) => (
                     <li
                       key={subfeature}
-                      className="flex items-start gap-2 text-gray-600 text-sm"
+                      className="flex items-start gap-2 text-gray-600 dark:text-white text-sm"
                     >
                       <span
                         className="w-2 h-2 bg-blue-900 rounded-full mt-2"

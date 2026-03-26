@@ -28,11 +28,11 @@ export default function WorldClassInnovation() {
           {["ZoikoNex", "Cisco", "Microsoft Azure", "BeQuick"].map(
             (partner) => (
               <li key={partner} className="list-none">
-                <div className="flex justify-center items-center px-6 py-5 md:px-10 md:py-6 text-base md:text-lg font-semibold text-white bg-[#10446C] rounded-2xl hover:scale-105 transition-transform duration-200">
+                <div className="flex justify-center items-center px-6 py-5 md:px-10 md:py-6 text-base md:text-lg font-semibold text-white bg-[#10446C] dark:bg-gray-900 rounded-2xl hover:scale-105 transition-transform duration-200">
                   {partner}
                 </div>
               </li>
-            ),
+            )
           )}
         </ul>
       </section>

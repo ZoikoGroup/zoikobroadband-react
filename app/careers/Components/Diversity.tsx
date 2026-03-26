@@ -11,7 +11,7 @@ export default function Diversity() {
         <div className="flex flex-col md:flex-row gap-10 justify-center py-16 px-4">
           <div className="max-w-xl w-full">
             {/* Card */}
-            <div className="bg-white rounded-3xl shadow-lg px-6 sm:px-10 py-8 flex flex-col items-center  dark:bg-gray-950">
+            <div className="bg-white rounded-3xl shadow-lg px-6 sm:px-10 py-8 flex flex-col items-center  dark:bg-gray-950 border border-gray-100">
               {/* Content */}
               <div className="text-[#10446C] sm:text-left w-full max-w-lg ">
                 <h3 className="text-xl sm:text-2xl font-bold mb-4 dark:text-white dark:bg-gray-950">
@@ -41,7 +41,7 @@ export default function Diversity() {
           </div>
           <div className="max-w-xl w-full">
             {/* Card */}
-            <div className="bg-white rounded-3xl shadow-lg px-4 sm:px-10 py-5 flex items-center dark:text-white dark:bg-gray-950 ">
+            <div className="bg-white rounded-3xl shadow-lg px-4 sm:px-10 py-5 flex items-center dark:text-white dark:bg-gray-950 border border-gray-100">
               {/* Content */}
               <div className="text-[#10446C] text-center md:text-left w-full max-w-lg  dark:bg-gray-950">
                 <h3 className="text-xl sm:text-2xl font-bold mb-3 dark:text-white ">

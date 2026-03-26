@@ -5,7 +5,7 @@ export default function page() {
     <div>
 
       {/* T&C hero section... */}
-      <section className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8">
+      <section className="w-full bg-[#10446C] dark:bg-gray-950 py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center text-white">
           {/* Heading */}
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-semibold leading-tight">
@@ -19,7 +19,7 @@ export default function page() {
           </p>
 
           {/* Updated Box */}
-          <div className="mt-8 dark:bg-gray-950 dark:text-white bg-white text-black px-6 py-4 rounded-xl border-l-4 border-amber-400 shadow-sm max-w-5xl mx-auto">
+          <div className="mt-8 dark:bg-gray-900 dark:text-white bg-white text-black px-6 py-4 rounded-xl border-l-4 border-amber-400 shadow-sm max-w-5xl mx-auto">
             <span className="font-semibold">Updated:</span> 1 August 2025 —
             Applies to all new and existing residential broadband customers
           </div>
@@ -268,8 +268,8 @@ dark:text-[#63a7db] text-[#10446C] mb-8">
           {/* Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Highlight Item */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400 dark:bg-gray-950">
-              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-950  dark:text-white">
+            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400 dark:bg-gray-900">
+              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-900  dark:text-white">
                 <span className="font-semibold  
 dark:text-[#63a7db] text-[#10446C]">
                   Minimum Term:
@@ -278,8 +278,8 @@ dark:text-[#63a7db] text-[#10446C]">
               </p>
             </div>
 
-            <div className=" dark:bg-gray-950 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-              <p className="text-gray-800 text-lg sm:text-base leading-relaxe dark:bg-gray-950  dark:text-white">
+            <div className=" dark:bg-gray-900 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 text-lg sm:text-base leading-relaxe dark:bg-gray-900  dark:text-white">
                 <span className="font-semibold dark:text-[#63a7db] text-[#10446C]">
                   Cancellation:
                 </span>{" "}
@@ -287,15 +287,15 @@ dark:text-[#63a7db] text-[#10446C]">
               </p>
             </div>
 
-            <div className="  dark:bg-gray-950bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400 ">
+            <div className="  dark:bg-gray-900 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400 ">
               <p className="text-gray-800 text-lg sm:text-base leading-relaxed  dark:text-white">
                 <span className="font-semibold dark:text-[#63a7db] text-[#10446C]">Equipment:</span>{" "}
                 Must be returned within 30 days of termination
               </p>
             </div>
 
-            <div className=" dark:bg-gray-950 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-950  dark:text-white">
+            <div className=" dark:bg-gray-900 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-900  dark:text-white">
                 <span className="font-semibold  dark:text-[#63a7db] text-[#10446C]">
                   Speed Commitments:
                 </span>{" "}
@@ -303,8 +303,8 @@ dark:text-[#63a7db] text-[#10446C]">
               </p>
             </div>
 
-            <div className=" dark:bg-gray-950 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-950  dark:text-white">
+            <div className=" dark:bg-gray-900 bg-white p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 text-lg sm:text-base leading-relaxed dark:bg-gray-900  dark:text-white">
                 <span className="font-semibold  
 
 dark:text-[#63a7db] *:text-[#10446C]">

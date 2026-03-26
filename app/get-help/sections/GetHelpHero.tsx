@@ -6,7 +6,7 @@ export default function GetHelpHero() {
     <>
       <section
         aria-labelledby="get-help-heading"
-        className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8 lg:py-20"
+        className="w-full bg-[#10446C] dark:bg-gray-950 dark-text-white py-16 px-4 sm:px-6 lg:px-8 lg:py-20"
       >
         <div className="max-w-5xl mx-auto text-white text-center">
           {/* Heading */}
@@ -27,7 +27,7 @@ export default function GetHelpHero() {
             <div className="flex flex-col justify-center items-center sm:flex-row gap-4">
               <Link
                 href="https://tawk.to/chat/68c5379a0a06ff1929296dd0/1j5162dnk"
-                className="bg-[#F6C140] text-[#10446C] px-6 py-3 rounded-md font-semibold text-center hover:bg-[#eab530] transition"
+                className="bg-[#F6C140] dark:bg-white text-[#10446C] px-6 py-3 rounded-md font-semibold text-center hover:bg-[#eab530] transition"
               >
                 Start Live Chat
               </Link>
@@ -41,13 +41,13 @@ export default function GetHelpHero() {
           </div>
         </div>
       </section>
-      <div className="w-full bg-[#10B981] flex flex-col md:flex-row gap-5 justify-center items-center py-4">
+      <div className="w-full bg-[#10B981] dark:bg-gray-900 dark:text-white flex flex-col md:flex-row gap-5 justify-center items-center py-4">
         <p className="text-center text-white py-2 text-base md:text-lg font-normal">
           No known service issues in your area
         </p>
         <Link
           href="#"
-          className="border-2 border-[#F6C140] text-[#10446C] px-5 py-3 rounded-md font-semibold text-center hover:bg-[#F6C140] transition"
+          className="border-2 border-[#F6C140] text-[#10446C] dark:bg-white dark:border-none px-5 py-3 rounded-md font-semibold text-center hover:bg-[#F6C140] transition"
         >
           Check Network Status
         </Link>

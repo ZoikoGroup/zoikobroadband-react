@@ -6,7 +6,7 @@ export default function ContactForm() {
       <section className="bg-[#f3f5f7] dark:bg-gray-900 py-14 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10">
           {/* LEFT FORM */}
-          <div className="lg:col-span-2 bg-white border border-gray-200 dark:bg-gray-800 rounded-2xl shadow-sm p-8">
+          <div className="bg-white border border-gray-200 dark:bg-gray-800 rounded-2xl shadow-sm p-8">
             <h2 className="text-2xl md:text-4xl font-bold text-[#1f2d3d] dark:text-white">
               Send Us a Message
             </h2>
@@ -116,9 +116,9 @@ export default function ContactForm() {
           </div>
 
           {/* RIGHT SIDE */}
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-7">
             {/* Live Chat */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border-l-4 border-[#F6C140]">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 md:px-5 md:py-8 shadow-sm border-l-4 border-[#F6C140]">
               <p className="text-base md:text-lg text-gray-500 dark:text-gray-400">
                 Live Chat
               </p>
