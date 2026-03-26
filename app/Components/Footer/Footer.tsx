@@ -21,9 +21,9 @@ export default function Footer() {
       links: [
         { name: "Get Help", href: "/get-help" },
         { name: "Setup & Installation", href: "/setup-installation" },
-        { name: "Manage My Account", href: "/manage-account" },
+        { name: "Manage My Account", href: "/dashboard" },
         { name: "Payments & Billing", href: "/payments-billing" },
-        { name: "Report a Fault", href: "/report-fault" },
+        { name: "Report a Fault", href: "/report-a-fault" },
       ],
     },
     {

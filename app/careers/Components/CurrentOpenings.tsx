@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { jobs } from "../data/Jobs";
+import Link from "next/link";
 
 export default function CurrentOpenings() {
   const [search, setSearch] = useState("");
@@ -11,35 +12,37 @@ export default function CurrentOpenings() {
 
   // FILTER LOGIC (optimized with useMemo)
   const filteredJobs = useMemo(() => {
-    return jobs.filter((job: { title: string; skills: any[]; department: string; location: string; type: string; }) => {
-      const matchesSearch =
-        job.title.toLowerCase().includes(search.toLowerCase()) ||
-        job.skills.join(" ").toLowerCase().includes(search.toLowerCase());
+    return jobs.filter(
+      (job: {
+        title: string;
+        skills: any[];
+        department: string;
+        location: string;
+        type: string;
+      }) => {
+        const matchesSearch =
+          job.title.toLowerCase().includes(search.toLowerCase()) ||
+          job.skills.join(" ").toLowerCase().includes(search.toLowerCase());
 
-      const matchesDepartment =
-        department === "All" || job.department === department;
+        const matchesDepartment =
+          department === "All" || job.department === department;
 
-      const matchesLocation =
-        location === "All" || job.location === location;
+        const matchesLocation = location === "All" || job.location === location;
 
-      const matchesType =
-        type === "All" || job.type === type;
+        const matchesType = type === "All" || job.type === type;
 
-      return (
-        matchesSearch &&
-        matchesDepartment &&
-        matchesLocation &&
-        matchesType
-      );
-    });
+        return (
+          matchesSearch && matchesDepartment && matchesLocation && matchesType
+        );
+      },
+    );
   }, [search, department, location, type]);
 
   return (
     <section className="py-16 px-4">
-      <div className="max-w-7xl mx-auto  dark:bg-gray-950
-">
+      <div className="max-w-7xl mx-auto">
         
-        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C] text-center dark:text-white">
+        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C] text-center">
           Current Openings
         </h2>
 
@@ -56,7 +59,7 @@ export default function CurrentOpenings() {
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 px-4 py-3 outline-none"
             />
-            <button className="bg-[#10446C] dark:bg-gray-950 dark:text-white text-white px-5 py-3">
+            <button className="bg-[#10446C] text-white px-5 py-3">
               🔍
             </button>
           </div>
@@ -118,7 +121,7 @@ export default function CurrentOpenings() {
                 <span>💼 {job.department}</span>
               </div>
 
-              <p className="mt-3 dark:text-white dark:bg-gray-950 text-gray-700">
+              <p className="mt-3 text-gray-700">
                 {job.description}
               </p>
 
@@ -133,7 +136,7 @@ export default function CurrentOpenings() {
                 ))}
               </div>
 
-              <button className="mt-5 bg-[#F5C241] text-[#10446C] px-6 py-2 rounded-lg font-semibold hover:scale-105 transition dark:hover:bg-gray-900">
+              <button className="mt-5 bg-[#F5C241] text-[#10446C] px-6 py-2 rounded-lg font-semibold hover:scale-105 transition">
                 Apply Now
               </button>
             </div>

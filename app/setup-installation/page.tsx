@@ -1,8 +1,8 @@
 import React from "react";
 import SetupInstallationHero from "./sections/SetupInstallationHero";
-import DeviceSetup from "./sections/DeviceSetup";
 import VisualSetupGuides from "./sections/VisualSetupGuides";
 import FAQ from "../Components/FAQs/FAQ";
+import StillNeedHelp from "./sections/StillNeedHelp";
 
 const setupfaqs = [
   {
@@ -61,9 +61,9 @@ export default function page() {
   return (
     <>
       <SetupInstallationHero />
-      <DeviceSetup />
       <VisualSetupGuides />
       <FAQ faqs={setupfaqs} />
+      <StillNeedHelp/>
     </>
   );
 }
