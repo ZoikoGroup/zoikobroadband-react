@@ -22,19 +22,22 @@ export default function DeviceSetup() {
   return (
     <>
     <section
-        className="w-full bg-[#D2ECFF] py-16 px-6 sm:px-8 lg:px-12"
+        className=" dark:bg-gray-950  dark:text-white
+ w-full bg-[#D2ECFF] py-16 px-6 sm:px-8 lg:px-12"
         aria-labelledby="device-setup-heading"
       >
         {/* Header */}
         <div className="max-w-5xl mx-auto text-center">
           <h2
             id="device-setup-heading"
-            className="text-[#10446C] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+            className="  dark:text-[#63a7db]
+ text-[#10446C] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
           >
             Device Setup Support
           </h2>
 
-          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto">
+          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto dark:bg-gray-950  dark:text-white
+">
             Get your devices connected quickly with our step-by-step guides
           </p>
         </div>
@@ -44,7 +47,8 @@ export default function DeviceSetup() {
           {Items.map((item, i) => (
             <li key={i}>
               <article
-                className="h-full bg-white shadow-md rounded-2xl border border-gray-100 px-6 py-10
+                className="h-full bg-white shadow-md rounded-2xl border border-gray-100 px-6 py-10 dark:bg-gray-950  dark:text-white
+
                   flex flex-col items-center text-center
                   transition-all duration-300 hover:shadow-md"
               >
@@ -61,16 +65,18 @@ export default function DeviceSetup() {
                 </div>
 
                 {/* Title */}
-                <h3 className="mt-6 text-base lg:text-lg font-bold text-black">
+                <h3 className="mt-6 text-base lg:text-lg font-bold text-black dark:bg-gray-950  dark:text-white
+">
                   {item.label}
                 </h3>
 
                 {/* Description */}
-                <p className="mt-3 text-sm text-[#555555] leading-relaxed">
+                <p className="mt-3 text-sm text-[#555555] leading-relaxed dark:bg-gray-950  dark:text-white
+">
                   {item.description}
                 </p>
                 <button
-                  className="mt-5 bg-[#fcd108] text-[#10446C] px-6 py-3 rounded-md font-semibold text-center hover:bg-[#e6b800] transition"
+                  className="mt-5 bg-[#fcd108]  text-[#10446C] px-6 py-3 rounded-md font-semibold text-center hover:bg-[#e6b800] transition"
                 >
                   {item.btn}
                 </button>

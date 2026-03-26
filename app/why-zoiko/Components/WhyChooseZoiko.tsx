@@ -42,13 +42,13 @@ export default function WhyChooseZoiko() {
   return (
     <>
       <section
-        className="bg-[#fafbff] w-full py-12 px-5 sm:px-10 border-t border-gray-200"
+        className="bg-[#fafbff] dark:bg-gray-950 w-full py-12 px-5 sm:px-10 border-t border-gray-200 dark:border-gray-800"
         aria-labelledby="why-zoiko-features"
       >
         <div className="max-w-6xl mx-auto text-center">
           <h2
             id="why-zoiko-features"
-            className="text-2xl md:text-3xl font-semibold text-gray-900"
+            className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white"
           >
             Why Zoiko Broadband?
           </h2>
@@ -57,7 +57,8 @@ export default function WhyChooseZoiko() {
           <ul className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
             {features.map((item) => (
               <li key={item.label}>
-                <article className="bg-white h-full rounded-2xl border border-gray-200 px-6 py-10 flex flex-col transition hover:shadow-xl">
+                <article className="bg-white dark:bg-gray-900 h-full rounded-2xl border border-gray-200 dark:border-gray-700 px-6 py-10 flex flex-col transition hover:shadow-xl dark:hover:bg-gray-800">
+                  
                   {/* Icon */}
                   <Image
                     src={item.src}
@@ -69,14 +70,15 @@ export default function WhyChooseZoiko() {
                   />
 
                   {/* Title */}
-                  <h3 className="text-left text-lg font-semibold text-gray-900 mt-4">
+                  <h3 className="text-left text-lg font-semibold text-gray-900 dark:text-white mt-4">
                     {item.label}
                   </h3>
 
                   {/* Description */}
-                  <p className="text-left text-base md:text-lg text-gray-700 leading-relaxed mt-3 flex-1">
+                  <p className="text-left text-base md:text-lg text-gray-700 dark:text-gray-300 leading-relaxed mt-3 flex-1">
                     {item.description}
                   </p>
+
                 </article>
               </li>
             ))}

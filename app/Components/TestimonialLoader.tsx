@@ -29,8 +29,11 @@ export default function TestimonialLoader() {
 
   return (
     <div ref={ref}>
-      {visible ? <Testemonials /> : (
-        <div className="w-full py-20 text-center text-gray-400">
+      {visible ? (
+        <Testemonials />
+      ) : (
+        <div className="w-full py-20 text-center dark:bg-gray-950  dark:text-white
+ text-gray-400 dark:text-gray-500">
           Preparing reviews...
         </div>
       )}

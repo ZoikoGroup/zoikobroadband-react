@@ -33,19 +33,19 @@ export default function NeedMoreSupport() {
   return (
     <>
     <section
-        className="w-full bg-white py-16 px-6 sm:px-8 lg:px-12"
+        className="w-full bg-white py-16 px-6 sm:px-8 lg:px-12 dark:bg-gray-950  dark:text-white"
         aria-labelledby="how-we-help-heading"
       >
         {/* Header */}
         <div className="max-w-6xl mx-auto text-center">
           <h2
             id="how-we-help-heading"
-            className="text-black text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+            className="text-black text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight dark:bg-gray-950  dark:text-white"
           >
             Need more support?
           </h2>
 
-          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto">
+          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto dark:bg-gray-950  dark:text-white">
             Our friendly UK-based team is here to help
           </p>
         </div>
@@ -57,7 +57,7 @@ export default function NeedMoreSupport() {
               <article
                 className="h-full bg-white shadow-md rounded-2xl border border-gray-100 px-6 py-10
                   flex flex-col items-center text-center
-                  transition-all duration-300 hover:shadow-md hover:-translate-y-1"
+                  transition-all duration-300 hover:shadow-md hover:-translate-y-1 dark:bg-gray-950  dark:text-white"
               >
                 {/* Icon wrapper (important for layout stability) */}
                 <div className="w-20 h-20 flex items-center justify-center rounded-full">
@@ -77,7 +77,7 @@ export default function NeedMoreSupport() {
                 </h3>
 
                 {/* Description */}
-                <p className="mt-4 text-base text-[#555555] leading-relaxed">
+                <p className="mt-4 text-base dark:bg-gray-950  dark:text-white text-[#555555] leading-relaxed">
                   {item.description}
                 </p>
                 <p className="mt-4 max-w-fit bg-[#F0FDF4] text-sm text-[#15803D] p-2 font-bold rounded-2xl leading-relaxed">

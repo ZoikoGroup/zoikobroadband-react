@@ -1,27 +1,30 @@
 "use client";
 import React from "react";
 import { useModal } from "./modal-system/ModalContext";
+
 export default function StartEarningToday() {
- const { openModal } = useModal();
+  const { openModal } = useModal();
+
   return (
     <>
       <section
         aria-labelledby="start-earning-today-heading"
-        className="flex justify-center px-4 py-12 sm:py-14"
+        className="flex justify-center px-4 py-12 sm:py-14 dark:bg-black"
       >
         <div
           className="
-    w-full max-w-6xl
-    bg-[#10446C]
-    rounded-2xl
-    shadow-lg
-    px-6 sm:px-10
-    py-10 lg:py-12
-    flex flex-col lg:flex-row
-    items-center lg:items-start
-    justify-between
-    gap-8
-  ">
+            w-full max-w-6xl
+            bg-[#10446C] dark:bg-gray-900
+            rounded-2xl
+            shadow-lg
+            px-6 sm:px-10
+            py-10 lg:py-12
+            flex flex-col lg:flex-row
+            items-center lg:items-start
+            justify-between
+            gap-8
+          "
+        >
           {/* LEFT CONTENT */}
           <header className="text-white text-center lg:text-left lg:w-2/3">
             <h2
@@ -31,7 +34,7 @@ export default function StartEarningToday() {
               Start Earning Today
             </h2>
 
-            <p className="text-base sm:text-lg text-white/95 leading-relaxed max-w-xl mx-auto lg:mx-0">
+            <p className="text-base sm:text-lg text-white/95 dark:text-gray-300 leading-relaxed max-w-xl mx-auto lg:mx-0">
               Share great internet with friends and get rewarded for every
               successful referral
             </p>
@@ -43,25 +46,25 @@ export default function StartEarningToday() {
               aria-label="Refer a friend and start earning rewards"
               onClick={() => openModal("referral")}
               className="
-        bg-white
-        text-[#10446C]
-        px-8 py-3
-        rounded-lg
-        font-semibold
-        transition-transform duration-200
-        hover:scale-105
-        active:scale-95
-        focus:outline-none
-        focus:ring-2
-        focus:ring-white
-        focus:ring-offset-2
-        focus:ring-offset-[#10446C]
-      "
+                bg-white dark:bg-gray-200
+                text-[#10446C] dark:text-black
+                px-8 py-3
+                rounded-lg
+                font-semibold
+                transition-transform duration-200
+                hover:scale-105
+                active:scale-95
+                focus:outline-none
+                focus:ring-2
+                focus:ring-white dark:focus:ring-gray-300
+                focus:ring-offset-2
+                focus:ring-offset-[#10446C] dark:focus:ring-offset-gray-900
+              "
             >
               Refer Now
             </button>
 
-            <p className="text-sm text-white/90 mt-3 text-center lg:text-left">
+            <p className="text-sm text-white/90 dark:text-gray-400 mt-3 text-center lg:text-left">
               Get your unique referral link instantly
             </p>
           </div>

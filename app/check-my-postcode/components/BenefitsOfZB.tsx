@@ -28,9 +28,9 @@ export default function BenefitsOfZB() {
     <>
       <section
         aria-labelledby="benefits-heading"
-        className="w-full bg-[#fffcf4] py-16"
+        className="w-full bg-[#fffcf4] py-16 dark:bg-gray-950 dark:text-white  "
       >
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 dark:bg-gray-950 dark:text-white">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* LEFT IMAGE */}
             <div className="flex justify-center">
@@ -48,19 +48,19 @@ export default function BenefitsOfZB() {
             <div>
               <h2
                 id="benefits-heading"
-                className="text-black font-bold text-3xl md:text-4xl mb-2"
+                className="text-black font-bold text-3xl md:text-4xl mb-2 dark:bg-gray-950 dark:text-white"
               >
                 Benefits of Zoiko Broadband
               </h2>
 
-              <p className="text-gray-600 text-base md:text-lg mb-8">
+              <p className="text-gray-600 text-base md:text-lg mb-8 dark:bg-gray-950 dark:text-white">
                 Here’s what you’ll get:
               </p>
 
               <ul className="space-y-5">
                 {benefits.map((item) => (
                   <li key={item.label}>
-                    <article className="bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
+                    <article className=" dark:bg-gray-950 dark:text-white bg-white border border-gray-200 p-5 rounded-2xl flex items-center gap-4 shadow-sm hover:shadow-md transition">
                       <Image
                         src={item.src}
                         alt=""
@@ -71,10 +71,10 @@ export default function BenefitsOfZB() {
                       />
 
                       <div>
-                        <h3 className="text-black font-semibold text-lg md:text-xl">
+                        <h3 className=" dark:bg-gray-950 dark:text-white text-black font-semibold text-lg md:text-xl">
                           {item.label}
                         </h3>
-                        <p className="text-gray-600 text-sm md:text-base mt-1">
+                        <p className=" dark:bg-gray-950 dark:text-white text-gray-600 text-sm md:text-base mt-1">
                           {item.title}
                         </p>
                       </div>

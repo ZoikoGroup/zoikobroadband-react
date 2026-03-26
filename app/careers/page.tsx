@@ -8,7 +8,7 @@ import ReadyToBuild from './Components/ReadyToBuild'
 
 export default function page() {
   return (
-    <>
+    <div className="dark:bg-gray-950">
     <CareerHero/>
     <WhyWorkHere/>
     <CareerPathways/>
@@ -16,6 +16,6 @@ export default function page() {
     <CurrentOpenings/>
     <Diversity/>
     <ReadyToBuild/>
-    </>
+    </div>
   )
 }

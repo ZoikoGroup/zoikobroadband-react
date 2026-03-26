@@ -1,9 +1,7 @@
-
 import Link from "next/link";
 import FooterMenu from "./FooterMenu";
 
 export default function Footer() {
-
 
   const footerSections = [
     {
@@ -12,7 +10,7 @@ export default function Footer() {
       links: [
         { name: "Broadband Plans", href: "/fibre-packages" },
         { name: "Digital Lines Options", href: "/digital-lines" },
-        { name: "Bundles & Save", href: "/bundles" }, 
+        { name: "Bundles & Save", href: "/bundles" },
         { name: "Check my postcode", href: "/check-my-postcode" },
         { name: "Refer a friend", href: "/refer-a-friend" },
       ],
@@ -53,19 +51,27 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-[#10446C] w-full border-t-2 p-3 role=contentinfo">
+    <footer
+      className="bg-[#10446C] dark:bg-gray-950 w-full border-t-2 border-[#0d3654] dark:border-gray-800 p-3"
+      role="contentinfo"
+    >
       <div className="footer-items w-[90%] mx-auto p-5 md:p-10">
-        {/* Desktop View - Standard Layout */}
+        
+        {/* Desktop View */}
         <div className="hidden lg:flex lg:flex-row justify-between">
           {footerSections.map((section) => (
             <div key={section.id}>
-              <h2 className="text-2xl md:text-2xl text-[#f5c241] font-bold my-3">
+              <h2 className="text-2xl text-[#f5c241] font-bold my-3">
                 {section.title}
               </h2>
-              <ul className="text-[#CBD5E1] text-lg md:text-lg font-normal leading-10">
+
+              <ul className="text-[#CBD5E1] dark:text-gray-300 text-lg font-normal leading-10">
                 {section.links.map((link, index) => (
                   <li key={index}>
-                    <Link href={link.href} className="hover:text-[#f5c241] transition-colors">
+                    <Link
+                      href={link.href}
+                      className="hover:text-[#f5c241] transition-colors"
+                    >
                       {link.name}
                     </Link>
                   </li>
@@ -75,17 +81,18 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Mobile View - Accordion Layout */}
-          <FooterMenu sections={footerSections} />
+        {/* Mobile Accordion */}
+        <FooterMenu sections={footerSections} />
       </div>
 
-      {/* Footer Bottom - Copyright */}
-      <div className="text-center p-2 border-t-2 text-white w-[90%] mx-auto">
+      {/* Bottom Copyright */}
+      <div className="text-center p-2 border-t-2 border-[#0d3654] dark:border-gray-800 text-white w-[90%] mx-auto">
         <p className="font-semibold text-sm md:text-base">
           &copy; 2026 Zoiko Broadband | Zoiko Broadband is a trading name of
           Zoiko Telecom Ltd., registered in England & Wales | Company No.
-          15021457 | VAT No 465 1110 23|
+          15021457 | VAT No 465 1110 23 |
         </p>
+
         <p className="font-semibold text-sm md:text-base">
           All rights reserved. Zoiko Telecom Ltd is Ofcom registered and adheres
           to the Broadband Speeds Code of Practice.

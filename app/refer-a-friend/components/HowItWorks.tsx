@@ -28,25 +28,37 @@ export default function HowItWorks() {
   return (
     <>
       <section
-      aria-labelledby="how-it-works"
-       className=" w-full py-10 px-5 sm:px-10">
+        aria-labelledby="how-it-works"
+        className="w-full py-10 px-5 sm:px-10 dark:bg-black"
+      >
         <div className="max-w-6xl mx-auto text-center">
-          <h2 id="how-it-works-heading" className="text-2xl md:text-4xl font-bold text-[#10446C]">
-            H<span className="underline decoration-amber-400 underline-offset-14">ow It Wo</span>rks
+          
+          <h2
+            id="how-it-works-heading"
+            className="text-2xl md:text-4xl font-bold text-[#10446C] dark:text-white"
+          >
+            H
+            <span className="underline decoration-amber-400 underline-offset-14">
+              ow It Wo
+            </span>
+            rks
           </h2>
+
           {/* Cards container */}
           <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            
             {steps.map((item, i) => (
               <div
                 key={i}
-                className="bg-[#f8f9fa] rounded-2xl border border-gray-200 px-6 py-10 flex flex-col items-center justify-between gap-4 hover:shadow-sm transition-shadow duration-300"
+                className="bg-[#f8f9fa] dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 px-6 py-10 flex flex-col items-center justify-between gap-4 hover:shadow-sm transition-shadow duration-300"
               >
-                <div
-                  className="w-14 h-14 rounded-full bg-[#F5C241] flex items-center justify-center
-          font-bold text-lg mb-3"
-                >
+                
+                {/* Step Number */}
+                <div className="w-14 h-14 rounded-full bg-[#F5C241] flex items-center justify-center font-bold text-lg mb-3 text-black">
                   {item.id}
                 </div>
+
+                {/* Image */}
                 <Image
                   src={item.src}
                   alt={item.label}
@@ -54,14 +66,19 @@ export default function HowItWorks() {
                   height={100}
                   className="w-18 h-18 object-contain"
                 />
-                <h3 className="text-center text-lg md:text-2xl font-bold text-[#10446C] mb-2">
+
+                {/* Title */}
+                <h3 className="text-center text-lg md:text-2xl font-bold text-[#10446C] dark:text-[#2069a1] mb-2">
                   {item.label}
                 </h3>
-                <p className="text-center text-base md:text-lg font-normal text-[#10446C] leading-relaxed">
+
+                {/* Description */}
+                <p className="text-center text-base md:text-lg font-normal text-[#10446C] dark:text-gray-300 leading-relaxed">
                   {item.description}
                 </p>
               </div>
             ))}
+
           </div>
         </div>
       </section>

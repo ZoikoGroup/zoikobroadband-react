@@ -36,17 +36,18 @@ export default function CurrentOpenings() {
 
   return (
     <section className="py-16 px-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto  dark:bg-gray-950
+">
         
-        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C] text-center">
+        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C] text-center dark:text-white">
           Current Openings
         </h2>
 
-        <p className="text-gray-500 mt-2 mb-12 text-center">
+        <p className="text-gray-500 mt-2 mb-12 text-center dark:text-white">
           Find your next opportunity with our smart search and filtering
         </p>
         {/* Search Panel */}
-        <div className="bg-white shadow-md rounded-2xl p-6 mb-8">
+        <div className="bg-white shadow-md rounded-2xl p-6 mb-8 dark:bg-gray-950">
           <div className="flex items-center border border-gray-300 rounded-xl overflow-hidden">
             <input
               type="text"
@@ -55,15 +56,15 @@ export default function CurrentOpenings() {
               onChange={(e) => setSearch(e.target.value)}
               className="flex-1 px-4 py-3 outline-none"
             />
-            <button className="bg-[#10446C] text-white px-5 py-3">
+            <button className="bg-[#10446C] dark:bg-gray-950 dark:text-white text-white px-5 py-3">
               🔍
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5 dark:bg-gray-950 dark:text-white">
             <select
               onChange={(e) => setDepartment(e.target.value)}
-              className="border border-gray-300 rounded-lg px-4 py-3"
+              className="border border-gray-300 rounded-lg px-4 py-3  dark:text-white"
             >
               <option value="All">All Departments</option>
               <option value="Engineering">Engineering</option>
@@ -72,7 +73,7 @@ export default function CurrentOpenings() {
 
             <select
               onChange={(e) => setLocation(e.target.value)}
-              className="border border-gray-300 rounded-lg px-4 py-3"
+              className="border dark:bg-gray-950 dark:text-white border-gray-300 rounded-lg px-4 py-3"
             >
               <option value="All">All Locations</option>
               <option value="London">London</option>
@@ -82,7 +83,7 @@ export default function CurrentOpenings() {
 
             <select
               onChange={(e) => setType(e.target.value)}
-              className="border border-gray-300 rounded-lg px-4 py-3"
+              className="border dark:bg-gray-950 dark:text-white border-gray-300 rounded-lg px-4 py-3"
             >
               <option value="All">All Types</option>
               <option value="Full-time">Full-time</option>
@@ -94,30 +95,30 @@ export default function CurrentOpenings() {
         {/* Job Cards */}
         <div className="space-y-6">
           {filteredJobs.length === 0 && (
-            <p className="text-gray-500">No jobs found.</p>
+            <p className="text-gray-500 dark:bg-gray-950 dark:text-white">No jobs found.</p>
           )}
 
           {filteredJobs.map((job) => (
             <div
               key={job.id}
-              className={`p-6 rounded-2xl shadow-sm border hover:bg-[#FFF4D8] hover:border-amber-200 transition-all duration-300`}
+              className={`p-6 rounded-2xl shadow-sm border  dark:bg-gray-950 dark:text-white dark:hover:bg-gray-900 hover:bg-[#FFF4D8] hover:border-amber-200 transition-all duration-300`}
             >
               <div className="flex flex-col md:flex-row md:justify-between">
                 <h3 className="text-xl font-bold text-[#10446C]">
                   {job.title}
                 </h3>
-                <span className="font-semibold text-[#10446C]">
+                <span className="font-semibold text-[#10446C] dark:text-white">
                   {job.salary}
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
+              <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2 dark:bg-gray-950 dark:text-white">
                 <span>📍 {job.location}</span>
                 <span>🕒 {job.type}</span>
                 <span>💼 {job.department}</span>
               </div>
 
-              <p className="mt-3 text-gray-700">
+              <p className="mt-3 dark:text-white dark:bg-gray-950 text-gray-700">
                 {job.description}
               </p>
 
@@ -125,14 +126,14 @@ export default function CurrentOpenings() {
                 {job.skills.map((skill) => (
                   <span
                     key={skill}
-                    className="bg-gray-100 px-3 py-1 rounded-full text-sm"
+                    className="bg-gray-100 px-3 py-1 rounded-full text-sm dark:text-white dark:bg-gray-950"
                   >
                     {skill}
                   </span>
                 ))}
               </div>
 
-              <button className="mt-5 bg-[#F5C241] text-[#10446C] px-6 py-2 rounded-lg font-semibold hover:scale-105 transition">
+              <button className="mt-5 bg-[#F5C241] text-[#10446C] px-6 py-2 rounded-lg font-semibold hover:scale-105 transition dark:hover:bg-gray-900">
                 Apply Now
               </button>
             </div>
