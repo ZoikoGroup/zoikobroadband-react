@@ -3,12 +3,12 @@ import React from 'react'
 export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
   return (
     <div
-      className="dark:bg-gray-950 dark:text-white fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      className="dark:bg-gray-900 dark:text-white fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}
     >
       {/* Modal Box */}
       <div
-        className="dark:bg-gray-950 dark:text-white bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-8 relative"
+        className="dark:bg-gray-900 dark:text-white bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-8 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
@@ -20,11 +20,11 @@ export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
           ✕
         </button>
 
-        <h2 className="dark:bg-gray-950 dark:text-white text-2xl font-bold text-center mb-4">
+        <h2 className="dark:bg-gray-900 dark:text-white text-2xl font-bold text-center mb-4">
           Leaderboard...
         </h2>
 
-        <p className="dark:bg-gray-950 dark:text-white text-gray-600 text-center mb-6">
+        <p className="dark:bg-gray-900 dark:text-white text-gray-600 text-center mb-6">
           Invite your friends to Zoiko Broadband and earn rewards.
         </p>
 

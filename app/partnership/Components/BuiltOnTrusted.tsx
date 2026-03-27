@@ -18,7 +18,7 @@ export default function BuiltOnTrusted() {
             crystal-clear digital lines and future-proof broadband services.
           </p>
         </div>
-        <div className="relative mt-10 bg-[#10446C] flex flex-col justify-center items-center text-white px-8 py-10 md:px-8 md:py-18 rounded-xl max-w-lg mx-auto">
+        <div className="relative mt-10 bg-[#10446C] dark:bg-gray-900 flex flex-col justify-center items-center text-white px-8 py-10 md:px-8 md:py-18 rounded-xl max-w-lg mx-auto">
             <button className="absolute -top-5  bg-[#f5c241] text-[#10446C] px-10 py-2 rounded-2xl text-base font-semibold">
                 Authorised Reseller
               </button>

@@ -4,10 +4,10 @@ export default function GetCustomQuote() {
   return (
     <section
       aria-labelledby="business-quote-heading"
-      className="relative w-full bg-[url('/Images/BusinessBroadband/bg-image.png')] bg-cover bg-center py-20"
+      className="relative w-full bg-[url('/Images/BusinessBroadband/bg-image.png')] bg-cover bg-center py-20 dark:bg-gray-900 dark:text-white"
     >
       {/* Overlay */}
-      <div className="absolute inset-0 bg-[#10446C]/75" />
+      <div className="absolute inset-0 bg-[#10446C]/75 dark:bg-gray-900 dark:text-white" />
 
       <div className="relative max-w-6xl mx-auto px-5 sm:px-10 text-center">
         {/* Heading */}
@@ -24,14 +24,14 @@ export default function GetCustomQuote() {
         </p>
 
         {/* Form Card */}
-        <div className="mt-10 bg-white rounded-xl shadow-xl max-w-xl mx-auto p-8 text-left">
+        <div className="mt-10 bg-white dark:bg-gray-800  rounded-xl shadow-xl max-w-xl mx-auto p-8 text-left">
           <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Business Name */}
             <div>
               <label
                 htmlFor="business-name"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Business Name
               </label>
@@ -49,7 +49,7 @@ export default function GetCustomQuote() {
             <div>
               <label
                 htmlFor="contact-name"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Contact Name
               </label>
@@ -67,7 +67,7 @@ export default function GetCustomQuote() {
             <div>
               <label
                 htmlFor="email"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Email Address
               </label>
@@ -85,7 +85,7 @@ export default function GetCustomQuote() {
             <div>
               <label
                 htmlFor="phone"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Phone Number
               </label>
@@ -103,7 +103,7 @@ export default function GetCustomQuote() {
             <div>
               <label
                 htmlFor="postcode"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Business Postcode
               </label>
@@ -121,7 +121,7 @@ export default function GetCustomQuote() {
             <div>
               <label
                 htmlFor="business-size"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Business Size
               </label>
@@ -143,7 +143,7 @@ export default function GetCustomQuote() {
             <div className="md:col-span-2">
               <label
                 htmlFor="requirements"
-                className="text-sm font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 dark:text-white"
               >
                 Additional Requirements
               </label>

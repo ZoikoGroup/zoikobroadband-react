@@ -36,9 +36,9 @@ export default function CorporateBacking() {
             fintech, media, foods, and more.
           </p>
         </div>
-        <div className="mt-8 bg-white text-base md:text-lg  px-6 py-4 border-l-4 dark:bg-gray-950 border-amber-400 rounded-2xl max-w-4xl mx-auto">
-          <span className="font-bold text-[#333333] dark:bg-gray-950  dark:text-white">Key assurance: </span>
-          <span className="text-gray-700 dark:bg-gray-950  dark:text-white">
+        <div className="mt-8 bg-white text-base md:text-lg  px-6 py-4 border-l-4 dark:bg-gray-900 border-amber-400 rounded-2xl max-w-4xl mx-auto">
+          <span className="font-bold text-[#333333] dark:bg-gray-900  dark:text-white">Key assurance: </span>
+          <span className="text-gray-700 dark:bg-gray-900  dark:text-white">
             Zoiko Broadband is not a small independent ISP—it's a future-proofed
             provider backed by international resources.
           </span>

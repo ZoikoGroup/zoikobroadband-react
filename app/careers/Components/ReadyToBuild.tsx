@@ -6,7 +6,7 @@ export default function ReadyToBuild() {
     <>
       <section className="flex justify-center px-4 py-12 sm:py-14  dark:bg-gray-950 dark:text-white">
         <div
-          className="max-w-7xl w-full bg-[#10446C] rounded-3xl shadow-lg
+          className="max-w-7xl w-full bg-[#10446C] rounded-3xl border border-gray-100 shadow-lg
                   flex flex-col lg:flex-row items-center
                   gap-8 lg:gap-0
                   px-6 sm:px-10 py-10 lg:py-14 dark:bg-gray-950 dark:text-white">

@@ -33,19 +33,19 @@ export default function StillNeedHelp() {
   return (
     <>
     <section
-        className="w-full bg-white py-16 px-6 sm:px-8 lg:px-12"
+        className="w-full bg-white dark:bg-gray-950  py-16 px-6 sm:px-8 lg:px-12"
         aria-labelledby="how-we-help-heading"
       >
         {/* Header */}
         <div className="max-w-6xl mx-auto text-center">
           <h2
             id="how-we-help-heading"
-            className="text-black text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
+            className="text-black dark:text-white text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight"
           >
             Need more support?
           </h2>
 
-          <p className="mt-2 text-base md:text-lg text-[#555555] leading-relaxed max-w-3xl mx-auto">
+          <p className="mt-2 text-base md:text-lg text-[#555555] dark:text-white leading-relaxed max-w-3xl mx-auto">
             Our friendly UK-based team is here to help
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function StillNeedHelp() {
           {Items.map((item, i) => (
             <li key={i}>
               <article
-                className="h-full bg-white shadow-md rounded-2xl border border-gray-100 px-6 py-10
+                className="h-full bg-white dark:bg-gray-900 shadow-md rounded-2xl border border-gray-100 px-6 py-10
                   flex flex-col items-center text-center
                   transition-all duration-300 hover:shadow-md hover:-translate-y-1"
               >

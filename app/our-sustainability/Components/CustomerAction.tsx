@@ -6,20 +6,20 @@ export default function CustomerAction() {
   return (
     <>
     {/* Customer Action Zone */}
-          <section className="flex justify-center py-16 px-4">
+          <section className="w-full dark:bg-gray-950  flex justify-center py-16 px-4">
             <div className="max-w-xl w-full">
               {/* Heading */}
-              <h2 className="text-2xl sm:text-4xl font-bold text-[#10446C] text-center mb-2">
+              <h2 className="text-2xl sm:text-4xl font-bold text-[#10446C] dark:text-white text-center mb-2">
                 Customer Action Zone
               </h2>
     
-              <p className="text-center text-gray-600 mb-10 max-w-xl mx-auto">
+              <p className="text-center text-gray-600 dark:text-white mb-10 max-w-xl mx-auto">
                 Join us in making a difference — every action counts towards our
                 shared environmental goals
               </p>
     
               {/* Card */}
-              <div className="bg-white rounded-3xl shadow-lg px-6 sm:px-10 py-8 flex flex-col items-center ">
+              <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-lg px-6 sm:px-10 py-8 flex flex-col items-center ">
                 {/* Icon */}
                 <div className="mb-4">
                   <Image
@@ -33,23 +33,23 @@ export default function CustomerAction() {
                 </div>
     
                 {/* Content */}
-                <div className="text-[#10446C] sm:text-left w-full max-w-lg">
+                <div className="text-[#10446C] dark:text-white sm:text-left w-full max-w-lg">
                   <h3 className="text-xl sm:text-2xl font-bold mb-4">
                     Sign Up for Paperless Billing
                   </h3>
     
-                  <p className="text-sm sm:text-base leading-relaxed mb-6 text-gray-700">
+                  <p className="text-sm sm:text-base leading-relaxed mb-6 text-gray-700 dark:text-white">
                     Reduce paper waste by switching to digital bills. Get instant
                     notifications and help save trees.
                   </p>
     
                   {/* Benefits */}
                   <ul className="text-left space-y-2 mb-6 w-fit">
-                    <li className="flex items-center gap-2 text-gray-600">
+                    <li className="flex items-center gap-2 text-gray-600 dark:text-white">
                       <span className="text-green-500 font-bold">✓</span>
                       Save 12 trees per year
                     </li>
-                    <li className="flex items-center gap-2 text-gray-600">
+                    <li className="flex items-center gap-2 text-gray-600 dark:text-white">
                       <span className="text-green-500 font-bold">✓</span>
                       Save 1,500L water annually
                     </li>

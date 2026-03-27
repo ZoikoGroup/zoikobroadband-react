@@ -7,7 +7,7 @@ export default function BundlesHero() {
     <>
       <section
         aria-labelledby="bundle-services"
-        className="bg-[#10446C] text-white w-full py-12"
+        className="bg-[#10446C] text-white w-full py-12 dark:bg-gray-900 dark:text-white"
       >
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-5">

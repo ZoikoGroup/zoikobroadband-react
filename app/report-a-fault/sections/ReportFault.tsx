@@ -371,7 +371,7 @@ export default function ReportFault() {
               </div>
 
               {/* Declarations */}
-              <div className="bg-gray-50 rounded-md p-4 border border-gray-200 mb-6 flex flex-col gap-3">
+              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4 border border-gray-200 mb-6 flex flex-col gap-3">
                 <label className="flex items-start gap-2 text-sm text-gray-600 cursor-pointer">
                   <input
                     type="checkbox"

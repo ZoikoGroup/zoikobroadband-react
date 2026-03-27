@@ -53,8 +53,8 @@ const CHARGE_LABELS: Record<string, { name: string; price: string }> = {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-600">{label}</span>
-      <span className="text-sm font-semibold text-gray-800">{value}</span>
+      <span className="text-sm text-gray-600 dark:text-white">{label}</span>
+      <span className="text-sm font-semibold text-gray-800 dark:text-white">{value}</span>
     </div>
   );
 }
@@ -71,11 +71,11 @@ function SummarySection({
 }) {
   return (
     <div className="mb-6">
-      <h4 className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-2 pb-1 border-b-2 border-[#F6C140]">
+      <h4 className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-white mb-2 pb-1 border-b-2 border-[#F6C140]">
         {title}
       </h4>
       {empty ? (
-        <p className="text-sm text-gray-400 italic">None selected</p>
+        <p className="text-sm text-gray-400 dark:text-white italic">None selected</p>
       ) : (
         children
       )}
@@ -92,14 +92,14 @@ export default function Checkout({ selections }: Props) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-2">
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-2">
         Checkout
       </h2>
-      <p className="text-center text-sm text-gray-400 mb-8">
+      <p className="text-center text-sm text-gray-400 dark:text-white mb-8">
         Review your selections before confirming your order.
       </p>
 
-      <div className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
+      <div className="border border-gray-200 rounded-xl p-6 bg-white dark:bg-gray-800 shadow-sm">
 
         {/* ── Plan ──────────────────────────────────────────────────── */}
         <SummarySection title="Plan" empty={!plan}>

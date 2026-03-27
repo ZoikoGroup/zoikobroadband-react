@@ -55,7 +55,7 @@ export default function SelectCustomerType() {
           Select your customer type for tailored help
         </h2>
 
-        <div className="bg-white rounded-full p-1 md:p-2 flex gap-1 md:gap-3 shadow-sm dark:bg-gray-950  dark:text-white">
+        <div className="bg-white rounded-full p-1 md:p-2 flex gap-1 md:gap-3 shadow-sm border border-gray-200 dark:bg-gray-950  dark:text-white">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -92,7 +92,7 @@ export default function SelectCustomerType() {
                     height={80}
                     className="object-contain"
                     sizes="80px"
-                  />s
+                  />
                 </div>
 
                 {/* Title */}
@@ -117,18 +117,19 @@ export default function SelectCustomerType() {
       </section>
 
       {/* Search Input */}
+      
       <div
         aria-labelledby="search-section"
-        className="relative  max-w-4xl mx-auto mt-8 pt-10"
+        className="relative  max-w-4xl mx-auto mt-8 pt-10 dark:bg-gray-950 "
       >
         <h2
           id="how-we-help-heading"
-          className="text-black text-center text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight dark:bg-gray-950  dark:text-white"
+          className="text-black text-center text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight   dark:text-white"
         >
           Search our help centre
         </h2>
 
-        <p className="mt-3 mb-4 text-center text-base md:text-lg dark:bg-gray-950  dark:text-white text-[#555555] leading-relaxed max-w-2xl mx-auto">
+        <p className="mt-3 mb-4 text-center text-base md:text-lg   dark:text-white text-[#555555] leading-relaxed max-w-2xl mx-auto">
           Can't find what you're looking for? Try searching below
         </p>
         <input
@@ -148,7 +149,7 @@ export default function SelectCustomerType() {
       </div>
 
       {/* Popular Searches */}
-      <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 text-base dark:bg-gray-950  dark:text-white text-gray-500">
+      <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 dark:bg-gray-950  text-base  dark:text-white text-gray-500">
         <span className="mr-1">Popular searches:</span>
 
         {popularSearches.map((item, index) => (

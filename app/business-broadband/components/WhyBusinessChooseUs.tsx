@@ -79,13 +79,13 @@ export default function WhyBusinessChooseUs() {
   return (
     <section
       aria-labelledby="why-businesses-heading"
-      className="bg-gray-100 w-full py-16 px-5 sm:px-10"
+      className="bg-gray-100 w-full py-16 px-5 sm:px-10 dark:bg-gray-900 dark:text-white"
     >
       <div className="max-w-6xl mx-auto text-center">
         {/* Heading */}
         <h2
           id="why-businesses-heading"
-          className="text-2xl md:text-3xl font-semibold text-gray-900"
+          className="text-2xl md:text-3xl font-semibold text-gray-900 dark:text-white"
         >
           Why Businesses Choose Us
         </h2>
@@ -99,7 +99,7 @@ export default function WhyBusinessChooseUs() {
         <ul className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((item) => (
             <li key={item.label}>
-              <article className="bg-white h-full rounded-2xl border border-gray-200 px-10 py-10 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+              <article className="bg-white dark:bg-gray-800  h-full rounded-2xl border border-gray-200 px-10 py-10 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                 
                 {/* Icon */}
                 <div className="w-14 h-14 relative">
@@ -113,12 +113,12 @@ export default function WhyBusinessChooseUs() {
                 </div>
 
                 {/* Title */}
-                <h3 className="text-left text-lg font-semibold text-gray-900 mt-4">
+                <h3 className="text-left text-lg font-semibold text-gray-900 dark:text-white mt-4">
                   {item.label}
                 </h3>
 
                 {/* Description */}
-                <p className="text-left text-sm md:text-base text-gray-600 leading-relaxed mt-3 flex-1">
+                <p className="text-left text-sm md:text-base text-gray-600 dark:text-white leading-relaxed mt-3 flex-1">
                   {item.description}
                 </p>
 
@@ -130,10 +130,10 @@ export default function WhyBusinessChooseUs() {
                   {item.subfeatures.map((subfeature) => (
                     <li
                       key={subfeature}
-                      className="flex items-start gap-2 text-gray-600 text-sm"
+                      className="flex items-start gap-2 text-gray-600 dark:text-white text-sm"
                     >
                       <span
-                        className="text-green-500 mt-[2px]"
+                        className="text-green-500 mt-0.5"
                         aria-hidden="true"
                       >
                         ✓

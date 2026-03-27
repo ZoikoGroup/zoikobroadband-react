@@ -78,7 +78,7 @@ export default function ChoosePlan({ selections, update }: Props) {
         {PLANS.map((plan) => (
           <div
             key={plan.id}
-            className={`relative border-2 rounded-xl px-6 py-8 flex flex-col transition ${
+            className={`relative dark:bg-gray-800 border-2 rounded-xl px-6 py-8 flex flex-col transition ${
               selections.plan === plan.id
                 ? "border-green-500 shadow-lg"
                 : plan.popular
@@ -96,18 +96,18 @@ export default function ChoosePlan({ selections, update }: Props) {
             )}
 
             {/* Plan Name */}
-            <h3 className="text-lg md:text-2xl font-bold text-[#10446C] mb-1">{plan.name}</h3>
+            <h3 className="text-lg md:text-2xl font-bold text-[#10446C] dark:text-white mb-1">{plan.name}</h3>
 
             {/* Price */}
             <div className="mb-4">
-              <span className="text-2xl font-extrabold text-gray-900">{plan.price}</span>
-              <span className="text-sm text-gray-400 ml-1">/month</span>
+              <span className="text-2xl font-extrabold text-gray-900 dark:text-white">{plan.price}</span>
+              <span className="text-sm text-gray-400 dark:text-white ml-1">/month</span>
             </div>
 
             {/* Features */}
             <ul className="flex flex-col gap-2 mb-6 flex-1">
               {plan.features.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-sm md:text-base text-gray-600">
+                <li key={feature} className="flex items-start gap-2 text-sm md:text-base text-gray-600 dark:text-white">
                   <svg
                     className="w-4 h-4 text-[#F6C140] mt-0.5 shrink-0"
                     fill="none"

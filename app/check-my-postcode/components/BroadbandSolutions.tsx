@@ -26,32 +26,32 @@ export default function BroadbandSolutions() {
     <>
       <section
         aria-labelledby="broadband-solutions-heading"
-        className="bg-[#10446C] text-white w-full py-16 px-6 sm:px-10 dark:bg-gray-950 dark:text-white"
+        className="bg-[#10446C] text-white w-full py-16 px-6 sm:px-10 dark:bg-gray-900 dark:text-white"
       >
-        <div className="max-w-6xl mx-auto text-center dark:bg-gray-950 ">
+        <div className="max-w-6xl mx-auto text-center dark:bg-gray-900 ">
           <h2
             id="broadband-solutions-heading"
-            className="text-2xl md:text-3xl font-semibold dark:bg-gray-950 dark:text-white"
+            className="text-2xl md:text-3xl font-semibold  dark:text-white"
           >
             Ultrafast Fibre Broadband Solutions for Your Home or Business
           </h2>
 
-          <ul className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 dark:bg-gray-950 dark:text-white">
+          <ul className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10  dark:text-white">
             {features.map((item) => (
               <li key={item.label}>
-                <article className=" dark:bg-gray-950 dark:text-white flex flex-col items-center text-center px-4 hover:-translate-y-1 transition-transform duration-300">
+                <article className="py-4 dark:bg-gray-900 dark:text-white flex flex-col items-center text-center px-4 hover:-translate-y-1 transition-transform duration-300">
                   <Image
                     src={item.src}
                     alt=""
                     aria-hidden="true"
                     width={80}
                     height={80}
-                    className="w-16 h-16 md:w-20 md:h-20 object-contain dark:bg-gray-950 dark:text-white"
+                    className="w-16 h-16 md:w-20 md:h-20 object-contain  dark:text-white"
                   />
 
-                  <h3 className="text-lg font-bold mt-5 dark:bg-gray-950 dark:text-white">{item.label}</h3>
+                  <h3 className="text-lg font-bold mt-5  dark:text-white">{item.label}</h3>
 
-                  <p className="text-sm md:text-base text-white/80 leading-relaxed mt-3 max-w-xs dark:bg-gray-950 dark:text-white">
+                  <p className="text-sm md:text-base text-white/80 leading-relaxed mt-3 max-w-xs  dark:text-white">
                     {item.description}
                   </p>
                 </article>

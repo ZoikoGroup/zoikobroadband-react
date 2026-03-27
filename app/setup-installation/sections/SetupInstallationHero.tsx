@@ -16,7 +16,7 @@ export default function SetupInstallationHero() {
     <>
       <section
         aria-labelledby="get-connected-heading"
-        className="w-full bg-[#10446C] py-16 px-4 sm:px-6 lg:px-8 lg:py-20"
+        className="w-full bg-[#10446C] dark:bg-gray-950 py-16 px-4 sm:px-6 lg:px-8 lg:py-20"
       >
         <div className="max-w-5xl mx-auto   dark:text-white
  text-white text-center">
@@ -36,7 +36,7 @@ export default function SetupInstallationHero() {
           </p>
           <Link
             href="#"
-            className="border border-[#f5c241] bg-[#698a96] text-white rounded-full px-6 py-3 text-sm md:text-base font-semibold whitespace-nowrap max-w-fit mt-6 inline-block"
+            className="border border-[#f5c241] bg-[#698a96] dark:bg-gray-800 text-white rounded-full px-6 py-3 text-sm md:text-base font-semibold whitespace-nowrap max-w-fit mt-6 inline-block"
           >
             Average Setup Time: 10-15 minutes
           </Link>

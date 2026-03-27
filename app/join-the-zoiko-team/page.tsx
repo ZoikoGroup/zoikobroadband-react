@@ -99,7 +99,7 @@ export default function CareerForm() {
   };
 
   return (
-    <section className="w-full py-10 md:py-14 px-4 dark:bg-gray-800 ">
+    <section className="w-full bg-[#f8f9fa] py-10 md:py-14 px-4 dark:bg-gray-800 ">
       <div className="max-w-4xl mx-auto bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl shadow-md p-6 md:p-8">
 
         {/* Header */}

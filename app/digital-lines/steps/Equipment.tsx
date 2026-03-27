@@ -52,7 +52,7 @@ export default function Equipment({ selections, update }: Props) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">
         Equipment
       </h2>
 
@@ -68,13 +68,13 @@ export default function Equipment({ selections, update }: Props) {
               }`}
             >
               {/* Name */}
-              <h3 className="text-lg font-bold text-gray-800 mb-1">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-1">
                 {item.name}
               </h3>
 
               {/* Price */}
               <div className="mb-4">
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   {item.price}
                 </span>
               </div>
@@ -84,7 +84,7 @@ export default function Equipment({ selections, update }: Props) {
                 {item.features.map((feature) => (
                   <li
                     key={feature}
-                    className="flex items-start gap-2 text-sm text-gray-600"
+                    className="flex items-start gap-2 text-sm text-gray-600 dark:text-white"
                   >
                     <svg
                       className="w-4 h-4 text-[#F6C140] mt-0.5 shrink-0"
@@ -110,7 +110,7 @@ export default function Equipment({ selections, update }: Props) {
                 onClick={() => toggleEquipment(item.id)}
                 className={`w-full py-2 rounded-md text-sm font-semibold transition ${
                   isAdded
-                    ? "bg-[#F6C140] text-[#10446C] hover:bg-gray-700"
+                    ? "bg-[#F6C140] text-[#10446C] hover:bg-gray-300"
                     : "bg-[#F6C140] text-white hover:bg-[#e0ad30]"
                 }`}
               >
