@@ -85,7 +85,7 @@ function OptionCard({
       className={`w-full text-left flex items-start gap-5 px-5 md:px-6 py-3 rounded-lg border-2 transition ${
         selected
           ? "border-[#F6C140] bg-[#F6C140]/5"
-          : "border-transparent hover:bg-gray-50"
+          : "border-transparent "
       }`}
     >
       {/* Radio circle */}
@@ -98,8 +98,8 @@ function OptionCard({
       {/* Content */}
       <div>
         <span className="text-green-500 font-bold text-base md:text-xl">{price}</span>
-        <p className="text-base md:text-lg font-semibold text-gray-800">{name}</p>
-        {description && <p className="text-sm text-gray-500">{description}</p>}
+        <p className="text-base md:text-lg font-semibold text-gray-800 dark:text-white">{name}</p>
+        {description && <p className="text-sm text-gray-500 dark:text-white">{description}</p>}
       </div>
     </button>
   );
@@ -115,7 +115,7 @@ function Column({
 }) {
   return (
     <div className="border border-gray-200 rounded-xl p-5 flex flex-col gap-1">
-      <h4 className="text-sm font-bold text-gray-800 mb-2 pb-2 border-b-2 border-[#F6C140]">
+      <h4 className="text-sm font-bold text-gray-800 dark:text-white mb-2 pb-2 border-b-2 border-[#F6C140]">
         {title}
       </h4>
       {children}

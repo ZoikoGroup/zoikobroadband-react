@@ -59,7 +59,7 @@ export default function AddOns({ selections, update }: Props) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">
         Add-ons & Extras
       </h2>
 
@@ -113,17 +113,17 @@ function AddonCard({
       }`}
     >
       {/* Name */}
-      <h3 className="text-sm font-bold text-gray-800 mb-1">{addon.name}</h3>
+      <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-1">{addon.name}</h3>
 
       {/* Description */}
-      <p className="text-xs text-gray-400 mb-3">{addon.description}</p>
+      <p className="text-xs text-gray-400 dark:text-white mb-3">{addon.description}</p>
 
       {/* Price */}
       <p className="text-[#F6C140] font-bold text-sm mb-1">{addon.price}</p>
 
       {/* Note */}
       {addon.note && (
-        <p className="text-xs text-gray-400 mb-3">{addon.note}</p>
+        <p className="text-xs text-gray-400 dark:text-white mb-3">{addon.note}</p>
       )}
 
       {/* Spacer */}

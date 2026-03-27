@@ -43,7 +43,7 @@ export default function ChargeChanges({ selections, update }: Props) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold text-center text-gray-800 mb-8">
+      <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-8">
         Charge Changes
       </h2>
 
@@ -59,27 +59,27 @@ export default function ChargeChanges({ selections, update }: Props) {
               }`}
             >
               {/* Name */}
-              <h3 className="text-sm font-bold text-gray-800 mb-1">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-white mb-1">
                 {charge.name}
               </h3>
 
               {/* Subtitle */}
               {charge.subtitle && (
-                <p className="text-xs text-gray-400 mb-3">{charge.subtitle}</p>
+                <p className="text-xs text-gray-400 dark:text-white mb-3">{charge.subtitle}</p>
               )}
 
               {/* Price */}
-              <p className="text-2xl font-bold text-gray-900 mt-2">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-2">
                 {charge.price}
               </p>
 
               {/* Admin Charges label */}
-              <p className="text-xs font-semibold text-gray-500 mb-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-white mb-3">
                 {charge.label}
               </p>
 
               {/* Description */}
-              <p className="text-xs text-gray-400 flex-1 mb-6">
+              <p className="text-xs text-gray-400 dark:text-white flex-1 mb-6">
                 {charge.description}
               </p>
 
