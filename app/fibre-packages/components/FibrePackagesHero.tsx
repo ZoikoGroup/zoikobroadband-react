@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, type KeyboardEvent, type FormEvent } from "react";
-import PostcodeSearchBar from "../../Components/PostcodeSearch";
+import BroadbandPlans from "../../Components/Broadbandplans";
 interface FormattedAddress {
   id: string;
   display: string;
@@ -59,11 +59,7 @@ export default function FibrePackagesHero() {
                 Enter your postcode
               </label>
 
-               <PostcodeSearchBar
-            onAddressSelect={(addr) => console.log("Selected:", addr)}
-            onSearchSuccess={(list) => console.log("Found:", list.length)}
-            onSearchError={(msg) => console.error("Error:", msg)}
-          />
+                <BroadbandPlans />
 
             
           </div>
