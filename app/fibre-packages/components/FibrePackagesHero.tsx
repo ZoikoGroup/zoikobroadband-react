@@ -1,6 +1,30 @@
-import React from "react";
+"use client";
+
+import React, { useState, useRef, type KeyboardEvent, type FormEvent } from "react";
+import PostcodeSearchBar from "../../Components/PostcodeSearch";
+interface FormattedAddress {
+  id: string;
+  display: string;
+  streetNr: string;
+  streetName: string;
+  city: string;
+  postcode: string;
+  districtCode: string;
+  uprn: string;
+  exchangeGroupCode: string;
+  qualifier: string;
+}
+
+interface SearchResponse {
+  success: boolean;
+  addresses?: FormattedAddress[];
+  count?: number;
+  cached?: boolean;
+  message?: string;
+}
 
 export default function FibrePackagesHero() {
+  
   return (
     <>
       <section
@@ -17,47 +41,31 @@ export default function FibrePackagesHero() {
           </h1>
 
           <p className="mt-4 text-base md:text-xl lg:text-2xl font-semibold text-white/90 max-w-4xl mx-auto">
-            From everyday browsing to gigabit power — there's a Zoiko plan for
-            everyone.
+            From everyday browsing to gigabit power — there's a Zoiko plan for everyone.
           </p>
 
           {/* Description */}
           <p className="mt-4 text-base md:text-lg text-white/90 leading-relaxed max-w-5xl mx-auto">
-            At Zoiko Broadband, we offer a range of full fibre and SOGEA
-            broadband packages designed to suit every lifestyle, household size,
-            and digital needs. Whether you're after basic connectivity or
-            ultra-high-speed performance, all our plans come with clear pricing,
-            UK-based support, and future-ready fibre.
+            At Zoiko Broadband, we offer a range of full fibre and SOGEA broadband packages
+            designed to suit every lifestyle, household size, and digital needs. Whether you're
+            after basic connectivity or ultra-high-speed performance, all our plans come with
+            clear pricing, UK-based support, and future-ready fibre.
           </p>
 
-          {/* Postcode Form */}
+          {/* Postcode Form Card */}
           <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10">
-            <form
-              className="flex flex-col md:flex-row gap-4 items-center"
-              noValidate
-            >
+            
               <label htmlFor="postcode" className="sr-only">
                 Enter your postcode
               </label>
 
-              <input
-                id="postcode"
-                name="postcode"
-                type="search"
-                autoComplete="postal-code"
-                placeholder="Enter postcode"
-                required
-                pattern="^[A-Za-z0-9 ]{5,8}$"
-                className="w-full md:flex-1 text-gray-700 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#10446C]"
-              />
+               <PostcodeSearchBar
+            onAddressSelect={(addr) => console.log("Selected:", addr)}
+            onSearchSuccess={(list) => console.log("Found:", list.length)}
+            onSearchError={(msg) => console.error("Error:", msg)}
+          />
 
-              <button
-                type="submit"
-                className="w-full md:w-auto px-7 py-3 rounded-full bg-[#10446C] font-semibold text-white hover:bg-[#0d3555] transition"
-              >
-                See your deals
-              </button>
-            </form>
+            
           </div>
         </div>
       </section>
