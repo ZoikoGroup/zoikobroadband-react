@@ -1,30 +1,30 @@
 import React from 'react'
 
-export default function LeaderboardModal({onClose}: {onClose: () => void}) {
+export default function LeaderboardModal({ onClose }: { onClose: () => void }) {
   return (
-    <>
-      <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+    <div
+      className="dark:bg-gray-900 dark:text-white fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={onClose}
     >
       {/* Modal Box */}
       <div
-        className="bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-8 relative"
+        className="dark:bg-gray-900 dark:text-white bg-white rounded-2xl shadow-xl w-[90%] max-w-md p-8 relative"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}
         <button
           onClick={onClose}
+          aria-label="Close leaderboard modal"
           className="absolute top-3 right-3 text-xl"
         >
           ✕
         </button>
 
-        <h2 className="text-2xl font-bold text-center mb-4">
+        <h2 className="dark:bg-gray-900 dark:text-white text-2xl font-bold text-center mb-4">
           Leaderboard...
         </h2>
 
-        <p className="text-gray-600 text-center mb-6">
+        <p className="dark:bg-gray-900 dark:text-white text-gray-600 text-center mb-6">
           Invite your friends to Zoiko Broadband and earn rewards.
         </p>
 
@@ -53,6 +53,5 @@ export default function LeaderboardModal({onClose}: {onClose: () => void}) {
         </div>
       </div>
     </div>
-    </>
   )
 }

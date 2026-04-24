@@ -7,7 +7,7 @@ export default function BundlesHero() {
     <>
       <section
         aria-labelledby="bundle-services"
-        className="bg-[#10446C] text-white w-full py-12"
+        className="bg-[#10446C] text-white w-full py-12 dark:bg-gray-900 dark:text-white"
       >
         <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-5">
@@ -28,14 +28,14 @@ export default function BundlesHero() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/bundle"
+                  href="/bundles"
                   className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 transition"
                 >
                   Build Your Bundle
                 </Link>
 
                 <Link
-                  href="/plans"
+                  href="/all-plans"
                   className="bg-[#F6C140] text-[#10446C] px-6 py-3 rounded-lg font-semibold text-center hover:bg-[#eab530] transition"
                 >
                   See All Plans

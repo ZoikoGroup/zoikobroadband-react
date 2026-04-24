@@ -4,21 +4,21 @@ export default function ReferralModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
+        className=" dark:bg-gray-900 dark:text-white fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="referral-modal-title"
         onClick={onClose}
       >
         <div
-          className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 sm:p-8 relative"
+          className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 sm:p-8 relative dark:bg-gray-900 dark:text-white"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Close Button */}
           <button
             onClick={onClose}
             aria-label="Close referral modal"
-            className="absolute top-4 right-4 text-gray-500 hover:text-black"
+            className=" dark:bg-gray-900 dark:text-white absolute top-4 right-4 text-gray-500 hover:text-black"
           >
             ✕
           </button>
@@ -29,7 +29,7 @@ export default function ReferralModal({ onClose }: { onClose: () => void }) {
               Referrals
             </h2>
 
-            <p className="text-gray-600 text-sm mt-2">
+            <p className=" dark:bg-gray-900 dark:text-white text-gray-600 text-sm mt-2">
               Invite your friends to Zoiko Broadband. If they sign up, you and
               your friend will get a reward!
             </p>
@@ -37,15 +37,15 @@ export default function ReferralModal({ onClose }: { onClose: () => void }) {
 
           {/* Invite Section */}
           <section className="mb-6">
-            <h3 className="font-semibold text-center mb-2">
+            <h3 className=" dark:bg-gray-900 dark:text-white font-semibold text-center mb-2">
               Invite your friends
             </h3>
 
-            <p className="text-sm text-gray-500 text-center mb-4">
+            <p className="dark:bg-gray-900 dark:text-whiteb text-sm text-gray-500 text-center mb-4">
               Insert your friends' addresses and send invitations.
             </p>
 
-            <div className="flex items-center border rounded-full overflow-hidden">
+            <div className=" dark:bg-gray-900 dark:text-white flex items-center border rounded-full overflow-hidden">
               <input
                 type="email"
                 placeholder="Email addresses..."
@@ -65,12 +65,12 @@ export default function ReferralModal({ onClose }: { onClose: () => void }) {
           <section className="text-center">
             <h3 className="font-semibold mb-2">Share the referral link</h3>
 
-            <p className="text-sm text-gray-500 mb-4">
+            <p className=" dark:bg-gray-900 dark:text-white text-sm text-gray-500 mb-4">
               You can also share your referral link by copying it or sharing it
               on social media.
             </p>
 
-            <div className="flex items-center justify-between gap-2 bg-gray-100 rounded-full px-3 py-2 mb-4">
+            <div className=" dark:bg-gray-900 dark:text-white flex items-center justify-between gap-2 bg-gray-100 rounded-full px-3 py-2 mb-4">
               <span className="text-sm truncate">
                 zoikobroadband.com/referral/123
               </span>

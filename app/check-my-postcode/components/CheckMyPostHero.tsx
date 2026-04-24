@@ -6,20 +6,20 @@ export default function CheckMyPostHero() {
     <>
       <section
         aria-labelledby="check-my-postcode-hero"
-        className="bg-[#dfe8ee] w-full py-16"
+        className="bg-[#dfe8ee] w-full py-16 dark:bg-gray-900 dark:text-white"
       >
-        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16 dark:bg-gray-900 dark:text-white">
           <div className="grid grid-cols-1 lg:grid-cols-2 items-center gap-12">
             {/* LEFT CONTENT */}
             <div>
               <h2
                 id="check-my-postcode-hero"
-                className="text-black text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6"
+                className="text-black text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight mb-6 dark:text-white"
               >
                 See If Zoiko Fibre Is Ready at Your Address
               </h2>
 
-              <p className="text-gray-700 text-base md:text-lg leading-relaxed max-w-xl">
+              <p className="text-gray-700 text-base md:text-lg leading-relaxed max-w-xl dark:text-white">
                 Tired of slow connections and patchy service? Zoiko Broadband
                 brings reliable, ultrafast fibre straight to homes and
                 businesses across the UK. Simply pop in your postcode to see if

@@ -3,9 +3,9 @@ import Image from "next/image";
 
 export default function WhyWorkHere() {
   return (
-    <section className=" w-full py-10 px-5 sm:px-10">
-      <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-2xl sm:text-4xl font-bold text-[#10446C]">
+    <section className=" w-full py-10 px-5 sm:px-10 dark:bg-gray-950 dark:text-white">
+      <div className="max-w-7xl mx-auto text-center dark:bg-gray-950 ">
+        <h2 className="text-2xl sm:text-4xl font-bold text-[#10446C] dark:bg-gray-950 dark:text-white ">
           Our M
           <span className="underline decoration-amber-400 underline-offset-14">
             easurable
@@ -51,7 +51,7 @@ export default function WhyWorkHere() {
           ].map((item, i) => (
             <div
               key={i}
-              className="bg-[#f5fbff] rounded-2xl border border-gray-200 p-6 sm:p-8 flex flex-col items-center text-center gap-4 hover:shadow-xl transition-shadow duration-300 h-full"
+              className=" dark:bg-gray-950 dark:text-white bg-[#f5fbff] rounded-2xl border border-gray-200 p-6 sm:p-8 flex flex-col items-center text-center gap-4 hover:shadow-xl transition-shadow duration-300 h-full"
             >
               <Image
                 src={item.src}
@@ -61,15 +61,15 @@ export default function WhyWorkHere() {
                 className="w-16 h-16 object-contain"
               />
 
-              <h3 className="text-lg lg:text-2xl font-bold text-[#10446C]">
+              <h3 className="text-lg lg:text-2xl font-bold text-[#10446C] dark:bg-gray-950 dark:text-white">
                 {item.label}
               </h3>
 
-              <p className="text-base lg:text-lg text-[#10446C] max-w-xs">
+              <p className="text-base lg:text-lg text-[#10446C] max-w-xs dark:bg-gray-950 dark:text-white">
                 {item.description}
               </p>
 
-              <ul className="mt-3 space-y-2 text-sm lg:text-base text-[#10446C]">
+              <ul className="mt-3 space-y-2 text-sm lg:text-base text-[#10446C] dark:bg-gray-950 dark:text-white">
                 {item.benefits.map((benefit, idx) => (
                   <li
                     key={idx}

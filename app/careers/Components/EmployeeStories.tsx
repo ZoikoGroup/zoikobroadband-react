@@ -21,13 +21,13 @@ const pathways = [
 
 export default function EmployeeStories() {
   return (
-    <section className="py-16 px-4 bg-[#F4F8FC]">
+    <section className="py-16 px-4 bg-[#F4F8FC] dark:bg-gray-950 dark:text-white">
       <div className="max-w-7xl mx-auto text-center">
-        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C]">
+        <h2 className="text-2xl md:text-4xl font-bold text-[#10446C]  dark:text-white">
           Employee Stories
         </h2>
 
-        <p className="text-gray-500 mt-2 mb-12">
+        <p className="text-gray-500 mt-2 mb-12  dark:text-white">
           Hear from our team about their experiences working at Zoiko
         </p>
 
@@ -39,26 +39,27 @@ export default function EmployeeStories() {
               className={`
               rounded-2xl flex flex-col justify-between text-left
               transition-all duration-300
+              dark:bg-gray-950 dark:text-white
               border-2 border-gray-200 bg-white hover:shadow-lg 
               }
               `}
             >
               {/* TOP */}
               <div>
-                <div className=" bg-[#10446C] w-full h-40 rounded-t-2xl flex items-center justify-center ">
+                <div className=" bg-[#10446C] w-full h-40 rounded-t-2xl flex items-center justify-center dark:bg-gray-950 dark:text-white ">
                   <span className="text-white text-xl font-bold">Video</span>
                 </div>
 
-                <h3 className="text-2xl font-bold text-[#10446C] mt-4 px-7 py-3">
+                <h3 className="text-2xl font-bold text-[#10446C] mt-4 px-7 py-3 dark:bg-gray-950 dark:text-white">
                   {item.title}
                 </h3>
 
-                <p className=" text-base text-[#10446C] mt-3 px-7 py-3 leading-relaxed">
+                <p className=" text-base text-[#10446C] mt-3 px-7 py-3 leading-relaxed dark:bg-gray-950 dark:text-white">
                   {item.desc}
                 </p>
 
                 {/* meta */}
-                <div className="flex gap-5 text-sm text-gray-500 mt-2 mb-4 px-7 py-3">
+                <div className="flex gap-5 text-sm text-gray-500 mt-2 mb-4 px-7 py-3 dark:bg-gray-950 dark:text-white">
                   <span>{item.positions}</span>
                   <span>{item.salary}</span>
                 </div>
