@@ -1,6 +1,62 @@
+"use client";
 import React from "react";
+import toast from "react-hot-toast";
 
 export default function ContactForm() {
+  const [first_name, setFirstName] = React.useState("");
+  const [last_name, setLastName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [subject, setSubject] = React.useState("");
+  const [message, setMessage] = React.useState("");
+  const [agreed_to_policy, setAgreedToPolicy] = React.useState(false);
+
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+
+  const formData = {
+    first_name,
+    last_name,
+    email,
+    phone,
+    subject,
+    message,
+    agreed_to_policy,
+  };
+
+  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  try {
+    const res = await fetch(`${API_URL}/api/contact/contact-us/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    });
+// console.log(formData);
+    const data = await res.json();
+
+    if (data.success) {
+      toast.success("Message sent successfully!");
+      console.log("Message sent successfully!");  
+      // Clear form fields     
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setSubject("");
+      setMessage("");
+      setAgreedToPolicy(false);
+    } else {
+      toast.error("Failed to send message.");
+      console.error(data);
+    }
+  } catch (err) {
+    toast.error("An error occurred while sending the message.");
+    console.error(err);
+  }
+};
+
   return (
     <>
       <section className="bg-[#f3f5f7] dark:bg-gray-900 py-14 px-4 sm:px-6 lg:px-8">
@@ -17,7 +73,7 @@ export default function ContactForm() {
             </p>
 
             {/* FORM */}
-            <form className="mt-6 space-y-5">
+            <form className="mt-6 space-y-5" onSubmit={handleSubmit}>
               {/* Name */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -27,6 +83,9 @@ export default function ContactForm() {
                   <input
                     type="text"
                     placeholder="John"
+                    value={first_name}
+                    required
+                    onChange={(e) => setFirstName(e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
                   />
                 </div>
@@ -38,6 +97,8 @@ export default function ContactForm() {
                   <input
                     type="text"
                     placeholder="Doe"
+                    value={last_name}
+                    onChange={(e) => setLastName(e.target.value)}
                     className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
                   />
                 </div>
@@ -51,6 +112,9 @@ export default function ContactForm() {
                 <input
                   type="email"
                   placeholder="Email Address"
+                  value={email}
+                  required
+                  onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
@@ -63,6 +127,9 @@ export default function ContactForm() {
                 <input
                   type="text"
                   placeholder="07123 456789"
+                  value={phone}
+                  required
+                  onChange={(e) => setPhone(e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
@@ -72,15 +139,19 @@ export default function ContactForm() {
                 <label className="text-sm font-medium dark:text-gray-300">
                   Subject *
                 </label>
-                <select className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600">
-                  <option>Select a subject</option>
-                  <option>Home Broadband</option>
-                  <option>Bussiness Plans</option>
-                  <option>Speed Issue</option>
-                  <option>Postcode</option>
-                  <option>Internet Issue</option>
-                  <option>Biling</option>
-                  <option>Other</option>
+                <select
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="">Select a subject</option>
+                  <option value="Home Broadband">Home Broadband</option>
+                  <option value="Bussiness Plans">Bussiness Plans</option>
+                  <option value="Speed Issue">Speed Issue</option>
+                  <option value="Postcode">Postcode</option>
+                  <option value="Internet Issue">Internet Issue</option>
+                  <option value="Biling">Biling</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
 
@@ -92,13 +163,20 @@ export default function ContactForm() {
                 <textarea
                   rows={4}
                   placeholder="Tell us more about your enquiry..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
                   className="mt-1 w-full border border-gray-300 rounded-md p-2 bg-white dark:bg-gray-700 dark:border-gray-600"
                 />
               </div>
 
               {/* Checkbox */}
               <div className="flex items-start gap-2 text-sm">
-                <input type="checkbox" className="mt-1" />
+                <input
+                  type="checkbox"
+                  className="mt-1"
+                  checked={agreed_to_policy}
+                  onChange={(e) => setAgreedToPolicy(e.target.checked)}
+                />
                 <p className="text-gray-600 dark:text-gray-400">
                   I agree to the processing of my personal data in accordance
                   with the{" "}
@@ -109,7 +187,10 @@ export default function ContactForm() {
               </div>
 
               {/* Button */}
-              <button className="w-full bg-[#F6C140] text-[#10446C] font-semibold py-3 rounded-md hover:bg-[#eab530] transition">
+              <button
+                type="submit"
+                className="w-full bg-[#F6C140] text-[#10446C] font-semibold py-3 rounded-md hover:bg-[#eab530] transition"
+              >
                 Send Message
               </button>
             </form>
