@@ -64,7 +64,7 @@ const CONTRACT_LABELS: Record<ContractDuration, string> = {
 function Spinner({ size = 20 }: { size?: number }) {
   return (
     <svg
-      className="animate-spin text-[#5514b4]"
+      className="animate-spin text-[#10446C]"
       width={size}
       height={size}
       viewBox="0 0 24 24"
@@ -108,18 +108,18 @@ function PlanCard({ item, contractType }: PlanCardProps) {
       className={`relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden
         ${
           available
-            ? "border-[#5514b4]/20 bg-white shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer"
+            ? "border-[#10446C]/20 bg-white shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer"
             : "border-gray-200 bg-gray-50 opacity-60"
         }`}
     >
       {/* Header stripe */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[#5514b4] to-[#8b3cf7]" />
+      <div className="h-1.5 w-full bg-gradient-to-r from-[#10446C] to-[#10446C]" />
 
       <div className="p-6 flex flex-col gap-4 flex-1">
         {/* Title + Badge */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#5514b4] mb-1">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[#10446C] mb-1">
               {technology || "Fibre"}
             </p>
             <h3 className="text-lg font-bold text-gray-900 leading-tight">
@@ -140,7 +140,7 @@ function PlanCard({ item, contractType }: PlanCardProps) {
         {/* Speed display */}
         {download && (
           <div className="flex items-end gap-1.5">
-            <span className="text-5xl font-black text-[#5514b4] leading-none tabular-nums">
+            <span className="text-5xl font-black text-[#10446C] leading-none tabular-nums">
               {download}
             </span>
             <span className="text-sm font-semibold text-gray-500 mb-1.5">
@@ -192,7 +192,7 @@ function PlanCard({ item, contractType }: PlanCardProps) {
         {/* Contract */}
         <div className="flex items-center gap-2 text-sm text-gray-600 mt-auto pt-2 border-t border-gray-100">
           <svg
-            className="w-4 h-4 text-[#5514b4]"
+            className="w-4 h-4 text-[#10446C] shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -212,8 +212,8 @@ function PlanCard({ item, contractType }: PlanCardProps) {
         {/* CTA */}
         {available && (
           <button
-            className="mt-2 w-full py-3 rounded-xl bg-[#5514b4] hover:bg-[#4a0fa0] active:scale-95 
-              text-white font-bold text-sm tracking-wide transition-all duration-200 shadow-md shadow-[#5514b4]/25"
+            className="mt-2 w-full py-3 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] active:scale-95 
+              text-white font-bold text-sm tracking-wide transition-all duration-200 shadow-md shadow-[#10446C]/25"
           >
             Get this deal
           </button>
@@ -348,13 +348,13 @@ export default function BroadbandPlans() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] font-sans">
+    <div className="min-h-screen bg-[#faf8ff] font-sans py-4">
       {/* ── Top bar ── */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+      <header className="max-w-2xl mx-auto rounded-2xl bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* BT-style logo mark */}
-            <div className="w-8 h-8 rounded-lg bg-[#5514b4] flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#10446C] flex items-center justify-center">
               <span className="text-white text-xs font-black tracking-tight">
                 BT
               </span>
@@ -377,7 +377,7 @@ export default function BroadbandPlans() {
                 <span
                   className={`px-2.5 py-1 rounded-full transition-colors ${
                     step === key
-                      ? "bg-[#5514b4] text-white"
+                      ? "bg-[#10446C] text-white"
                       : ["search", "select", "plans"].indexOf(step) >
                         ["search", "select", "plans"].indexOf(key)
                       ? "bg-emerald-100 text-emerald-700"
@@ -402,7 +402,7 @@ export default function BroadbandPlans() {
             <div>
               <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-3">
                 Find your{" "}
-                <span className="text-[#5514b4]">broadband deals</span>
+                <span className="text-[#10446C]">broadband deals</span>
               </h1>
               <p className="text-gray-500 text-lg max-w-md mx-auto">
                 Enter your postcode to see which fibre plans are available at
@@ -422,7 +422,7 @@ export default function BroadbandPlans() {
                 maxLength={10}
                 required
                 disabled={loadingAddresses}
-                className="flex-1 px-5 py-3.5 rounded-xl border-2 border-gray-200 focus:border-[#5514b4] 
+                className="flex-1 px-5 py-3.5 rounded-xl border-2 border-gray-200 focus:border-[#10446C] focus:ring-2 focus:ring-[#10446C]/30 
                   outline-none text-base font-semibold tracking-widest text-gray-900 bg-white
                   placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400
                   transition-colors disabled:opacity-50"
@@ -430,8 +430,8 @@ export default function BroadbandPlans() {
               <button
                 type="submit"
                 disabled={loadingAddresses || !postcode.trim()}
-                className="px-6 py-3.5 rounded-xl bg-[#5514b4] hover:bg-[#4a0fa0] text-white 
-                  font-bold text-sm tracking-wide transition-all duration-200 shadow-lg shadow-[#5514b4]/30
+                className="px-6 py-3.5 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] text-white 
+                  font-bold text-sm tracking-wide transition-all duration-200 shadow-lg shadow-[#10446C]/30
                   disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center gap-2 justify-center"
               >
                 {loadingAddresses ? (
@@ -498,7 +498,7 @@ export default function BroadbandPlans() {
                     onClick={() => setContractType(key)}
                     className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
                       contractType === key
-                        ? "bg-[#5514b4] text-white shadow-md shadow-[#5514b4]/25"
+                        ? "bg-[#10446C] text-white shadow-md shadow-[#10446C]/25"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -513,12 +513,12 @@ export default function BroadbandPlans() {
                 <button
                   key={addr.id}
                   onClick={() => handleSelectAddress(addr, contractType)}
-                  className="w-full text-left bg-white border border-gray-200 hover:border-[#5514b4] 
+                  className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C] 
                     rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900 group-hover:text-[#5514b4] transition-colors">
+                      <p className="font-semibold text-gray-900 group-hover:text-[#10446C] transition-colors">
                         {addr.display}
                       </p>
                       <p className="text-sm text-gray-500 mt-0.5">
@@ -563,7 +563,7 @@ export default function BroadbandPlans() {
                 {selectedAddress && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <svg
-                      className="w-4 h-4 text-[#5514b4] shrink-0"
+                      className="w-4 h-4 text-[#10446C] shrink-0"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -609,8 +609,8 @@ export default function BroadbandPlans() {
                   disabled={loadingPlans}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
                     contractType === key
-                      ? "bg-[#5514b4] text-white shadow-md shadow-[#5514b4]/25"
-                      : "bg-white border border-gray-200 text-gray-600 hover:border-[#5514b4] hover:text-[#5514b4]"
+                      ? "bg-[#10446C] text-white shadow-md shadow-[#10446C]/25"
+                      : "bg-white border border-gray-200 text-gray-600 hover:border-[#10446C] hover:text-[#10446C]"
                   }`}
                 >
                   {label}
@@ -692,8 +692,8 @@ export default function BroadbandPlans() {
                 </div>
                 <button
                   onClick={() => setStep("select")}
-                  className="mt-2 px-5 py-2.5 rounded-xl border-2 border-[#5514b4] text-[#5514b4] 
-                    font-semibold text-sm hover:bg-[#5514b4] hover:text-white transition-all duration-200"
+                  className="mt-2 px-5 py-2.5 rounded-xl border-2 border-[#10446C] text-[#10446C] 
+                    font-semibold text-sm hover:bg-[#10446C] hover:text-white transition-all duration-200"
                 >
                   Try a different address
                 </button>
