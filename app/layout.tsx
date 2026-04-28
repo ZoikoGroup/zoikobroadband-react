@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "./Components/Header/Header";
 import dynamic from "next/dynamic";
 import { Toaster } from "react-hot-toast";
+import { CartProvider } from "./context/CartContext";
 
 const Footer = dynamic(() => import("./Components/Footer/Footer"), {
   ssr: true,
@@ -37,11 +38,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
-        <Header />
-        <main className="flex-1 pt-20 md:pt-24 lg:pt-28">
-          {children}
-          <Toaster position="top-center" reverseOrder={false} />
-        </main>
+        <CartProvider>
+          <Header />
+          <main className="flex-1 pt-20 md:pt-24 lg:pt-28">
+            {children}
+            <Toaster position="top-center" reverseOrder={false} />
+          </main>
+        </CartProvider>
         <Footer />
       </body>
     </html>
