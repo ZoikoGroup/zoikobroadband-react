@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useCart } from "@/app/context/CartContext";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,7 +38,7 @@ type ContractDuration = "12-months" | "18-months" | "24-months";
 
 function getChar(
   chars: ProductCharacteristic[] | undefined,
-  name: string
+  name: string,
 ): string {
   return chars?.find((c) => c.name === name)?.value ?? "";
 }
@@ -100,8 +101,30 @@ function PlanCard({ item, contractType }: PlanCardProps) {
   const minSpeed = getChar(chars, "productMinimumGuaranteedSpeed");
   const technology = getChar(chars, "AccessTechnology");
   const available = getChar(chars, "AVAILABILITY_FLAG") !== "N";
+  const price = getChar(chars, "price");
 
   const contractMonths = contractType.replace("-months", "");
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    const plan = {
+      id: offeringId,
+      name: offeringId.replace(/([A-Z])/g, " $1").trim(),
+      price: parseFloat(price) || 0,
+      speed: download || "Unknown",
+      validity: `${contractMonths}-month contract`,
+      description: `${technology} broadband with up to ${download} Mbps download speed and ${upload} Mbps upload speed.`,
+    };
+    // addToCart(plan);
+    addToCart({
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      speed: plan.speed,
+      validity: plan.validity,
+      description: plan.description,
+    });
+  };
 
   return (
     <div
@@ -181,7 +204,9 @@ function PlanCard({ item, contractType }: PlanCardProps) {
           )}
           {download && (
             <div className="bg-[#f5f0ff] rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Devices</p>
+              <p className="text-xs text-gray-500 font-medium mb-0.5">
+                Devices
+              </p>
               <p className="text-base font-bold text-gray-800">
                 {deviceLabel(download)}
               </p>
@@ -204,14 +229,13 @@ function PlanCard({ item, contractType }: PlanCardProps) {
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <span>
-            {contractMonths}-month contract
-          </span>
+          <span>{contractMonths}-month contract</span>
         </div>
 
         {/* CTA */}
         {available && (
           <button
+            onClick={handleAddToCart}
             className="mt-2 w-full py-3 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] active:scale-95 
               text-white font-bold text-sm tracking-wide transition-all duration-200 shadow-md shadow-[#10446C]/25"
           >
@@ -234,7 +258,8 @@ export default function BroadbandPlans() {
   const [selectedAddress, setSelectedAddress] =
     useState<FormattedAddress | null>(null);
 
-  const [contractType, setContractType] = useState<ContractDuration>("24-months");
+  const [contractType, setContractType] =
+    useState<ContractDuration>("24-months");
   const [plans, setPlans] = useState<ProductOfferingQualificationItem[]>([]);
 
   const [loadingAddresses, setLoadingAddresses] = useState(false);
@@ -282,7 +307,7 @@ export default function BroadbandPlans() {
         setLoadingAddresses(false);
       }
     },
-    [postcode]
+    [postcode],
   );
 
   // ── Address selection + fetch plans ─────────────────────────────────────
@@ -320,7 +345,7 @@ export default function BroadbandPlans() {
         setLoadingPlans(false);
       }
     },
-    []
+    [],
   );
 
   // Re-fetch plans when contract changes (address already selected)
@@ -331,18 +356,18 @@ export default function BroadbandPlans() {
         handleSelectAddress(selectedAddress, contract);
       }
     },
-    [selectedAddress, handleSelectAddress]
+    [selectedAddress, handleSelectAddress],
   );
 
   // ── Filter plans by availability ─────────────────────────────────────────
 
   const availablePlans = plans.filter(
     (p) =>
-      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") !== "N"
+      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") !== "N",
   );
   const unavailablePlans = plans.filter(
     (p) =>
-      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") === "N"
+      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") === "N",
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -379,16 +404,14 @@ export default function BroadbandPlans() {
                     step === key
                       ? "bg-[#10446C] text-white"
                       : ["search", "select", "plans"].indexOf(step) >
-                        ["search", "select", "plans"].indexOf(key)
-                      ? "bg-emerald-100 text-emerald-700"
-                      : "bg-gray-100 text-gray-400"
+                          ["search", "select", "plans"].indexOf(key)
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-gray-100 text-gray-400"
                   }`}
                 >
                   {label}
                 </span>
-                {i < arr.length - 1 && (
-                  <span className="text-gray-300">›</span>
-                )}
+                {i < arr.length - 1 && <span className="text-gray-300">›</span>}
               </span>
             ))}
           </nav>
@@ -482,7 +505,7 @@ export default function BroadbandPlans() {
             </div>
 
             {/* Contract picker — choose before address so plans load correctly */}
-            <div className="bg-white border border-gray-200 rounded-2xl p-4">
+            {/* <div className="bg-white border border-gray-200 rounded-2xl p-4">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
                 Contract duration
               </p>
@@ -506,7 +529,7 @@ export default function BroadbandPlans() {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             <div className="flex flex-col gap-2">
               {addresses.map((addr) => (
