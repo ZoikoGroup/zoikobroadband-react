@@ -24,7 +24,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     agreed_to_policy,
   };
 
-  const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+     const API_URL = "http://127.0.0.1:8000/";
   try {
     const res = await fetch(`${API_URL}/api/contact/contact-us/`, {
       method: "POST",
@@ -146,11 +147,11 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
                 >
                   <option value="">Select a subject</option>
                   <option value="Home Broadband">Home Broadband</option>
-                  <option value="Bussiness Plans">Bussiness Plans</option>
+                  <option value="Business Plans">Business Plans</option>
                   <option value="Speed Issue">Speed Issue</option>
                   <option value="Postcode">Postcode</option>
                   <option value="Internet Issue">Internet Issue</option>
-                  <option value="Biling">Biling</option>
+                  <option value="Billing">Billing</option>
                   <option value="Other">Other</option>
                 </select>
               </div>

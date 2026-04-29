@@ -57,7 +57,7 @@ export default function ContactUsHero() {
           Email Us
         </h3>
 
-        <p className="mt-4 text-[#F6C140] font-semibold text-base md:text-lg wrap-break-words">
+        <p className="mt-4 text-[#F6C140] font-semibold text-base md:text-lg wrap-break-word">
           support@zoikobroadband.com
         </p>
 
