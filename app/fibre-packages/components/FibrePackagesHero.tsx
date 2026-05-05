@@ -49,18 +49,27 @@ export default function FibrePackagesHero() {
 
         {/* Postcode Form */}
         <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10 dark:bg-gray-900 dark:text-white">
-          <label htmlFor="postcode" className="sr-only">
-            Enter your postcode
-          </label>
+         
+            <label htmlFor="postcode" className="sr-only">
+              Enter your postcode
+            </label>
 
-          {/* 👉 You can add input + button here later */}
-          <div className="mt-4">
-            <input
-              id="postcode"
-              type="text"
-              placeholder="Enter your postcode"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 text-black"
-            />
+          <p className="mt-4 text-base md:text-xl lg:text-2xl font-semibold text-white/90 max-w-4xl mx-auto">
+            From everyday browsing to gigabit power — there's a Zoiko plan for everyone.
+          </p>
+
+          <p className="mt-4 text-base md:text-lg text-gray-800 dark:text-white/90 leading-relaxed max-w-5xl mx-auto">
+            At Zoiko Broadband, we offer a range of full fibre and SOGEA broadband packages
+            designed to suit every lifestyle, household size, and digital needs. Whether you're
+            after basic connectivity or ultra-high-speed performance, all our plans come with
+            clear pricing, UK-based support, and future-ready fibre.
+          </p>
+
+          <div className="w-full bg-white rounded-xl shadow-md px-6 py-6">
+            
+              <label htmlFor="postcode" className="sr-only">
+                Enter your postcode
+              </label>
           </div>
         </div>
 
