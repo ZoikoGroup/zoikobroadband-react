@@ -1,15 +1,18 @@
 "use client";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function RegisterForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
+    setLoading(true);
     try {
       const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
         method: "POST",
@@ -29,11 +32,11 @@ export default function RegisterForm() {
 
       if (!res.ok) {
         console.error("Backend Error:", data);
-        alert(JSON.stringify(data));
+        toast.error(JSON.stringify(data));
         return;
       }
 
-      alert("Registered successfully!");
+      toast.success("Registered successfully!");
       setUsername("");
       setEmail("");
       setPassword("");
@@ -43,7 +46,9 @@ export default function RegisterForm() {
       router.push("/login");
     } catch (error) {
       console.error(error);
-      alert("Server error");
+      toast.error("Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -169,7 +174,7 @@ export default function RegisterForm() {
                      hover:bg-[#0d3555] transition
                      dark:bg-blue-600 dark:hover:bg-blue-700"
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
 

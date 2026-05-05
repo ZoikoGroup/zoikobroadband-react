@@ -6,6 +6,7 @@ import HeaderMenu from "./HeaderMenu";
 import CartIcon from "./CartIcon";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 export default function Header() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -33,9 +34,10 @@ export default function Header() {
 
     setIsLoggedIn(false);
 
-    // 🔥 trigger update across app
+    //  trigger update across app
     window.dispatchEvent(new Event("authChanged"));
 
+    toast.success("Logged out successfully!");
     router.push("/login");
   };
 

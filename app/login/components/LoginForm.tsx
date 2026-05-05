@@ -1,6 +1,7 @@
 import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 
 type Tab = "login" | "register" | "reset-password";
@@ -11,10 +12,12 @@ type Props = {
 export default function LoginForm({ setActiveTab }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
     try {
       const res = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
         method: "POST",
@@ -30,7 +33,7 @@ export default function LoginForm({ setActiveTab }: Props) {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Invalid credentials");
+        toast.error(data.error || "Invalid credentials");
         return;
       }
 
@@ -43,12 +46,15 @@ export default function LoginForm({ setActiveTab }: Props) {
        //  THIS IS THE FIX
   window.dispatchEvent(new Event("authChanged"));
 
+      toast.success("Logged in successfully!");
       // Redirect
       router.push("/dashboard");
 
     } catch (err) {
       console.error(err);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -131,7 +137,7 @@ export default function LoginForm({ setActiveTab }: Props) {
                      hover:bg-[#0d3555] transition
                      dark:bg-blue-600 dark:hover:bg-blue-700"
         >
-          Log In
+            {loading ? "Logging in..." : "Log In"}
         </button>
       </form>
 
