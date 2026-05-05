@@ -55,13 +55,13 @@ export default function FibrePackagesHero() {
         </p>
 
         {/* Postcode Form */}
-        {/* <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10 dark:bg-gray-900 dark:text-white">
+        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10 dark:bg-gray-900 dark:text-white">
          
             <label htmlFor="postcode" className="sr-only">
               Enter your postcode
             </label>
 
-          <p className="mt-4 text-base md:text-xl lg:text-2xl font-semibold text-gray-800 dark:text-white/90 max-w-4xl mx-auto">
+          <p className="mt-4 text-base md:text-xl lg:text-2xl font-semibold text-white/90 max-w-4xl mx-auto">
             From everyday browsing to gigabit power — there's a Zoiko plan for everyone.
           </p>
 
@@ -78,8 +78,7 @@ export default function FibrePackagesHero() {
                 Enter your postcode
               </label>
           </div>
-          
-        </div> */}
+        </div>
 
       </div>
       
