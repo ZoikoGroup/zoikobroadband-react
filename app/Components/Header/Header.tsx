@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import HeaderMenu from "./HeaderMenu";
+import CartIcon from "./CartIcon";
 
 export default function Header() {
   return (
@@ -47,11 +48,12 @@ export default function Header() {
         </div>
 
         {/* Right Side Buttons */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 md:gap-5 px-2 md:px-4">
 
+          <CartIcon />
           <Link href="/login">
-            <button className="bg-[#10446c] text-white px-3 py-2 rounded-md hover:bg-blue-600 transition h-9 md:h-11 text-sm md:text-base">
-              MyZoiko
+            <button className="bg-[#10446c] text-white px-2 py-1 md:px-3 md:py-2 rounded-md hover:bg-blue-600 transition h-9 md:h-11 text-sm md:text-base">
+              Login
             </button>
           </Link>
 
