@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import toast from "react-hot-toast";
 import Modal from "./Modal";
 
 type Bundle = {
@@ -15,6 +16,7 @@ type Props = {
 };
 
 export default function BundleRequestModal({ open, onClose, bundle }: Props) {
+  const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -25,16 +27,56 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
+  
+  const handleSubmit = async () => {
+    setLoading(true);
     if (!form.name || !form.phone) {
-      alert("Name and phone are required");
+      toast.error("Name and phone are required");
+      setLoading(false);
       return;
     }
 
-    console.log("Form Data:", { ...form, bundle });
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api/bundle-request/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        bundle_name: bundle?.label,
+        bundle_price: bundle?.price,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error(data);
+      toast.error("Failed to submit");
+      setLoading(false);
+      return;
+    }
+
+    toast.success("Request submitted successfully!");
+
+    // reset form
+    setForm({
+      name: "",
+      phone: "",
+      email: "",
+    });
+    setLoading(false);
 
     onClose();
-  };
+  } catch (error) {
+    console.error(error);
+    toast.error("Server error");
+    setLoading(false);
+  }
+};
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -124,7 +166,7 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
               onClick={handleSubmit}
               className="w-full bg-[#10446C] text-white px-4 py-2 rounded-xl font-semibold hover:bg-[#0d3a5a] transition"
             >
-              Submit Request
+              {loading ? "Submitting..." : "Submit Request"}
             </button>
           </section>
         </div>
