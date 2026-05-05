@@ -58,8 +58,8 @@ interface Tab {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const API_URL =  "http://127.0.0.1:8000/api/v1/plans/";
-// const API_URL =  "https://api.zoikobroadband.com/api/v1/plans/";
+// const API_URL =  "https://api.zoikobroadband.com";
+const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
 
 
 const TABS: Tab[] = [
@@ -196,7 +196,7 @@ export default function AllPlans() {
   useEffect(() => {
     async function fetchPlans(): Promise<void> {
       try {
-        const res = await fetch(API_URL);
+        const res = await fetch(`${API_URL}/api/v1/plans/`);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
 
         const data: PlansApiResponse = await res.json();

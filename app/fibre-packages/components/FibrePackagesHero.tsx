@@ -65,28 +65,23 @@ export default function FibrePackagesHero() {
             From everyday browsing to gigabit power — there's a Zoiko plan for everyone.
           </p>
 
-          {/* Description */}
-          <p className="mt-4 text-base md:text-lg text-white/90 leading-relaxed max-w-5xl mx-auto">
+          <p className="mt-4 text-base md:text-lg text-gray-800 dark:text-white/90 leading-relaxed max-w-5xl mx-auto">
             At Zoiko Broadband, we offer a range of full fibre and SOGEA broadband packages
             designed to suit every lifestyle, household size, and digital needs. Whether you're
             after basic connectivity or ultra-high-speed performance, all our plans come with
             clear pricing, UK-based support, and future-ready fibre.
           </p>
 
-          {/* Postcode Form Card */}
-          <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10">
+          <div className="w-full bg-white rounded-xl shadow-md px-6 py-6">
             
               <label htmlFor="postcode" className="sr-only">
                 Enter your postcode
               </label>
-
-                <BroadbandPlans />
-
-            
           </div>
         </div>
 
       </div>
+      
     </section>
   );
 }
