@@ -3,7 +3,7 @@ import FibrePackagesHero from './components/FibrePackagesHero'
 import FibreBroadband from './components/FibreBroadband'
 import WhyChooseZoiko from '../why-zoiko/Components/WhyChooseZoiko'
 import FAQ from '../Components/FAQs/FAQ'
-import BroadbandPlans from '../Components/Broadbandplans'
+import  BroadbandPlans  from '../Components/Broadbandplans';
 
 const fibrefaqs = [
   {
@@ -71,7 +71,7 @@ export default function page() {
   return (
     <>
     <FibrePackagesHero/>
-    <BroadbandPlans />
+    <BroadbandPlans/>
     <FibreBroadband/>
     <WhyChooseZoiko/>
     <FAQ faqs={fibrefaqs} />

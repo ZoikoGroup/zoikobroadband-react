@@ -23,13 +23,40 @@ interface ProductCharacteristic {
   value: string;
 }
 
+interface ZoikoVariation {
+  id: number;
+  label: string;
+  duration_value: number;
+  duration_unit: string;
+  duration_display: string;
+  price: string;
+  sale_price: string | null;
+  bt_plan_id: string;
+  effective_bt_plan_id: string;
+  is_default: boolean;
+  is_active: boolean;
+  sort_order: number;
+}
+
+interface ZoikoPlan {
+  id: number;
+  name: string;
+  slug: string;
+  bt_plan_id: string;
+  bt_plan_name: string;
+  description: string;
+  is_active: boolean;
+  variations: ZoikoVariation[];
+}
+
 interface ProductOfferingQualificationItem {
   id: string;
   product: {
-    productOffering: { id: string };
+    productOffering: { id: string; name?: string };
     productCharacteristic?: ProductCharacteristic[];
   };
   eligibilityUnavailabilityReason?: { cause: string }[];
+  zoikoPlan?: ZoikoPlan | null;
 }
 
 type ContractDuration = "12-months" | "18-months" | "24-months";
@@ -45,13 +72,43 @@ function getChar(
 
 function downloadTimeLabel(speed: string): string {
   const s = parseFloat(speed);
-  if (s >= 60) return "5 min 10 sec";
-  if (s >= 40) return "6 min 50 sec";
-  return "9 min 19 sec";
+  if (s >= 60) return "5 minutes 10 seconds";
+  if (s >= 40) return "6 minutes 50 seconds";
+  return "9 minutes 19 seconds";
 }
 
 function deviceLabel(speed: string): string {
-  return parseFloat(speed) >= 60 ? "5–8 devices" : "1–4 devices";
+  return parseFloat(speed) >= 60 ? "5–8 Devices" : "1-4 Devices";
+}
+
+function formatUpload(upload: string): string {
+  const n = parseFloat(upload);
+  if (!n) return upload;
+  if (n < 1) return `${Math.round(n * 1000)}Kbps upload`;
+  return `${upload}Mbps upload`;
+}
+
+function formatDownload(download: string): string {
+  const n = parseFloat(download);
+  if (!n) return download;
+  if (n < 1) return `${Math.round(n * 1000)}Kbps`;
+  return `${download}Mbps`;
+}
+
+/** Pick the variation matching the selected contract duration */
+function getVariationForContract(
+  zoikoPlan: ZoikoPlan | null | undefined,
+  contractType: ContractDuration,
+): ZoikoVariation | null {
+  if (!zoikoPlan) return null;
+  const months = parseInt(contractType); // "24-months" → 24
+  return (
+    zoikoPlan.variations.find(
+      (v) => v.is_active && v.duration_value === months,
+    ) ??
+    zoikoPlan.variations.find((v) => v.is_active) ??
+    null
+  );
 }
 
 const CONTRACT_LABELS: Record<ContractDuration, string> = {
@@ -60,7 +117,7 @@ const CONTRACT_LABELS: Record<ContractDuration, string> = {
   "12-months": "12 months",
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Spinner ──────────────────────────────────────────────────────────────────
 
 function Spinner({ size = 20 }: { size?: number }) {
   return (
@@ -88,160 +145,151 @@ function Spinner({ size = 20 }: { size?: number }) {
   );
 }
 
+// ─── PlanCard ─────────────────────────────────────────────────────────────────
+
 interface PlanCardProps {
   item: ProductOfferingQualificationItem;
   contractType: ContractDuration;
 }
 
 function PlanCard({ item, contractType }: PlanCardProps) {
-  const chars = item.product.productCharacteristic;
-  const offeringId = item.product.productOffering.id;
+  const chars = item.product?.productCharacteristic;
   const download = getChar(chars, "productAdvertisedDownloadSpeed");
   const upload = getChar(chars, "productAdvertisedUploadSpeed");
-  const minSpeed = getChar(chars, "productMinimumGuaranteedSpeed");
-  const technology = getChar(chars, "AccessTechnology");
-  const available = getChar(chars, "AVAILABILITY_FLAG") !== "N";
-  const price = getChar(chars, "price");
 
-  const contractMonths = contractType.replace("-months", "");
+  // zoikoPlan is guaranteed non-null here (filtered before render)
+  const zoikoPlan = item.zoikoPlan!;
+  const variation = getVariationForContract(zoikoPlan, contractType);
+  const planName = zoikoPlan.name;
+  const price = variation?.sale_price ?? variation?.price ?? null;
+  const contractMonths = parseInt(contractType);
+
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {
-    const plan = {
-      id: offeringId,
-      name: offeringId.replace(/([A-Z])/g, " $1").trim(),
-      price: parseFloat(price) || 0,
+    addToCart({
+      id: String(variation?.id ?? item.id),
+      name: planName,
+      price: parseFloat(price ?? "0"),
       speed: download || "Unknown",
       validity: `${contractMonths}-month contract`,
-      description: `${technology} broadband with up to ${download} Mbps download speed and ${upload} Mbps upload speed.`,
-    };
-    // addToCart(plan);
-    addToCart({
-      id: plan.id,
-      name: plan.name,
-      price: plan.price,
-      speed: plan.speed,
-      validity: plan.validity,
-      description: plan.description,
+      description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
     });
   };
 
   return (
-    <div
-      className={`relative flex flex-col rounded-2xl border transition-all duration-300 overflow-hidden
-        ${
-          available
-            ? "border-[#10446C]/20 bg-white shadow-md hover:shadow-xl hover:-translate-y-1 cursor-pointer"
-            : "border-gray-200 bg-gray-50 opacity-60"
-        }`}
-    >
-      {/* Header stripe */}
-      <div className="h-1.5 w-full bg-gradient-to-r from-[#10446C] to-[#10446C]" />
+    <div className="relative flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
 
-      <div className="p-6 flex flex-col gap-4 flex-1">
-        {/* Title + Badge */}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#10446C] mb-1">
-              {technology || "Fibre"}
-            </p>
-            <h3 className="text-lg font-bold text-gray-900 leading-tight">
-              {offeringId.replace(/([A-Z])/g, " $1").trim()}
-            </h3>
-          </div>
-          {available ? (
-            <span className="shrink-0 text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full">
-              Available
-            </span>
+      {/* ── Top: speed + price ── */}
+      <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-4">
+        {/* Left: download speed */}
+        <div>
+          {download ? (
+            <>
+              <p className="text-2xl font-black text-gray-900 leading-tight">
+                {formatDownload(download)}
+              </p>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                download speed
+              </p>
+            </>
           ) : (
-            <span className="shrink-0 text-xs font-semibold bg-red-50 text-red-600 border border-red-200 px-2.5 py-1 rounded-full">
-              Unavailable
-            </span>
+            <p className="text-sm text-gray-400">Speed unavailable</p>
+          )}
+
+          {/* Upload */}
+          {upload && (
+            <div className="flex items-center gap-1.5 mt-2">
+              <svg
+                className="w-4 h-4 text-[#10446C] shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 16V8m0 0l-3 3m3-3l3 3M6.5 19a4.5 4.5 0 01-.5-8.97A5 5 0 0116.5 10H17a3 3 0 010 6h-.5"
+                />
+              </svg>
+              <span className="text-xs text-gray-500 font-medium">
+                {formatUpload(upload)}
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Speed display */}
+        {/* Right: price */}
+        <div className="text-right shrink-0">
+          {price ? (
+            <>
+              <p className="text-2xl font-black text-[#10446C] leading-tight">
+                £ {parseFloat(price).toFixed(2)}
+              </p>
+              <p className="text-xs text-gray-500 font-medium mt-0.5">
+                a month
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-gray-400 italic">Price unavailable</p>
+          )}
+        </div>
+      </div>
+
+      {/* ── Divider ── */}
+      <div className="border-t border-gray-100 mx-5" />
+
+      {/* ── Plan name ── */}
+      <div className="px-5 pt-3 pb-2">
+        <h3 className="text-base font-bold text-[#10446C]">{planName}</h3>
+      </div>
+
+      {/* ── Divider ── */}
+      <div className="border-t border-gray-100 mx-5" />
+
+      {/* ── Feature checklist ── */}
+      <div className="px-5 pt-3 pb-4 flex flex-col gap-2.5">
         {download && (
-          <div className="flex items-end gap-1.5">
-            <span className="text-5xl font-black text-[#10446C] leading-none tabular-nums">
-              {download}
-            </span>
-            <span className="text-sm font-semibold text-gray-500 mb-1.5">
-              Mbps
-              <br />
-              avg. download
+          <div className="flex items-center gap-2.5">
+            <span className="w-4 h-4 rounded border border-gray-300 shrink-0 bg-white" />
+            <span className="text-sm text-gray-700">
+              {downloadTimeLabel(download)} Movie Download time
             </span>
           </div>
         )}
-
-        {/* Stats row */}
-        <div className="grid grid-cols-2 gap-3">
-          {upload && (
-            <div className="bg-[#f5f0ff] rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-medium mb-0.5">Upload</p>
-              <p className="text-base font-bold text-gray-800">{upload} Mbps</p>
-            </div>
-          )}
-          {minSpeed && (
-            <div className="bg-[#f5f0ff] rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-medium mb-0.5">
-                Min. guaranteed
-              </p>
-              <p className="text-base font-bold text-gray-800">
-                {minSpeed} Mbps
-              </p>
-            </div>
-          )}
-          {download && (
-            <div className="bg-[#f5f0ff] rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-medium mb-0.5">
-                HD film in
-              </p>
-              <p className="text-base font-bold text-gray-800">
-                {downloadTimeLabel(download)}
-              </p>
-            </div>
-          )}
-          {download && (
-            <div className="bg-[#f5f0ff] rounded-xl p-3">
-              <p className="text-xs text-gray-500 font-medium mb-0.5">
-                Devices
-              </p>
-              <p className="text-base font-bold text-gray-800">
-                {deviceLabel(download)}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Contract */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 mt-auto pt-2 border-t border-gray-100">
-          <svg
-            className="w-4 h-4 text-[#10446C] shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <span>{contractMonths}-month contract</span>
-        </div>
-
-        {/* CTA */}
-        {available && (
-          <button
-            onClick={handleAddToCart}
-            className="mt-2 w-full py-3 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] active:scale-95 
-              text-white font-bold text-sm tracking-wide transition-all duration-200 shadow-md shadow-[#10446C]/25"
-          >
-            Get this deal
-          </button>
+        {download && (
+          <div className="flex items-center gap-2.5">
+            <svg
+              className="w-4 h-4 text-[#10446C] shrink-0"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <rect x="7" y="2" width="10" height="20" rx="2" ry="2" />
+            </svg>
+            <span className="text-sm text-gray-700">
+              {deviceLabel(download)}
+            </span>
+          </div>
         )}
+      </div>
+
+      {/* ── Contract ── */}
+      <div className="px-5 pb-4">
+        <p className="text-sm text-gray-700">
+          <span className="font-black">{contractMonths}-Months</span> contract
+        </p>
+      </div>
+
+      {/* ── CTA ── */}
+      <div className="px-5 pb-5 mt-auto">
+        <button
+          onClick={handleAddToCart}
+          className="w-full py-3 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] active:scale-95
+            text-white font-bold text-sm tracking-wide transition-all duration-200 shadow-md shadow-[#10446C]/20"
+        >
+          Checkout now
+        </button>
       </div>
     </div>
   );
@@ -250,7 +298,6 @@ function PlanCard({ item, contractType }: PlanCardProps) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function BroadbandPlans() {
-  // Step: "search" | "select" | "plans"
   const [step, setStep] = useState<"search" | "select" | "plans">("search");
 
   const [postcode, setPostcode] = useState("");
@@ -268,7 +315,6 @@ export default function BroadbandPlans() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Focus input on mount
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
@@ -348,7 +394,6 @@ export default function BroadbandPlans() {
     [],
   );
 
-  // Re-fetch plans when contract changes (address already selected)
   const handleContractChange = useCallback(
     (contract: ContractDuration) => {
       setContractType(contract);
@@ -359,26 +404,36 @@ export default function BroadbandPlans() {
     [selectedAddress, handleSelectAddress],
   );
 
-  // ── Filter plans by availability ─────────────────────────────────────────
+  // ── Filter ───────────────────────────────────────────────────────────────
+  //
+  // Matching is done server-side (get-products route) by comparing:
+  //   BT    → product.productOffering.id  e.g. "SOGEA 40_10M"
+  //   Zoiko → bt_plan_name                e.g. "SOGEA 40_10M"
+  //
+  // Items with zoikoPlan === null have no Zoiko match (ADSL, SOADSL, etc.)
+  // and are intentionally hidden from the UI.
 
-  const availablePlans = plans.filter(
+  const matchedPlans = plans.filter((p) => p.zoikoPlan !== null && p.zoikoPlan !== undefined);
+
+  const availablePlans = matchedPlans.filter(
     (p) =>
-      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") !== "N",
+      getChar(p.product?.productCharacteristic, "AVAILABILITY_FLAG") === "Y",
   );
-  const unavailablePlans = plans.filter(
+
+  const unavailablePlans = matchedPlans.filter(
     (p) =>
-      getChar(p.product.productCharacteristic, "AVAILABILITY_FLAG") === "N",
+      getChar(p.product?.productCharacteristic, "AVAILABILITY_FLAG") !== "Y",
   );
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-[#faf8ff] font-sans py-4">
+
       {/* ── Top bar ── */}
       <header className="max-w-2xl mx-auto rounded-2xl bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            {/* BT-style logo mark */}
             <div className="w-8 h-8 rounded-lg bg-[#10446C] flex items-center justify-center">
               <span className="text-white text-xs font-black tracking-tight">
                 BT
@@ -411,7 +466,9 @@ export default function BroadbandPlans() {
                 >
                   {label}
                 </span>
-                {i < arr.length - 1 && <span className="text-gray-300">›</span>}
+                {i < arr.length - 1 && (
+                  <span className="text-gray-300">›</span>
+                )}
               </span>
             ))}
           </nav>
@@ -419,6 +476,7 @@ export default function BroadbandPlans() {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-10">
+
         {/* ────────────────── STEP 1: Postcode ────────────────── */}
         {step === "search" && (
           <div className="flex flex-col items-center text-center gap-8 py-12">
@@ -445,7 +503,7 @@ export default function BroadbandPlans() {
                 maxLength={10}
                 required
                 disabled={loadingAddresses}
-                className="flex-1 px-5 py-3.5 rounded-xl border-2 border-gray-200 focus:border-[#10446C] focus:ring-2 focus:ring-[#10446C]/30 
+                className="flex-1 px-5 py-3.5 rounded-xl border-2 border-gray-200 focus:border-[#10446C] focus:ring-2 focus:ring-[#10446C]/30
                   outline-none text-base font-semibold tracking-widest text-gray-900 bg-white
                   placeholder:tracking-normal placeholder:font-normal placeholder:text-gray-400
                   transition-colors disabled:opacity-50"
@@ -453,7 +511,7 @@ export default function BroadbandPlans() {
               <button
                 type="submit"
                 disabled={loadingAddresses || !postcode.trim()}
-                className="px-6 py-3.5 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] text-white 
+                className="px-6 py-3.5 rounded-xl bg-[#10446C] hover:bg-[#0d3a5a] text-white
                   font-bold text-sm tracking-wide transition-all duration-200 shadow-lg shadow-[#10446C]/30
                   disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 flex items-center gap-2 justify-center"
               >
@@ -497,46 +555,17 @@ export default function BroadbandPlans() {
                 <p className="text-gray-500 text-sm">
                   {addresses.length} address
                   {addresses.length !== 1 ? "es" : ""} found for{" "}
-                  <span className="font-semibold text-gray-700">
-                    {postcode}
-                  </span>
+                  <span className="font-semibold text-gray-700">{postcode}</span>
                 </p>
               </div>
             </div>
-
-            {/* Contract picker — choose before address so plans load correctly */}
-            {/* <div className="bg-white border border-gray-200 rounded-2xl p-4">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-3">
-                Contract duration
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                {(
-                  Object.entries(CONTRACT_LABELS) as [
-                    ContractDuration,
-                    string
-                  ][]
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    onClick={() => setContractType(key)}
-                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ${
-                      contractType === key
-                        ? "bg-[#10446C] text-white shadow-md shadow-[#10446C]/25"
-                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div> */}
 
             <div className="flex flex-col gap-2">
               {addresses.map((addr) => (
                 <button
                   key={addr.id}
                   onClick={() => handleSelectAddress(addr, contractType)}
-                  className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C] 
+                  className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C]
                     rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
                 >
                   <div className="flex items-center justify-between">
@@ -548,7 +577,7 @@ export default function BroadbandPlans() {
                         {[addr.city, addr.postcode].filter(Boolean).join(", ")}
                       </p>
                     </div>
-                    <span className="text-[#5514b4] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
+                    <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
                       →
                     </span>
                   </div>
@@ -567,6 +596,7 @@ export default function BroadbandPlans() {
         {/* ────────────────── STEP 3: Plans ────────────────── */}
         {step === "plans" && (
           <div className="flex flex-col gap-8">
+
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-start gap-4">
               <button
@@ -609,9 +639,6 @@ export default function BroadbandPlans() {
                       {[selectedAddress.city, selectedAddress.postcode]
                         .filter(Boolean)
                         .join(", ")}
-                    </span>
-                    <span className="text-gray-400 text-xs font-mono">
-                      ({selectedAddress.id})
                     </span>
                   </div>
                 )}
@@ -658,8 +685,8 @@ export default function BroadbandPlans() {
               </p>
             )}
 
-            {/* Plans grid */}
-            {!loadingPlans && !error && plans.length > 0 && (
+            {/* Plans grid — only Zoiko-matched plans shown */}
+            {!loadingPlans && !error && matchedPlans.length > 0 && (
               <>
                 {availablePlans.length > 0 && (
                   <section>
@@ -686,11 +713,17 @@ export default function BroadbandPlans() {
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                       {unavailablePlans.map((item) => (
-                        <PlanCard
-                          key={item.id}
-                          item={item}
-                          contractType={contractType}
-                        />
+                        <div key={item.id} className="relative">
+                          {/* Unavailable overlay */}
+                          <div className="absolute inset-0 bg-white/70 z-10 rounded-2xl flex items-center justify-center">
+                            <span className="text-xs font-semibold bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-full shadow-sm">
+                              Not available at your address
+                            </span>
+                          </div>
+                          <div className="opacity-50 pointer-events-none">
+                            <PlanCard item={item} contractType={contractType} />
+                          </div>
+                        </div>
                       ))}
                     </div>
                   </section>
@@ -698,8 +731,8 @@ export default function BroadbandPlans() {
               </>
             )}
 
-            {/* No plans */}
-            {!loadingPlans && !error && plans.length === 0 && (
+            {/* No matched plans at all */}
+            {!loadingPlans && !error && matchedPlans.length === 0 && (
               <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
                 <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center text-3xl">
                   📡
@@ -709,13 +742,13 @@ export default function BroadbandPlans() {
                     No plans found
                   </p>
                   <p className="text-gray-500 text-sm mt-1 max-w-xs mx-auto">
-                    We couldn't find any broadband plans for this address and
-                    contract duration.
+                    We couldn&apos;t find any broadband plans for this address
+                    and contract duration.
                   </p>
                 </div>
                 <button
                   onClick={() => setStep("select")}
-                  className="mt-2 px-5 py-2.5 rounded-xl border-2 border-[#10446C] text-[#10446C] 
+                  className="mt-2 px-5 py-2.5 rounded-xl border-2 border-[#10446C] text-[#10446C]
                     font-semibold text-sm hover:bg-[#10446C] hover:text-white transition-all duration-200"
                 >
                   Try a different address
