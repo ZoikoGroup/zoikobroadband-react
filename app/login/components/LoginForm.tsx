@@ -9,6 +9,8 @@ type Props = {
   setActiveTab: (tab: Tab) => void;
 };
 
+const API_URL =  "process.env.NEXT_PUBLIC_API_URL";
+
 export default function LoginForm({ setActiveTab }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,7 +21,7 @@ export default function LoginForm({ setActiveTab }: Props) {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
+      const res = await fetch(`${API_URL}/api/accounts/login/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -3,6 +3,8 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
+const API_URL =  "process.env.NEXT_PUBLIC_API_URL";
+
 export default function RegisterForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -14,7 +16,7 @@ export default function RegisterForm() {
   const handleRegister = async () => {
     setLoading(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
+      const res = await fetch(`${API_URL}/api/accounts/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

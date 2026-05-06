@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
+const API_URL =  "process.env.NEXT_PUBLIC_API_URL";
 export default function ResetPassword() {
     const router = useRouter();
     const params = useParams();
@@ -29,7 +30,7 @@ export default function ResetPassword() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/accounts/reset-password/${uid}/${token}/`,
+        `${API_URL}/api/accounts/reset-password/${uid}/${token}/`,
         {
           method: "POST",
           headers: {
