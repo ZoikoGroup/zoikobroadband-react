@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
-const API_URL =  "process.env.NEXT_PUBLIC_API_URL";
+const API_URL =  "process.env.NEXT_PUBLIC_API_BASE_URL";
 export default function ResetPassword() {
     const router = useRouter();
     const params = useParams();

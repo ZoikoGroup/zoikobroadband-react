@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 
-const API_URL =  "process.env.NEXT_PUBLIC_API_URL";
+const API_URL =  "process.env.NEXT_PUBLIC_API_BASE_URL";
 
 export default function RegisterForm() {
   const [username, setUsername] = useState("");
