@@ -2,11 +2,13 @@
 import React, { useState }  from "react";
 import Link from "next/link";
 
+const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function ResetPasswordForm() {
   const [email, setEmail] = useState("");
   const handleForgotPassword = async () => {
   try {
-    const res = await fetch("http://127.0.0.1:8000/api/accounts/forgot-password/", {
+    const res = await fetch(`${API_URL}/api/accounts/forgot-password/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
