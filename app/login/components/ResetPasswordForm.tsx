@@ -2,7 +2,7 @@
 import React, { useState }  from "react";
 import Link from "next/link";
 
-const API_URL =  "process.env.NEXT_PUBLIC_API_BASE_URL";
+const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ResetPasswordForm() {
   const [email, setEmail] = useState("");

@@ -9,7 +9,7 @@ type Props = {
   setActiveTab: (tab: Tab) => void;
 };
 
-const API_URL =  "process.env.NEXT_PUBLIC_API_BASE_URL";
+const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function LoginForm({ setActiveTab }: Props) {
   const [email, setEmail] = useState("");
