@@ -1,9 +1,59 @@
-import React from "react";
+"use client";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import toast from "react-hot-toast";
 
 export default function RegisterForm() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleRegister = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Frontend-Origin": window.location.origin, // Send the frontend origin for CORS validation
+        },
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          password2: confirmPassword,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error("Backend Error:", data);
+        toast.error(JSON.stringify(data));
+        return;
+      }
+
+      toast.success("Registered successfully!");
+      setUsername("");
+      setEmail("");
+      setPassword("");
+      setConfirmPassword("");
+
+      // ONLY redirect on success
+      router.push("/login");
+    } catch (error) {
+      console.error(error);
+      toast.error("Server error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="w-full dark:bg-gray-950 dark:text-white">
-      
       {/* Header */}
       <header className="mb-6">
         <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
@@ -16,8 +66,13 @@ export default function RegisterForm() {
       </header>
 
       {/* Form */}
-      <form className="flex flex-col gap-5">
-        
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleRegister();
+        }}
+        className="flex flex-col gap-5"
+      >
         {/* Username */}
         <div>
           <label
@@ -33,6 +88,10 @@ export default function RegisterForm() {
             autoComplete="username"
             placeholder="Choose a username"
             required
+            value={username}
+            onChange={(e) => {
+              setUsername(e.target.value);
+            }}
             className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
@@ -57,6 +116,8 @@ export default function RegisterForm() {
             className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
@@ -75,6 +136,8 @@ export default function RegisterForm() {
             autoComplete="new-password"
             placeholder="Create a strong password"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
@@ -96,6 +159,8 @@ export default function RegisterForm() {
             autoComplete="new-password"
             placeholder="Re-enter your password"
             required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
@@ -109,7 +174,7 @@ export default function RegisterForm() {
                      hover:bg-[#0d3555] transition
                      dark:bg-blue-600 dark:hover:bg-blue-700"
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
 
@@ -123,7 +188,6 @@ export default function RegisterForm() {
           Sign In
         </a>
       </footer>
-
     </section>
   );
 }

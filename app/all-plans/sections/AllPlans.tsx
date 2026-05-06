@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useCart } from "@/app/context/CartContext";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -125,6 +126,20 @@ function PlanCard({ plan, selectedVariationId, onSelectVariation }: PlanCardProp
   const price = parseFloat(selectedVariation.price).toFixed(2);
   const speed = parseSpeed(plan.bt_plan_name);
   const features = getFeatures(plan);
+  const {addToCart} = useCart();
+
+  const handleCart = () => {
+    // ensure the object passed to addToCart contains expected fields (e.g. price, speed)
+    const cartItem = {
+      id: `${plan.id}-${selectedVariation?.id}`,
+      name: `${plan.name} - ${selectedVariation.duration_display}`,
+      price: parseFloat(price) || 0,  
+      speed: speed,
+      variation: selectedVariation.duration_display,
+    };
+    addToCart(cartItem);
+    alert(`Added to cart: ${cartItem.name} at £${cartItem.price}/month`);
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 flex flex-col justify-between hover:shadow-md transition">
@@ -177,7 +192,9 @@ function PlanCard({ plan, selectedVariationId, onSelectVariation }: PlanCardProp
       </ul>
 
       {/* CTA */}
-      <button className="mt-6 bg-[#F6C140] text-[#10446C] py-2 rounded-md font-semibold hover:bg-[#eab530] transition">
+      <button
+       onClick={handleCart}
+        className="mt-6 bg-[#F6C140] text-[#10446C] py-2 rounded-md font-semibold hover:bg-[#eab530] transition">
         Choose This Package
       </button>
     </div>

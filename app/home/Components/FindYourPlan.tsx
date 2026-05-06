@@ -22,7 +22,7 @@ export default function FindYourPlan() {
           <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* CARD 1 */}
             <div
-              className="group border-2 border-[#F5C241] rounded-3xl p-6 flex flex-col items-center
+              className="group border-2 border-[#F5C241] rounded-3xl p-3 md:p-6 flex flex-col items-center
         min-h-105 hover:shadow-xl transition-all duration-300 dark:bg-gray-950  dark:text-white
 "
             >
@@ -47,7 +47,7 @@ export default function FindYourPlan() {
                 ].map((item) => (
                   <button
                     key={item}
-                    className="w-full py-3 rounded-xl border-2 dark:bg-gray-950  dark:text-white
+                    className="w-full py-3 px-1 rounded-xl border-2 dark:bg-gray-950  dark:text-white
  border-gray-200 bg-white
                 hover:border-[#10446C] hover:bg-[#F0F6FF] dark:hover:bg-teal-900
                 transition-all text-sm"
@@ -60,7 +60,7 @@ export default function FindYourPlan() {
 
             {/* CARD 2 */}
             <div
-              className="border-2 border-[#F5C241] rounded-3xl p-6 flex flex-col items-center
+              className="border-2 border-[#F5C241] rounded-3xl p-3 md:p-6 flex flex-col items-center
         min-h-105 hover:shadow-xl transition-all duration-300"
             >
               <div
@@ -99,7 +99,7 @@ export default function FindYourPlan() {
 
             {/* CARD 3 – RECOMMENDED */}
             <div
-              className="border-2 border-gray-200 rounded-3xl p-6 flex flex-col items-center
+              className="border-2 border-gray-200 rounded-3xl p-3 md:p-6 flex flex-col items-center
         min-h-105 hover:shadow-xl transition-all duration-300"
             >
               <div
@@ -114,7 +114,7 @@ export default function FindYourPlan() {
                 Your perfect match
               </h3>
 
-              <div className="bg-[#0F3D5E] text-white rounded-2xl p-6 text-center flex flex-col gap-4 w-full flex-1 justify-between">
+              <div className="bg-[#0F3D5E] text-white rounded-2xl p-3 md:p-6 text-center flex flex-col gap-4 w-full flex-1 justify-between">
                 <div>
                   <p className="text-[#F5C241] font-semibold">Recommended:</p>
                   <h4 className="text-xl font-bold mt-1">Fibre Plus 67Mb</h4>
@@ -126,7 +126,7 @@ export default function FindYourPlan() {
 
                 <Link
                   href="/fibre-packages"
-                  className="bg-[#F5C241] text-[#10446C] py-3 rounded-full font-semibold
+                  className="bg-[#F5C241] text-sm md:text-base text-[#10446C] py-3 px-2 rounded-full font-semibold
             hover:scale-105 transition-transform"
                 >
                   View This Plan

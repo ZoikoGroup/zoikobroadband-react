@@ -48,7 +48,7 @@ export default function FibrePackagesHero() {
         </p>
 
         {/* Postcode Form */}
-        <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10 dark:bg-gray-900 dark:text-white">
+        {/* <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-md px-6 py-6 mt-10 dark:bg-gray-900 dark:text-white">
          
             <label htmlFor="postcode" className="sr-only">
               Enter your postcode
@@ -71,7 +71,7 @@ export default function FibrePackagesHero() {
                 Enter your postcode
               </label>
           </div>
-        </div>
+        </div> */}
 
       </div>
     </section>

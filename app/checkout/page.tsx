@@ -1,11 +1,13 @@
 "use client";
 
 import { useCart } from "@/app/context/CartContext";
+import ProtectedRoute from '../Components/ProtectedRoute'
 
 export default function CheckoutPage() {
   const { cart, removeFromCart, clearCart } = useCart();
 
   return (
+    <ProtectedRoute>
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white text-center">
         Checkout
@@ -46,5 +48,6 @@ export default function CheckoutPage() {
         </>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

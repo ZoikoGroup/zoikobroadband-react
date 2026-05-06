@@ -9,6 +9,7 @@ export default function Footer() {
       title: "Zoiko Broadband",
       links: [
         { name: "Broadband Plans", href: "/fibre-packages" },
+        { name: "Business Broadband", href: "/business-broadband" },
         { name: "Digital Lines Options", href: "/digital-lines" },
         { name: "Bundles & Save", href: "/bundles" },
         { name: "Check my postcode", href: "/check-my-postcode" },
@@ -24,6 +25,7 @@ export default function Footer() {
         { name: "Manage My Account", href: "/dashboard" },
         { name: "Payments & Billing", href: "/payments-billing" },
         { name: "Report a Fault", href: "/report-a-fault" },
+        { name: "Contact Us", href: "/contact-us" }
       ],
     },
     {
