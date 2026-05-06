@@ -172,7 +172,7 @@ function PlanCard({ item, contractType }: PlanCardProps) {
       name: planName,
       price: parseFloat(price ?? "0"),
       speed: download || "Unknown",
-      validity: `${contractMonths}-month contract`,
+      validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
     });
   };
