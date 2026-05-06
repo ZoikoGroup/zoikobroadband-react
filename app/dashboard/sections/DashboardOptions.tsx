@@ -159,7 +159,7 @@ export default function DashboardOptions() {
       <button
         key={tab.id}
         onClick={() => setActiveTab(tab.id)}
-        className={`px-1 md:px-4 py-2 md:py-5 text-xs md:text-base rounded-md font-medium md:font-bold transition whitespace-nowrap
+        className={`${tab.style} px-1 md:px-4 py-2 md:py-5 text-[10px] md:text-base rounded-md font-semibold md:font-bold transition whitespace-wrap
         ${
           activeTab === tab.id
             ? "bg-[#fefbf4] dark:bg-gray-700 border-b-2 border-[#ffd300] text-[#10446C] dark:text-yellow-400"

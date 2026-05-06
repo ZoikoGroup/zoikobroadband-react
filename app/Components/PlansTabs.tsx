@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import Link from "next/link";
 interface Plan {
   title: string;
   speed: string;
@@ -166,7 +167,7 @@ export default function PlansTabs({ plans }: { plans: Plan[] }) {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={` dark:bg-gray-950  dark:text-white
- px-3 sm:px-4 md:px-6 py-2 sm:py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap shrink-0
+ px-1 sm:px-4 md:px-6 py-1 sm:py-2.5 md:py-3 rounded-full text-[10px] sm:text-xs md:text-sm font-medium transition-all whitespace-nowrap shrink-0
       ${
         activeTab === tab
           ? "bg-[#F5C241] text-[#10446C] shadow-sm"
@@ -231,19 +232,19 @@ dark:text-[#63a7db]
                   </div>
 
                   {/* Button */}
-                  <button className="mt-6 w-full py-3 rounded-full font-semibold bg-[#10446C] text-white hover:bg-[#0d3a5c] transition-colors">
+                  <Link href="/check-my-postcode" className="mt-6 w-full py-3 rounded-full text-center font-semibold bg-[#10446C] text-white hover:bg-[#0d3a5c] transition-colors">
                     Choose This Package
-                  </button>
+                  </Link>
                 </div>
               ))}
             </div>
 
             {/* View All Button */}
             <div className="mt-12 flex justify-center">
-              <button className="px-12 py-5 rounded-full border-2 dark:text-white
+              <Link href="/all-plans" className="px-12 py-3 rounded-full border-2 dark:text-white
  border-[#10446C] text-[#10446C] font-semibold hover:bg-[#10446C] hover:text-white transition-all">
                 View All
-              </button>
+              </Link>
             </div>
           </div>
         </section>

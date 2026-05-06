@@ -1,5 +1,14 @@
-import Link from "next/link";
+"use client";
+import BundleRequestModal from "@/app/Components/BundleRequestModal";
+import { useState } from "react";
 
+type Bundle = {
+  label: string;
+  // description: string;
+  // oldprice: string;
+  price: string;
+  // tags: string[];
+};
 const bundleServices = [
   {
     label: "Home Essentials",
@@ -39,6 +48,8 @@ const bundleServices = [
 ];
 
 export default function BundleBuilders() {
+  const [open, setOpen] = useState(false);
+  const [selectedBundle, setSelectedBundle] = useState<Bundle | null>(null);
   return (
     <>
       <section
@@ -91,13 +102,23 @@ export default function BundleBuilders() {
                 </p>
 
                 <button
+                  onClick={() => {
+                    setOpen(true);
+                    setSelectedBundle(item);
+                  }}
                   aria-label={`Add ${item.label} to bundle`}
                   className="bg-[#10446C] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#0d3a5a] transition"
                 >
                   Choose Bundle
                 </button>
+                
               </article>
             ))}
+            <BundleRequestModal
+              open={open}
+              onClose={() => setOpen(false)}
+              bundle={selectedBundle}
+              />
           </div>
         </div>
       </section>

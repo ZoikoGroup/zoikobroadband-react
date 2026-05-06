@@ -27,8 +27,8 @@ export default function page() {
           </div>
 
           {/* RIGHT FORM */}
-          <div className="p-4 ">
-             <div className="flex justify-center">
+          <div className="px-2 md:px-4 py-6 ">
+            {/* <div className="flex justify-center">
             <Image
               src="/ZBLogo.svg"
               alt="Customers enjoying reliable broadband connectivity"
@@ -37,12 +37,12 @@ export default function page() {
               priority
               className="w-50 h-40"
             />
-          </div>
+          </div> */}
             {/* tabs */}
-            <div className="flex items-center  gap-6 mb-2 border-b-2 border-gray-200">
+            <div className="flex items-center gap-4 md:gap-6 mb-2 border-b-2 border-gray-200">
               <button
                 onClick={() => setActiveTab("login")}
-                className={`pb-1 font-semibold ${
+                className={`pb-1 font-semibold text-sm md:text-base ${
                   activeTab === "login"
                     ? "border-b-2 rounded-sm border-[#10446C]"
                     : "text-gray-500"
@@ -53,7 +53,7 @@ export default function page() {
               </button>
               <button
                 onClick={() => setActiveTab("register")}
-                className={`pb-1 font-semibold ${
+                className={`pb-1 font-semibold text-sm md:text-base ${
                   activeTab === "register"
                     ? "border-b-2 rounded-sm border-[#10446C]"
                     : "text-gray-500"
@@ -63,7 +63,7 @@ export default function page() {
               </button>
               <button
                 onClick={() => setActiveTab("reset-password")}
-                className={`pb-1 font-semibold ${
+                className={`pb-1 font-semibold text-sm md:text-base ${
                   activeTab === "reset-password"
                     ? "border-b-2 rounded-sm border-[#10446C]"
                     : "text-gray-500"

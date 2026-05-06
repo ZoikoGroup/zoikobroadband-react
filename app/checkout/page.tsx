@@ -1342,5 +1342,6 @@ const [orderError, setOrderError] = useState("");
 
 
     </div>
+    </ProtectedRoute>
   );
 }
