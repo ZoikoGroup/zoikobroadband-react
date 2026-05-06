@@ -1,7 +1,5 @@
 "use client";
 
-import React, { useState, useRef, type KeyboardEvent, type FormEvent } from "react";
-import BroadbandPlans from "../../Components/Broadbandplans";
 interface FormattedAddress {
   id: string;
   display: string;
@@ -24,13 +22,12 @@ interface SearchResponse {
 }
 
 export default function FibrePackagesHero() {
-  
   return (
     <section
       aria-labelledby="fibre-broadband-heading"
       className="w-full bg-[#10446C] dark:bg-gray-950 dark:text-white py-16 px-4 sm:px-6 lg:px-8 lg:py-20"
     >
-      <div className="max-w-6xl mx-auto text-white text-center dark:text-white">
+      <div className="max-w-6xl mx-auto text-white text-center">
 
         {/* Heading */}
         <h1
@@ -41,17 +38,13 @@ export default function FibrePackagesHero() {
         </h1>
 
         <p className="mt-4 text-base md:text-xl lg:text-2xl font-semibold text-white/90 max-w-4xl mx-auto">
-          From everyday browsing to gigabit power — there's a Zoiko plan for
-          everyone.
+          From everyday browsing to gigabit power — there's a Zoiko plan for everyone.
         </p>
 
         {/* Description */}
         <p className="mt-4 text-base md:text-lg text-white/90 leading-relaxed max-w-5xl mx-auto">
-          At Zoiko Broadband, we offer a range of full fibre and SOGEA
-          broadband packages designed to suit every lifestyle, household size,
-          and digital needs. Whether you're after basic connectivity or
-          ultra-high-speed performance, all our plans come with clear pricing,
-          UK-based support, and future-ready fibre.
+          At Zoiko Broadband, we offer a range of full fibre and SOGEA broadband packages designed to suit every lifestyle, household size, and digital needs.
+          Whether you're after basic connectivity or ultra-high-speed performance, all our plans come with clear pricing, UK-based support, and future-ready fibre.
         </p>
 
         {/* Postcode Form */}
@@ -81,7 +74,6 @@ export default function FibrePackagesHero() {
         </div> */}
 
       </div>
-      
     </section>
   );
 }
