@@ -716,57 +716,57 @@ export default function CheckoutPage() {
               <div className="divide-y divide-gray-50">
                 {cart.map((item, idx) => (
                   <div key={idx} className="px-6 py-4">
-    <div className="flex items-start gap-4">
-      {/* 📦 Plan Information */}
-      <div className="flex-1 min-w-0">
-        <p className="font-bold text-gray-900 text-lg leading-tight mb-1">
-          {item.title}
-        </p>
-        
-        <div className="flex flex-wrap items-center gap-3 mb-2">
-          {/* ⚡ Speed Badge */}
-          {item.speed && (
-            <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              {item.speed}
-            </span>
-          )}
-          {/* 🗓️ Validity Label */}
-          {item.validity && (
-            <span className="text-xs text-gray-500 font-medium">
-              Contract: {item.validity}
-            </span>
-          )}
-        </div>
+                    <div className="flex items-start gap-4">
+                      {/* 📦 Plan Information */}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-gray-900 text-lg leading-tight mb-1">
+                          {item.title}
+                        </p>
+                        
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          {/* ⚡ Speed Badge */}
+                          {item.speed && (
+                            <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                              {item.speed}
+                            </span>
+                          )}
+                          {/* 🗓️ Validity Label */}
+                          {item.validity && (
+                            <span className="text-xs text-gray-500 font-medium">
+                              Contract: {item.validity}
+                            </span>
+                          )}
+                        </div>
 
-        {/* 📍 Service Address */}
-        {item.serviceAddress && (
-          <p className="text-xs text-gray-400 flex items-start gap-1">
-            <svg className="w-3 h-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            {item.serviceAddress}
-          </p>
-        )}
-      </div>
+                        {/* 📍 Service Address */}
+                        {item.serviceAddress && (
+                          <p className="text-xs text-gray-400 flex items-start gap-1">
+                            <svg className="w-3 h-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            {item.serviceAddress}
+                          </p>
+                        )}
+                      </div>
 
-      {/* 💰 Price Display */}
-      <div className="text-right shrink-0">
-        <p className="font-bold text-gray-900 text-lg">
-          ${item.price.toFixed(2)}
-        </p>
-        <button
-          onClick={() => handleRemove(idx)}
-          className="text-xs text-red-500 hover:underline mt-1"
-        >
-          Remove
-        </button>
-      </div>
-    </div>
-  </div>
+                      {/* 💰 Price Display */}
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-gray-900 text-lg">
+                          ${item.price.toFixed(2)}
+                        </p>
+                        <button
+                          onClick={() => handleRemove(idx)}
+                          className="text-xs text-red-500 hover:underline mt-1"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -786,7 +786,7 @@ export default function CheckoutPage() {
                 <button
                   onClick={handleApplyCoupon}
                   disabled={loading}
-                  className="px-4 flex-row md:flex-col py-2.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                  className="px-4 flex-row md:flex-col py-2.5 rounded-lg bg-[#10446c] hover:bg-[#0d3a5a] text-white text-sm font-semibold transition-colors disabled:opacity-50"
                 >
                   {loading ? "Applying…" : "Apply"}
                 </button>
@@ -806,7 +806,7 @@ export default function CheckoutPage() {
                 </p>
               )}
               {!isLoggedIn && (
-                <p className="mt-2 text-xs text-red-400">
+                <p className="mt-2 text-xs text-[#10446c] dark:text-[#0d3a5a]">
                   You need to be logged in to apply a coupon.
                 </p>
               )}
@@ -945,7 +945,7 @@ export default function CheckoutPage() {
               <button
                 onClick={handlePlaceOrderStripe}
                 disabled={loading || !clientSecret}
-                className="w-full mt-5 py-3.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full mt-5 py-3.5 rounded-xl bg-[#10446c] hover:bg-[#0d3a5a] text-white font-bold text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
