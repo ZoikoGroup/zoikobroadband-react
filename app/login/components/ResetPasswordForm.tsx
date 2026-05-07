@@ -1,7 +1,31 @@
-import React from "react";
+"use client";
+import React, { useState }  from "react";
 import Link from "next/link";
 
+const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function ResetPasswordForm() {
+  const [email, setEmail] = useState("");
+  const handleForgotPassword = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/accounts/forgot-password/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Frontend-Origin": window.location.origin,
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await res.json();
+
+    alert(data.message || data.error);
+
+  } catch (err) {
+    alert("Something went wrong");
+  }
+};
+
   return (
     <section
       className="w-full dark:bg-gray-950 dark:text-white"
@@ -21,7 +45,12 @@ export default function ResetPasswordForm() {
       </header>
 
       {/* Form */}
-      <form className="flex flex-col gap-5">
+      <form 
+        onSubmit={(e) => {
+          e.preventDefault();
+          handleForgotPassword();
+        }}
+      className="flex flex-col gap-5">
         <div>
           <label
             htmlFor="email"
@@ -39,6 +68,8 @@ export default function ResetPasswordForm() {
             className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 

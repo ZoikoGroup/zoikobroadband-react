@@ -2,6 +2,19 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
+type FormattedAddress = {
+  id: string;
+  display: string;
+  streetNr: string;
+  streetName: string;
+  city: string;
+  postcode: string;
+  districtCode: string;
+  uprn: string;
+  exchangeGroupCode: string;
+  qualifier: string;
+};
+
 //  Define FULL plan structure (IMPORTANT)
 type Plan = {
   id: string;
@@ -10,6 +23,7 @@ type Plan = {
   speed: string;
   validity?: string;
   description?: string;
+  address?: FormattedAddress | null; // Store full address object or just display string
 };
 
 //  Context Type
@@ -43,6 +57,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
   //  Add plan (with full details)
   const addToCart = (plan: Plan) => {
+    setCart([]);
     setCart((prev) => {
       const exists = prev.find((item) => item.id === plan.id);
       if (exists) return prev;

@@ -4,13 +4,15 @@ import BroadbandSolutions from './components/BroadbandSolutions'
 import CheckYourPost from './components/CheckYourPost'
 import BenefitsOfZB from './components/BenefitsOfZB'
 import SpecialOffer from './components/SpecialOffer'
+import BroadbandPlans from '../Components/Broadbandplans'
 
 export default function page() {
   return (
     <div className="dark:bg-gray-950 ">
     <CheckMyPostHero/>
+    <BroadbandPlans/>
     <BroadbandSolutions/>
-    <CheckYourPost/>
+    {/* <CheckYourPost/> */}
     <BenefitsOfZB/>
     <SpecialOffer/>
     </div>

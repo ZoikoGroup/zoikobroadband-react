@@ -29,61 +29,29 @@ interface CategoryData {
 
 /** Raw shape coming from localStorage (as stored by the plan-selection page) */
 interface RawCartItem {
-  planId?: number | string | null;
-  bqPlanID?: string | null;
-  planSlug?: string | null;
-  planName?: string | null;
-  planTitle?: string | null;     // legacy fallback
-  price?: string | number | null;
-  salePrice?: string | number | null;
-  finalPrice?: number | null;
-  durationDays?: number | null;
-  planDuration?: string | null;  // legacy fallback
-  shortDescription?: string | null;
-  isPopular?: boolean;
-  category?: CategoryData | null;
-  planType?: string | null;      // legacy fallback
-  features?: Feature[];
-  simType?: string | null;
-  setupType?: string | null;
-  imei?: string | null;
-  device?: unknown;
-  manufacturer?: string | null;
-  lteCompatible?: boolean | null;
-  fiveGCompatible?: boolean | null;
-  esimCompatible?: boolean | null;
-  lineType?: string | null;
-  type?: string | null;
-  qty?: number;
-  timestamp?: number;
-  formData?: {
-    priceQty?: number;
-    price?: number;
+  id: string | number;
+  name: string;
+  price: number | string;
+  speed?: string;
+  validity?: string;
+  description?: string;
+  address?: {
+    display: string;
+    city: string;
+    postcode: string;
+    [key: string]: any;
   };
-  [key: string]: unknown;
 }
 
 /** Normalised shape used throughout the component */
 interface CartItem {
-  planId: string | number | null;
-  bqPlanID: string | null;
-  planSlug: string | null;
-  planTitle: string;
-  planPrice: number;
-  planDuration: string;         // e.g. "30 Days"
-  lineType: string;
-  simType: string;              // "esim" | "psim" | "N/A"
-  planType: string;             // category slug, e.g. "prepaid-plans"
-  planCategory: string;         // category display name
-  shortDescription: string;
-  features: Feature[];
-  setupType: string;
-  imei: string | null;
-  type?: string;
-  formData: {
-    priceQty: number;
-    price: number;
-  };
+  id: string | number;
+  title: string;
+  price: number;
+  description: string;
+  validity: string;
+  speed: string;
+  serviceAddress?: string;
   _raw: RawCartItem;
 }
 
@@ -118,67 +86,16 @@ interface FormErrors {
 // ── Normalise a raw localStorage item into CartItem ───────────────────────────
 
 function normalizeCartItem(raw: RawCartItem): CartItem {
-  // Resolve price
-  const resolvePrice = (): number => {
-    if (typeof raw.finalPrice === "number" && Number.isFinite(raw.finalPrice)) return raw.finalPrice;
-    for (const key of ["salePrice", "price"] as const) {
-      const v = raw[key];
-      if (typeof v === "number" && Number.isFinite(v)) return v;
-      if (typeof v === "string") {
-        const n = parseFloat(v.replace(/[^0-9.-]+/g, ""));
-        if (Number.isFinite(n)) return n;
-      }
-    }
-    if (raw.formData?.price && Number.isFinite(Number(raw.formData.price))) return Number(raw.formData.price);
-    return 0;
-  };
-
-  // Resolve plan type / category slug
-  const resolveType = (): string => {
-    if (raw.category?.slug) return raw.category.slug;
-    if (typeof raw.planType === "string") return raw.planType;
-    return "";
-  };
-
-  // Resolve duration label
-  const resolveDuration = (): string => {
-    if (typeof raw.durationDays === "number") return `${raw.durationDays} Days`;
-    if (typeof raw.planDuration === "string" && raw.planDuration) return raw.planDuration;
-    return "30 Days";
-  };
-
-  // Resolve simType – normalise to lowercase
-  const resolveSimType = (): string => {
-    const s = (raw.simType ?? "N/A").toLowerCase();
-    if (s === "esim") return "eSIM";
-    if (s === "psim") return "pSIM";
-    return raw.simType ?? "N/A";
-  };
-
-  const price = resolvePrice();
-  const qty = Number(raw.formData?.priceQty ?? raw.qty ?? 1);
 
   return {
-    planId:          raw.planId ?? null,
-    bqPlanID:        raw.bqPlanID ?? null,
-    planSlug:        raw.planSlug ?? null,
-    planTitle:       (raw.planName ?? raw.planTitle ?? raw.planSlug ?? "Unnamed Plan") as string,
-    planPrice:       price,
-    planDuration:    resolveDuration(),
-    lineType:        (raw.lineType ?? "device") as string,
-    simType:         resolveSimType(),
-    planType:        resolveType(),
-    planCategory:    raw.category?.name ?? "",
-    shortDescription: (raw.shortDescription ?? "") as string,
-    features:        Array.isArray(raw.features) ? raw.features : [],
-    setupType:       (raw.setupType ?? "new-sim") as string,
-    imei:            raw.imei ?? null,
-    type:            raw.type as string | undefined,
-    formData: {
-      priceQty: qty,
-      price,
-    },
-    _raw: raw,
+    id:          raw.id,
+    title:       raw.name ?? "Unnamed Service",
+    price:       typeof raw.price === "number" ? raw.price : parseFloat(String(raw.price)) || 0,
+    description: raw.description ?? "",
+    validity:    raw.validity ? `${raw.validity} Months` : "",
+    speed:       raw.speed ? `${raw.speed} Mbps` : "",
+    serviceAddress: raw.address?.display ?? "",
+    _raw:        raw,
   };
 }
 
@@ -402,7 +319,7 @@ const CategoryBadge = ({ categoryName, slug }: { categoryName: string; slug: str
 export default function CheckoutPage() {
   const stripeFormRef = useRef<StripePaymentFormRef>(null);
   const [showOrderErrorPopup, setShowOrderErrorPopup] = useState(false);
-const [orderError, setOrderError] = useState("");
+  const [orderError, setOrderError] = useState("");
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
 
   const [clientSecret, setClientSecret] = useState("");
@@ -410,11 +327,7 @@ const [orderError, setOrderError] = useState("");
   //   submitPayment: () => Promise<{ success: boolean; error?: string }>;
   // }>(null);
 
-  const shippingOptions: ShippingOption[] = [
-    { label: "Standard (3-5 Days)", value: 9.99 },
-    { label: "Expedited (2-3 Days)", value: 14.99 },
-    { label: "Overnight", value: 24.99 },
-  ];
+
 
   const [showThankYou, setShowThankYou] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -427,8 +340,7 @@ const [orderError, setOrderError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
-  const [shippingFee, setShippingFee] = useState(0);
-  const [selectedShippingOption, setSelectedShippingOption] = useState<ShippingOption>(shippingOptions[0]);
+  
 
   const emptyAddress: Address = {
     firstName: "",
@@ -452,7 +364,7 @@ const [orderError, setOrderError] = useState("");
   useEffect(() => {
     try {
       const storedCart = JSON.parse(
-        localStorage.getItem("driverx_checkout") ?? "[]"
+        localStorage.getItem("cart") ?? "[]"
       ) as RawCartItem[];
       const normalized: CartItem[] = (Array.isArray(storedCart) ? storedCart : []).map(
         normalizeCartItem
@@ -472,40 +384,28 @@ const [orderError, setOrderError] = useState("");
    * Physical SIM items require shipping.
    * Triggered by:  simType === "pSIM"  OR  type === "device"
    */
-  const hasShippingItem = cart.some(
-    (item) => item.simType.toLowerCase() === "psim" || item.type === "device"
-  );
-
+ 
   /**
    * Activation fee applies to prepaid-plan eSIM items only.
    * (pSIM activation is handled differently / already priced in.)
    */
-  const prepaidEsimItems = cart.filter(
-    (item) =>
-      item.planType === "prepaid-plans" && item.simType.toLowerCase() === "esim"
-  );
+ 
 
-  const activationFeeTotal = prepaidEsimItems.reduce((acc, item) => {
-    const qty = Number(item.formData?.priceQty ?? 1);
-    return acc + ACTIVATION_FEE_PER_ESIM * qty;
-  }, 0);
+ 
 
   // ── Cart mutations ────────────────────────────────────────────────────────
 
   const handleQuantity = (index: number, delta: number) => {
   const newCart = [...cart];
-  const curQty = Number(newCart[index].formData?.priceQty || 1);
-  const newQty = Math.max(1, curQty + delta);
   
   newCart[index] = {
     ...newCart[index],
-    formData: { ...newCart[index].formData, priceQty: newQty },
-    _raw: { ...newCart[index]._raw, qty: newQty }, // ← ADD THIS
+    _raw: { ...newCart[index]._raw }, // ← ADD THIS
   };
   
   setCart(newCart);
   localStorage.setItem(
-    "driverx_checkout",
+    "cart",
     JSON.stringify(newCart.map((i) => i._raw))
   );
 };
@@ -514,7 +414,7 @@ const [orderError, setOrderError] = useState("");
     const newCart = [...cart];
     newCart.splice(index, 1);
     setCart(newCart);
-    localStorage.setItem("driverx_checkout", JSON.stringify(newCart.map((i) => i._raw)));
+    localStorage.setItem("cart", JSON.stringify(newCart.map((i) => i._raw)));
   };
 
   const handleClearCart = () => {
@@ -575,9 +475,7 @@ const [orderError, setOrderError] = useState("");
   // ── Totals ────────────────────────────────────────────────────────────────
 
   const subtotal = cart.reduce((acc, item) => {
-    const price = Number(item.planPrice ?? item.formData?.price ?? 0);
-    const qty = Number(item.formData?.priceQty ?? 1);
-    return acc + price * qty;
+    return acc + (item.price || 0);
   }, 0);
 
   const discountAmount = discountData
@@ -586,11 +484,9 @@ const [orderError, setOrderError] = useState("");
       : Number(discountData.discount)
     : 0;
 
-  useEffect(() => {
-    setShippingFee(hasShippingItem ? selectedShippingOption.value : 0);
-  }, [selectedShippingOption, hasShippingItem]);
 
-  const total = Math.max(subtotal + shippingFee + activationFeeTotal - discountAmount, 0);
+
+  const total = Math.max(subtotal - (discountAmount || 0), 0);
 
   // ── Create Stripe payment intent ──────────────────────────────────────────
 
@@ -602,7 +498,6 @@ const [orderError, setOrderError] = useState("");
         body: JSON.stringify({
           total,
           subtotal,
-          shippingFee,
           discountAmount,
           cart,
           billingAddress,
@@ -646,25 +541,22 @@ const [orderError, setOrderError] = useState("");
   };
 
   const buildProducts = () =>
-    cart.map((item) => ({
-      planId:       item.planId,
-      bqPlanID:     item.bqPlanID,
-      planSlug:     item.planSlug,
-      planTitle:    item.planTitle,
-      planCategory: item.planCategory,
-      planType:     item.planType,
-      simType:      item.simType,
-      setupType:    item.setupType,
-      imei:         item.imei,
-      lineType:     item.lineType,
-      duration:     item.planDuration,
-      features:     item.features,
-      quantity:     Number(item.formData?.priceQty ?? 1),
-      pricePerUnit: Number(item.planPrice ?? item.formData?.price ?? 0),
-      totalPrice:
-        Number(item.planPrice ?? item.formData?.price ?? 0) *
-        Number(item.formData?.priceQty ?? 1),
-    }));
+    cart.map((item) => {
+      // We ensure the price is a valid number first
+      const unitPrice = Number(item.price ?? 0);
+
+      return {
+        id: item.id,
+        name: item.title,
+        pricePerUnit: unitPrice,
+        quantity: 1, // Fixed at 1 as per your requirement
+        totalPrice: unitPrice, // No multiplication needed since qty is 1
+        description: item.description,
+        validity: item.validity,
+        speed: item.speed,
+        address: item.serviceAddress,
+      };
+  });
 
   // ── Place Order – Stripe ──────────────────────────────────────────────────
 
@@ -691,10 +583,9 @@ const [orderError, setOrderError] = useState("");
     const orderData = {
       billingAddress,
       shippingAddress: showShipping ? shippingAddress : billingAddress,
-      shippingOption: hasShippingItem ? { ...selectedShippingOption } : null,
       coupon: discountData ? { ...discountData } : null,
       cart: products,
-      totals: { subtotal, shipping: shippingFee, activationFee: activationFeeTotal, discount: discountAmount, total },
+      totals: { subtotal, discount: discountAmount, total },
       agreedToTerms: agreeTerms,
       paymentMethod: "stripe",
       createdAt: new Date().toISOString(),
@@ -825,111 +716,57 @@ const [orderError, setOrderError] = useState("");
               <div className="divide-y divide-gray-50">
                 {cart.map((item, idx) => (
                   <div key={idx} className="px-6 py-4">
-                    <div className="flex items-start gap-4">
-                      {/* Plan info */}
-                      <div className="flex-1 min-w-0">
-                        {/* Product name */}
-                        <p className="font-bold text-gray-900 text-base leading-tight mb-1.5">
-                          {item.planTitle}
-                        </p>
-                        {/* Category + SIM badges */}
-                        <div className="flex flex-wrap items-center gap-2 mb-1">
-                          {item.planCategory && (
-                            <CategoryBadge categoryName={item.planCategory} slug={item.planType} />
-                          )}
-                          <SimBadge simType={item.simType} />
-                        </div>
+    <div className="flex items-start gap-4">
+      {/* 📦 Plan Information */}
+      <div className="flex-1 min-w-0">
+        <p className="font-bold text-gray-900 text-lg leading-tight mb-1">
+          {item.title}
+        </p>
+        
+        <div className="flex flex-wrap items-center gap-3 mb-2">
+          {/* ⚡ Speed Badge */}
+          {item.speed && (
+            <span className="bg-blue-50 text-blue-700 text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              {item.speed}
+            </span>
+          )}
+          {/* 🗓️ Validity Label */}
+          {item.validity && (
+            <span className="text-xs text-gray-500 font-medium">
+              Contract: {item.validity}
+            </span>
+          )}
+        </div>
 
-                        {item.shortDescription && (
-                          <p className="text-xs text-gray-400 mb-2">{item.shortDescription}</p>
-                        )}
+        {/* 📍 Service Address */}
+        {item.serviceAddress && (
+          <p className="text-xs text-gray-400 flex items-start gap-1">
+            <svg className="w-3 h-3 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            {item.serviceAddress}
+          </p>
+        )}
+      </div>
 
-                        {/* Features list */}
-                        {item.features.length > 0 && (
-                          <ul className="space-y-0.5 mb-2">
-                            {item.features.map((f) => (
-                              <li key={f.id} className="flex items-start gap-1.5 text-xs text-gray-500">
-                                <svg className="w-3.5 h-3.5 text-green-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                </svg>
-                                {f.title}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          <span className="text-xs text-gray-400">
-                            Duration: <span className="font-medium text-gray-600">{item.planDuration}</span>
-                          </span>
-                          {item.setupType && (
-                            <span className="text-xs text-gray-400">
-                              Setup: <span className="font-medium text-gray-600 capitalize">{item.setupType.replace(/-/g, " ")}</span>
-                            </span>
-                          )}
-                          {item.imei && (
-                            <span className="text-xs text-gray-400">
-                              IMEI: <span className="font-medium text-gray-600">{item.imei}</span>
-                            </span>
-                          )}
-                        </div>
-
-                        {item.planType === "prepaid-plans" && item.simType.toLowerCase() === "esim" && (
-                          <span className="inline-block mt-2 text-xs bg-amber-100 text-amber-700 font-semibold px-2.5 py-0.5 rounded-full">
-                            + ${ACTIVATION_FEE_PER_ESIM.toFixed(2)} / eSIM Activation Fee
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Qty + price + remove */}
-                      <div className="flex flex-col items-end gap-2 shrink-0">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleQuantity(idx, -1)}
-                            disabled={loading}
-                            className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
-                          >
-                            −
-                          </button>
-                          <span className="w-6 text-center text-sm font-medium">
-                            {item.formData?.priceQty ?? 1}
-                          </span>
-                          <button
-                            onClick={() => handleQuantity(idx, 1)}
-                            disabled={loading}
-                            className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-600 hover:border-red-300 hover:text-red-500 transition-colors disabled:opacity-40"
-                          >
-                            +
-                          </button>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-gray-900 text-base">
-                            ${(
-                              Number(item.planPrice ?? item.formData?.price ?? 0) *
-                              Number(item.formData?.priceQty ?? 1)
-                            ).toFixed(2)}
-                          </p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            ${Number(item.planPrice ?? 0).toFixed(2)} / {item.planDuration}
-                          </p>
-                          {Number(item.formData?.priceQty ?? 1) > 1 && (
-                            <p className="text-xs text-gray-400">
-                              × {item.formData?.priceQty} units
-                            </p>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleRemove(idx)}
-                          disabled={loading}
-                          className="text-gray-300 hover:text-red-400 transition-colors disabled:opacity-40"
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+      {/* 💰 Price Display */}
+      <div className="text-right shrink-0">
+        <p className="font-bold text-gray-900 text-lg">
+          ${item.price.toFixed(2)}
+        </p>
+        <button
+          onClick={() => handleRemove(idx)}
+          className="text-xs text-red-500 hover:underline mt-1"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  </div>
                 ))}
               </div>
             </div>
@@ -1024,68 +861,21 @@ const [orderError, setOrderError] = useState("");
                 {cart.map((item, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-2 text-sm">
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{item.planTitle}</p>
-                      <p className="text-xs text-gray-400">
-                        {item.planCategory && <span>{item.planCategory} · </span>}
-                        {item.simType} · ×{item.formData?.priceQty ?? 1}
-                      </p>
+                      <p className="font-medium text-gray-900 truncate">{item.title}</p>
+                      {item.speed && (
+                        <span className="text-xs text-gray-500">
+                          Speed: {item.speed}
+                        </span>
+                      )}
                     </div>
                     <span className="font-semibold text-gray-900 shrink-0">
-                      ${(
-                        Number(item.planPrice ?? item.formData?.price ?? 0) *
-                        Number(item.formData?.priceQty ?? 1)
-                      ).toFixed(2)}
+                       ${item.price.toFixed(2)}
                     </span>
                   </div>
                 ))}
               </div>
 
-              {hasShippingItem && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Shipping Options
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-300 mb-2"
-                    value={selectedShippingOption.value}
-                    onChange={(e) => {
-                      const opt = shippingOptions.find(
-                        (o) => o.value === parseFloat(e.target.value)
-                      );
-                      if (opt) setSelectedShippingOption(opt);
-                    }}
-                  >
-                    {shippingOptions.map((o, i) => (
-                      <option key={i} value={o.value}>
-                        {o.label} — ${o.value}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Shipping</span>
-                    <span className="font-medium">${shippingFee.toFixed(2)}</span>
-                  </div>
-                </div>
-              )}
-
-              {activationFeeTotal > 0 &&
-                (() => {
-                  const qty = prepaidEsimItems.reduce(
-                    (a, i) => a + Number(i.formData?.priceQty ?? 1),
-                    0
-                  );
-                  return (
-                    <div className="flex justify-between text-sm mt-2">
-                      <span className="text-gray-500">
-                        Activation Fee{qty > 1 ? "s" : ""} ({qty} × $
-                        {ACTIVATION_FEE_PER_ESIM.toFixed(2)})
-                      </span>
-                      <span className="font-medium text-amber-600">
-                        +${activationFeeTotal.toFixed(2)}
-                      </span>
-                    </div>
-                  );
-                })()}
+            
 
               {discountData && (
                 <div className="flex justify-between text-sm mt-2">
@@ -1272,12 +1062,7 @@ const [orderError, setOrderError] = useState("");
               <span className="text-gray-500">Subtotal</span>
               <span className="font-semibold text-gray-800">${subtotal.toFixed(2)}</span>
             </div>
-            {shippingFee > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Shipping</span>
-                <span className="font-semibold text-gray-800">${shippingFee.toFixed(2)}</span>
-              </div>
-            )}
+            
             {discountAmount > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">Discount</span>
@@ -1342,5 +1127,6 @@ const [orderError, setOrderError] = useState("");
 
 
     </div>
+    // </ProtectedRoute>
   );
 }

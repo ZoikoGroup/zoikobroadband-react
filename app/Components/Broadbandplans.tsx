@@ -150,9 +150,10 @@ function Spinner({ size = 20 }: { size?: number }) {
 interface PlanCardProps {
   item: ProductOfferingQualificationItem;
   contractType: ContractDuration;
+  selectedAddress: FormattedAddress | null;
 }
 
-function PlanCard({ item, contractType }: PlanCardProps) {
+function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
   const chars = item.product?.productCharacteristic;
   const download = getChar(chars, "productAdvertisedDownloadSpeed");
   const upload = getChar(chars, "productAdvertisedUploadSpeed");
@@ -174,6 +175,7 @@ function PlanCard({ item, contractType }: PlanCardProps) {
       speed: download || "Unknown",
       validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
+      address: selectedAddress,
     });
   };
 
@@ -431,15 +433,15 @@ export default function BroadbandPlans() {
     <div className="min-h-screen bg-[#faf8ff] font-sans py-4">
 
       {/* ── Top bar ── */}
-      <header className="max-w-2xl mx-auto rounded-2xl bg-white border-b border-gray-100 sticky top-0 z-30 shadow-sm">
+      <header className="max-w-2xl mx-auto rounded-2xl bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-600 sticky top-0 z-30 shadow-sm">
         <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[#10446C] flex items-center justify-center">
-              <span className="text-white text-xs font-black tracking-tight">
+              <span className="text-white text-xs font-black dark:font-bold dark:text-white tracking-tight">
                 BT
               </span>
             </div>
-            <span className="font-bold text-gray-900 text-sm tracking-tight">
+            <span className="font-bold text-gray-900 dark:text-white text-sm tracking-tight">
               Broadband Deals
             </span>
           </div>
@@ -481,11 +483,11 @@ export default function BroadbandPlans() {
         {step === "search" && (
           <div className="flex flex-col items-center text-center gap-8 py-12">
             <div>
-              <h1 className="text-4xl sm:text-5xl font-black text-gray-900 tracking-tight mb-3">
+              <h1 className="text-4xl sm:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-3">
                 Find your{" "}
                 <span className="text-[#10446C]">broadband deals</span>
               </h1>
-              <p className="text-gray-500 text-lg max-w-md mx-auto">
+              <p className="text-gray-500 dark:text-gray-300 text-lg max-w-md mx-auto">
                 Enter your postcode to see which fibre plans are available at
                 your address.
               </p>
@@ -549,10 +551,10 @@ export default function BroadbandPlans() {
                 ←
               </button>
               <div>
-                <h2 className="text-2xl font-black text-gray-900">
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
                   Select your address
                 </h2>
-                <p className="text-gray-500 text-sm">
+                <p className="text-gray-500 dark:text-gray-300 text-sm">
                   {addresses.length} address
                   {addresses.length !== 1 ? "es" : ""} found for{" "}
                   <span className="font-semibold text-gray-700">{postcode}</span>
@@ -561,32 +563,60 @@ export default function BroadbandPlans() {
             </div>
 
             <div className="flex flex-col gap-2">
-              {addresses.map((addr) => (
+              {addresses.map((addr, index) => (
                 <button
-                  key={addr.id}
+                  key={addr.id || addr.uprn || `${addr.display}-${index}`}
                   onClick={() => handleSelectAddress(addr, contractType)}
                   className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C]
                     rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-semibold text-gray-900 group-hover:text-[#10446C] transition-colors">
+                      <p className="font-semibold text-gray-900 dark:text-white group-hover:text-[#10446C] dark:hover:text-white transition-colors">
                         {addr.display}
                       </p>
-                      <p className="text-sm text-gray-500 mt-0.5">
+                      <p className="text-sm text-gray-500 dark:text-gray-300 mt-0.5">
                         {[addr.city, addr.postcode].filter(Boolean).join(", ")}
                       </p>
                     </div>
-                    <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
-                      →
-                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {addr.qualifier && (
+                        addr.qualifier === "Gold" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                            style={{
+                              background: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                              color: "#7a4f00",
+                              border: "1px solid #e6b800",
+                              boxShadow: "0 1px 3px rgba(214,158,0,0.3)"
+                            }}>
+                            ★ Gold
+                          </span>
+                        ) : addr.qualifier === "Silver" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                            style={{
+                              background: "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                              color: "#4a4a4a",
+                              border: "1px solid #9e9e9e",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.15)"
+                            }}>
+                            ✦ Silver
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">( {addr.qualifier} )</span>
+                        )
+                      )}
+                      <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
+                        →
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
             </div>
 
             {error && (
-              <p className="text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm font-medium">
+              <p className="text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm font-medium dark:bg-red-900 dark:border-red-600 dark:text-red-300">
                 {error}
               </p>
             )}
@@ -610,11 +640,11 @@ export default function BroadbandPlans() {
                 ←
               </button>
               <div className="flex-1">
-                <h2 className="text-2xl font-black text-gray-900 mb-1">
+                <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
                   Available broadband plans
                 </h2>
                 {selectedAddress && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                     <svg
                       className="w-4 h-4 text-[#10446C] shrink-0"
                       fill="none"
@@ -647,7 +677,7 @@ export default function BroadbandPlans() {
 
             {/* Contract toggle */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-gray-600 mr-1">
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 mr-1">
                 Contract:
               </span>
               {(
@@ -659,8 +689,8 @@ export default function BroadbandPlans() {
                   disabled={loadingPlans}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-50 ${
                     contractType === key
-                      ? "bg-[#10446C] text-white shadow-md shadow-[#10446C]/25"
-                      : "bg-white border border-gray-200 text-gray-600 hover:border-[#10446C] hover:text-[#10446C]"
+                      ? "bg-[#10446C] text-white dark:bg-[#10446C] dark:text-white shadow-md shadow-[#10446C]/25"
+                      : "bg-white border border-gray-200 text-gray-600 hover:border-[#10446C] hover:text-[#10446C] dark:bg-gray-700 dark:text-gray-300 dark:hover:border-[#10446C] dark:hover:text-white"
                   }`}
                 >
                   {label}
@@ -672,7 +702,7 @@ export default function BroadbandPlans() {
             {loadingPlans && (
               <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <Spinner size={36} />
-                <p className="text-gray-500 font-medium">
+                <p className="text-gray-500 dark:text-gray-300 font-medium">
                   Checking available plans…
                 </p>
               </div>
@@ -700,6 +730,7 @@ export default function BroadbandPlans() {
                           key={item.id}
                           item={item}
                           contractType={contractType}
+                          selectedAddress={selectedAddress}
                         />
                       ))}
                     </div>
@@ -721,7 +752,7 @@ export default function BroadbandPlans() {
                             </span>
                           </div>
                           <div className="opacity-50 pointer-events-none">
-                            <PlanCard item={item} contractType={contractType} />
+                            <PlanCard item={item} contractType={contractType} selectedAddress={selectedAddress}/>
                           </div>
                         </div>
                       ))}

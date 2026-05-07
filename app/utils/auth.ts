@@ -19,3 +19,16 @@ export const logout = async () => {
     window.location.href = '/login';
   }
 };
+
+export const getToken = () => {
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("token");
+  }
+  return null;
+};
+
+export const isAuthenticated = () => {
+  return !!getToken();
+};
+
+
