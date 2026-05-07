@@ -180,7 +180,7 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
   };
 
   return (
-    <div className="relative flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
+    <div className="relative flex flex-col rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 cursor-pointer dark:bg-gray-800 dark:border-gray-700" onClick={handleAddToCart}>
 
       {/* ── Top: speed + price ── */}
       <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-4">
@@ -188,15 +188,15 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
         <div>
           {download ? (
             <>
-              <p className="text-2xl font-black text-gray-900 leading-tight">
+              <p className="text-2xl font-black text-gray-900 leading-tight dark:text-white">
                 {formatDownload(download)}
               </p>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
+              <p className="text-xs text-gray-500 font-medium mt-0.5 dark:text-gray-300">
                 download speed
               </p>
             </>
           ) : (
-            <p className="text-sm text-gray-400">Speed unavailable</p>
+            <p className="text-sm text-gray-400 dark:text-gray-300">Speed unavailable</p>
           )}
 
           {/* Upload */}
@@ -226,15 +226,15 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
         <div className="text-right shrink-0">
           {price ? (
             <>
-              <p className="text-2xl font-black text-[#10446C] leading-tight">
+              <p className="text-2xl font-black text-[#10446C] leading-tight dark:text-[#63a7db]">
                 £ {parseFloat(price).toFixed(2)}
               </p>
-              <p className="text-xs text-gray-500 font-medium mt-0.5">
+              <p className="text-xs text-gray-500 font-medium mt-0.5 dark:text-gray-300">
                 a month
               </p>
             </>
           ) : (
-            <p className="text-xs text-gray-400 italic">Price unavailable</p>
+            <p className="text-xs text-gray-400 italic dark:text-gray-300">Price unavailable</p>
           )}
         </div>
       </div>
@@ -244,7 +244,7 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
 
       {/* ── Plan name ── */}
       <div className="px-5 pt-3 pb-2">
-        <h3 className="text-base font-bold text-[#10446C]">{planName}</h3>
+        <h3 className="text-base font-bold text-[#10446C] dark:text-[#63a7db]">{planName}</h3>
       </div>
 
       {/* ── Divider ── */}
@@ -254,8 +254,8 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
       <div className="px-5 pt-3 pb-4 flex flex-col gap-2.5">
         {download && (
           <div className="flex items-center gap-2.5">
-            <span className="w-4 h-4 rounded border border-gray-300 shrink-0 bg-white" />
-            <span className="text-sm text-gray-700">
+            <span className="w-4 h-4 rounded border border-gray-300 shrink-0 bg-white dark:bg-gray-600" />
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               {downloadTimeLabel(download)} Movie Download time
             </span>
           </div>
@@ -263,13 +263,17 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
         {download && (
           <div className="flex items-center gap-2.5">
             <svg
-              className="w-4 h-4 text-[#10446C] shrink-0"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <rect x="7" y="2" width="10" height="20" rx="2" ry="2" />
-            </svg>
-            <span className="text-sm text-gray-700">
+                className="w-4 h-4 text-[#10446C] dark:text-[#63a7db] shrink-0"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={1.8}
+              >
+                <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+                <circle cx="12" cy="17" r="1" fill="currentColor" />
+                <line x1="9" y1="5" x2="15" y2="5" strokeLinecap="round" />
+              </svg>
+            <span className="text-sm text-gray-700 dark:text-gray-300">
               {deviceLabel(download)}
             </span>
           </div>
@@ -278,7 +282,7 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
 
       {/* ── Contract ── */}
       <div className="px-5 pb-4">
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-gray-700 dark:text-gray-300">
           <span className="font-black">{contractMonths}-Months</span> contract
         </p>
       </div>
@@ -430,7 +434,7 @@ export default function BroadbandPlans() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-[#faf8ff] font-sans py-4">
+    <div className="min-h-screen bg-[#faf8ff] dark:bg-gray-900 font-sans py-4">
 
       {/* ── Top bar ── */}
       <header className="max-w-2xl mx-auto rounded-2xl bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-600 sticky top-0 z-30 shadow-sm">
@@ -477,7 +481,7 @@ export default function BroadbandPlans() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-10">
+      <main className="max-w-5xl mx-auto px-4 py-10 dark:bg-gray-900">
 
         {/* ────────────────── STEP 1: Postcode ────────────────── */}
         {step === "search" && (
@@ -539,25 +543,26 @@ export default function BroadbandPlans() {
         {/* ────────────────── STEP 2: Select Address ────────────────── */}
         {step === "select" && (
           <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center gap-4 text-center">              
               <button
                 onClick={() => {
                   setStep("search");
                   setError(null);
                 }}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+                className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-600 transition-colors dark:text-gray-300 text-gray-500 shrink-0"
                 aria-label="Back"
               >
                 ←
               </button>
-              <div>
+
+              <div className="justify-center">
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
                   Select your address
                 </h2>
                 <p className="text-gray-500 dark:text-gray-300 text-sm">
                   {addresses.length} address
                   {addresses.length !== 1 ? "es" : ""} found for{" "}
-                  <span className="font-semibold text-gray-700">{postcode}</span>
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">{postcode}</span>
                 </p>
               </div>
             </div>
@@ -568,7 +573,7 @@ export default function BroadbandPlans() {
                   key={addr.id || addr.uprn || `${addr.display}-${index}`}
                   onClick={() => handleSelectAddress(addr, contractType)}
                   className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C]
-                    rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
+                    dark:bg-gray-800 dark:border-gray-600 dark:hover:border-[#10446C] rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -606,7 +611,7 @@ export default function BroadbandPlans() {
                           <span className="text-xs text-gray-400 italic">( {addr.qualifier} )</span>
                         )
                       )}
-                      <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
+                      <span className="text-[#10446C] dark:text-[#63a7db] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
                         →
                       </span>
                     </div>
@@ -628,55 +633,40 @@ export default function BroadbandPlans() {
           <div className="flex flex-col gap-8">
 
             {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-              <button
-                onClick={() => {
-                  setStep("select");
-                  setError(null);
-                }}
-                className="self-start p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
-                aria-label="Back"
-              >
-                ←
-              </button>
-              <div className="flex-1">
+            <div className="relative flex flex-col items-center text-center gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setStep("select");
+                    setError(null);
+                  }}
+                  className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-600 transition-colors dark:text-gray-300 text-gray-500 shrink-0"
+                  aria-label="Back"
+                >
+                  ←
+                </button>
                 <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-1">
                   Available broadband plans
                 </h2>
-                {selectedAddress && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <svg
-                      className="w-4 h-4 text-[#10446C] shrink-0"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    <span className="font-medium">
-                      {selectedAddress.display},{" "}
-                      {[selectedAddress.city, selectedAddress.postcode]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </span>
-                  </div>
-                )}
               </div>
+              {selectedAddress && (
+                <div className="flex items-center justify-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                  <svg className="w-4 h-4 text-[#10446C] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="font-medium">
+                    {selectedAddress.display},{" "}
+                    {[selectedAddress.city, selectedAddress.postcode].filter(Boolean).join(", ")}
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Contract toggle */}
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap items-center justify-center">
               <span className="text-sm font-semibold text-gray-600 dark:text-gray-300 mr-1">
                 Contract:
               </span>

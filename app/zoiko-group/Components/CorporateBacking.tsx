@@ -22,7 +22,7 @@ const OurBrands = [
 export default function CorporateBacking() {
   return (
     <>
-      <section className="w-full bg-[#f8f9fa] py-16 px-4 sm:px-6 lg:px-8 lg:py-18 dark:bg-gray-950  dark:text-white">
+      <section className="w-full bg-[#f8f9fa] py-16 px-4 sm:px-6 lg:px-8 lg:py-18 dark:bg-gray-900  dark:text-white">
         <div className="max-w-6xl mx-auto text-center">
           {/* Heading */}
           <h1 className=" dark:text-[#63a7db] text-[#10446C] text-2xl md:text-3xl lg:text-4xl font-semibold leading-tight">
@@ -44,7 +44,7 @@ export default function CorporateBacking() {
           </span>
         </div>
 
-        <div className="max-w-5xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto px-4 py-10  dark:bg-gray-900 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 dark:bg-gray-950  dark:text-white">
             {OurBrands.map((item, i) => (
               <div

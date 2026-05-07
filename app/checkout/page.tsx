@@ -336,7 +336,7 @@ export default function CheckoutPage() {
 
   const handleClearCart = () => {
     setCart([]);
-    localStorage.removeItem("driverx_checkout");
+    localStorage.removeItem("cart");
   };
 
   // ── Coupon ────────────────────────────────────────────────────────────────
@@ -535,7 +535,7 @@ export default function CheckoutPage() {
       setShowOrderErrorPopup(true);
       return;
     }
-    localStorage.removeItem("driverx_checkout");
+    localStorage.removeItem("cart");
     setShowThankYou(true);
     
     console.log("✅ showThankYou set to true");  // ← ADD
@@ -557,8 +557,8 @@ export default function CheckoutPage() {
   // ── Empty Cart ────────────────────────────────────────────────────────────
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-black-900 flex flex-col items-center justify-center px-4 py-16 text-center">
-        <div className="w-40 h-40 bg-red-50 rounded-full flex items-center justify-center mb-6">
+      <div className="min-h-screen dark:bg-gray-900 bg-gray-50 flex flex-col items-center justify-center px-4 py-16 text-center">
+        <div className="w-40 h-40 bg-red-50 dark:bg-red-900 rounded-full flex items-center justify-center mb-6">
           <svg className="w-20 h-20 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
@@ -568,8 +568,8 @@ export default function CheckoutPage() {
             />
           </svg>
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-        <p className="text-gray-500 mb-8">Looks like you haven't added anything yet.</p>
+        <h2 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">Your cart is empty</h2>
+        <p className="text-gray-500 dark:text-gray-400 mb-8">Looks like you haven't added anything yet.</p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
           {[
             { href: "/prepaid-plans",  label: "Prepaid Plans" },
