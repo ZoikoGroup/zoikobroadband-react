@@ -113,7 +113,7 @@ const InputField = ({
   children: React.ReactNode;
 }) => (
   <div className="flex flex-col gap-1">
-    <label className="text-sm font-semibold text-gray-700">
+    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
       {label}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
@@ -124,13 +124,13 @@ const InputField = ({
 
 const inputClass = (error?: string) =>
   `w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors
-   focus:ring-2 focus:ring-red-300 focus:border-red-400
-   ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`;
+   focus:ring-2 focus:ring-red-300 focus:border-red-400 
+   ${error ? "border-red-400 bg-red-50 dark:bg-red-900" : "border-gray-200 bg-white dark:bg-gray-800 "}`;
 
 const selectClass = (error?: string) =>
   `w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition-colors
    focus:ring-2 focus:ring-red-300 focus:border-red-400
-   ${error ? "border-red-400 bg-red-50" : "border-gray-200 bg-white"}`;
+   ${error ? "border-red-400 bg-red-50 dark:bg-red-900" : "border-gray-200 bg-white  dark:bg-gray-800"}`;
 
 // ── Address Form ──────────────────────────────────────────────────────────────
 
@@ -165,7 +165,7 @@ const AddressForm = ({
   loading: boolean;
   includeShipping?: boolean;
 }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700 dark:text-gray-300">
     {(Object.keys(address) as Array<keyof Address>).map((key) => {
       const meta = billingFieldMeta[key] || { label: key, placeholder: key };
       const errKey = `${prefix}${key.charAt(0).toUpperCase() + key.slice(1)}`;
@@ -236,83 +236,7 @@ const Modal = ({
   );
 };
 
-// ── SIM-type badge ────────────────────────────────────────────────────────────
 
-const SimBadge = ({ simType }: { simType: string }) => {
-  const isESim = simType.toLowerCase() === "esim";
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
-        isESim
-          ? "bg-blue-100 text-blue-700"
-          : "bg-orange-100 text-orange-700"
-      }`}
-    >
-      {isESim ? (
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-        </svg>
-      ) : (
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-        </svg>
-      )}
-      {simType}
-    </span>
-  );
-};
-
-// ── Category badge ────────────────────────────────────────────────────────────
-
-const CategoryBadge = ({ categoryName, slug }: { categoryName: string; slug: string }) => {
-  const isPrepaid = slug === "prepaid-plans";
-  const isPostpaid = slug === "postpaid-plans";
-  return (
-    <span
-      className={`inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-full ${
-        isPrepaid
-          ? "bg-purple-100 text-purple-700"
-          : isPostpaid
-          ? "bg-teal-100 text-teal-700"
-          : "bg-gray-100 text-gray-600"
-      }`}
-    >
-      {categoryName}
-    </span>
-  );
-};
-
-// ── Stripe inner form (must be rendered inside <Elements>) ───────────────────
-
-// const StripePaymentForm = ({
-//   formRef,
-// }: {
-//   formRef: React.MutableRefObject<{ submitPayment: () => Promise<{ success: boolean; error?: string }> } | null>;
-// }) => {
-//   const stripe = useStripe();
-//   const elements = useElements();
-
-//   useEffect(() => {
-//     formRef.current = {
-//       submitPayment: async () => {
-//         if (!stripe || !elements) return { success: false, error: "Stripe not loaded" };
-//         const { error } = await stripe.confirmPayment({
-//           elements,
-//           confirmParams: { return_url: `${window.location.origin}/order-confirmed` },
-//           redirect: "if_required",
-//         });
-//         if (error) return { success: false, error: error.message };
-//         return { success: true };
-//       },
-//     };
-//   }, [stripe, elements, formRef]);
-
-//   return (
-//     <div className="mt-2">
-//       <PaymentElement options={{ layout: "tabs" }} />
-//     </div>
-//   );
-// };
 
 // ── Main Component ────────────────────────────────────────────────────────────
 
@@ -321,14 +245,7 @@ export default function CheckoutPage() {
   const [showOrderErrorPopup, setShowOrderErrorPopup] = useState(false);
   const [orderError, setOrderError] = useState("");
   const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "");
-
   const [clientSecret, setClientSecret] = useState("");
-  // const stripeFormRef = useRef<{
-  //   submitPayment: () => Promise<{ success: boolean; error?: string }>;
-  // }>(null);
-
-
-
   const [showThankYou, setShowThankYou] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showShipping, setShowShipping] = useState(false);
@@ -640,7 +557,7 @@ export default function CheckoutPage() {
   // ── Empty Cart ────────────────────────────────────────────────────────────
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4 py-16 text-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-black-900 flex flex-col items-center justify-center px-4 py-16 text-center">
         <div className="w-40 h-40 bg-red-50 rounded-full flex items-center justify-center mb-6">
           <svg className="w-20 h-20 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
@@ -675,13 +592,13 @@ export default function CheckoutPage() {
 
   // ── Main Checkout ─────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen dark:bg-gray-900 bg-gray-50">
       {/* Page header */}
-      <div className="bg-white border-b border-gray-100 py-6 px-4">
+      <div className=" border-b border-gray-100 py-6 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Checkout</h1>
-            <p className="text-sm text-gray-500">Connecting Every Possibility with Zoiko Mobile!</p>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Checkout</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Connecting Every Possibility with Zoiko Mobile!</p>
           </div>
           <button
             onClick={handleClearCart}
@@ -708,9 +625,9 @@ export default function CheckoutPage() {
           <div className="flex-1 space-y-6">
 
             {/* Cart Items */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="font-bold text-gray-900">Your Items</h2>
+                <h2 className="font-bold text-gray-900 dark:text-white">Your Items</h2>
                 <span className="text-xs text-gray-400 font-medium">{cart.length} item{cart.length !== 1 ? "s" : ""}</span>
               </div>
               <div className="divide-y divide-gray-50">
@@ -719,7 +636,7 @@ export default function CheckoutPage() {
                     <div className="flex items-start gap-4">
                       {/* 📦 Plan Information */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-bold text-gray-900 text-lg leading-tight mb-1">
+                        <p className="font-bold text-gray-900 dark:text-white text-lg leading-tight mb-1">
                           {item.title}
                         </p>
                         
@@ -755,7 +672,7 @@ export default function CheckoutPage() {
 
                       {/* 💰 Price Display */}
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-gray-900 text-lg">
+                        <p className="font-bold dark:text-white text-lg">
                           ${item.price.toFixed(2)}
                         </p>
                         <button
@@ -772,8 +689,8 @@ export default function CheckoutPage() {
             </div>
 
             {/* Coupon */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4">Have a Coupon?</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4">Have a Coupon?</h2>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -806,15 +723,15 @@ export default function CheckoutPage() {
                 </p>
               )}
               {!isLoggedIn && (
-                <p className="mt-2 text-xs text-[#10446c] dark:text-[#0d3a5a]">
+                <p className="mt-2 text-xs text-[#10446c] dark:text-gray-400">
                   You need to be logged in to apply a coupon.
                 </p>
               )}
             </div>
 
             {/* Billing Address */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-5">Service / Billing Details</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-5">Service / Billing Details</h2>
               <AddressForm
                 address={billingAddress}
                 setAddress={setBillingAddress}
@@ -831,7 +748,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   className="w-4 h-4 accent-red-500"
                 />
-                <span className="text-sm text-gray-700">Ship to a different address?</span>
+                <span className="text-sm text-gray-700 dark:text-gray-300">Ship to a different address?</span>
               </label>
 
               {showShipping && (
@@ -854,21 +771,21 @@ export default function CheckoutPage() {
           <div className="w-full lg:w-96 space-y-6">
 
             {/* Order Summary */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4">Order Summary</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4">Order Summary</h2>
 
               <div className="space-y-3">
                 {cart.map((item, idx) => (
                   <div key={idx} className="flex items-start justify-between gap-2 text-sm">
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">{item.title}</p>
+                      <p className="font-medium text-gray-900 dark:text-white truncate">{item.title}</p>
                       {item.speed && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
                           Speed: {item.speed}
                         </span>
                       )}
                     </div>
-                    <span className="font-semibold text-gray-900 shrink-0">
+                    <span className="font-semibold text-gray-900 dark:text-white shrink-0">
                        ${item.price.toFixed(2)}
                     </span>
                   </div>
@@ -899,8 +816,8 @@ export default function CheckoutPage() {
             </div>
 
             {/* Payment */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-              <h2 className="font-bold text-gray-900 mb-4">Payment</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="font-bold text-gray-900 dark:text-white mb-4">Payment</h2>
 
               {clientSecret ? (
                 <Elements
@@ -933,7 +850,7 @@ export default function CheckoutPage() {
                   disabled={loading}
                   className="w-4 h-4 mt-0.5 accent-red-500"
                 />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
                   I have read and agree to the website{" "}
                   <a href="/terms-and-conditions" className="text-red-500 hover:underline">
                     terms and conditions
