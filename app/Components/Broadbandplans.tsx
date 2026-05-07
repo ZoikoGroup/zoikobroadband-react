@@ -150,9 +150,10 @@ function Spinner({ size = 20 }: { size?: number }) {
 interface PlanCardProps {
   item: ProductOfferingQualificationItem;
   contractType: ContractDuration;
+  selectedAddress: FormattedAddress | null;
 }
 
-function PlanCard({ item, contractType }: PlanCardProps) {
+function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
   const chars = item.product?.productCharacteristic;
   const download = getChar(chars, "productAdvertisedDownloadSpeed");
   const upload = getChar(chars, "productAdvertisedUploadSpeed");
@@ -172,8 +173,9 @@ function PlanCard({ item, contractType }: PlanCardProps) {
       name: planName,
       price: parseFloat(price ?? "0"),
       speed: download || "Unknown",
-      validity: `${contractMonths}-month contract`,
+      validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
+      address: selectedAddress,
     });
   };
 
@@ -561,9 +563,9 @@ export default function BroadbandPlans() {
             </div>
 
             <div className="flex flex-col gap-2">
-              {addresses.map((addr) => (
+              {addresses.map((addr, index) => (
                 <button
-                  key={addr.id}
+                  key={addr.id || addr.uprn || `${addr.display}-${index}`}
                   onClick={() => handleSelectAddress(addr, contractType)}
                   className="w-full text-left bg-white border border-gray-200 hover:border-[#10446C]
                     rounded-xl px-5 py-4 transition-all duration-200 hover:shadow-md group"
@@ -577,9 +579,37 @@ export default function BroadbandPlans() {
                         {[addr.city, addr.postcode].filter(Boolean).join(", ")}
                       </p>
                     </div>
-                    <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
-                      →
-                    </span>
+
+                    <div className="flex items-center gap-2">
+                      {addr.qualifier && (
+                        addr.qualifier === "Gold" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                            style={{
+                              background: "linear-gradient(135deg, #f6d365 0%, #fda085 100%)",
+                              color: "#7a4f00",
+                              border: "1px solid #e6b800",
+                              boxShadow: "0 1px 3px rgba(214,158,0,0.3)"
+                            }}>
+                            ★ Gold
+                          </span>
+                        ) : addr.qualifier === "Silver" ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold"
+                            style={{
+                              background: "linear-gradient(135deg, #e0e0e0 0%, #bdbdbd 100%)",
+                              color: "#4a4a4a",
+                              border: "1px solid #9e9e9e",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.15)"
+                            }}>
+                            ✦ Silver
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">( {addr.qualifier} )</span>
+                        )
+                      )}
+                      <span className="text-[#10446C] opacity-0 group-hover:opacity-100 transition-opacity text-lg">
+                        →
+                      </span>
+                    </div>
                   </div>
                 </button>
               ))}
@@ -700,6 +730,7 @@ export default function BroadbandPlans() {
                           key={item.id}
                           item={item}
                           contractType={contractType}
+                          selectedAddress={selectedAddress}
                         />
                       ))}
                     </div>
@@ -721,7 +752,7 @@ export default function BroadbandPlans() {
                             </span>
                           </div>
                           <div className="opacity-50 pointer-events-none">
-                            <PlanCard item={item} contractType={contractType} />
+                            <PlanCard item={item} contractType={contractType} selectedAddress={selectedAddress}/>
                           </div>
                         </div>
                       ))}
