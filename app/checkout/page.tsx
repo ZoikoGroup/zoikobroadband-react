@@ -5,7 +5,9 @@ import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-
 import { usStates } from "../utils/usStates";
 import { processOrderStripe } from "../utils/beQuickStripeWebPaymentApi";
 import StripePaymentForm, { StripePaymentFormRef } from "../Components/StripePaymentForm";
-
+import { useTheme } from "next-themes";
+import { useMemo } from "react";
+import type { StripeElementsOptions } from "@stripe/stripe-js";
 // ── Stub data for standalone compilation ──────────────────────────────────────
 
 // const processOrderStripe = async (data: unknown) => ({ status: true, data });
@@ -257,8 +259,80 @@ export default function CheckoutPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
-  
+  const { resolvedTheme } = useTheme();
+  const stripeOptions: StripeElementsOptions = useMemo(() => {
+  const isDark = resolvedTheme === "dark";
 
+  return {
+    clientSecret,
+
+    appearance: {
+      theme: isDark ? "night" : "stripe",
+
+      variables: {
+        colorPrimary: "#ef4444",
+
+        colorBackground: isDark
+          ? "#1f2937"
+          : "#ffffff",
+
+        colorText: isDark
+          ? "#f9fafb"
+          : "#111827",
+
+        colorDanger: "#ef4444",
+
+        colorTextPlaceholder: isDark
+          ? "#9ca3af"
+          : "#6b7280",
+
+        borderRadius: "12px",
+
+        fontFamily: "Inter, sans-serif",
+      },
+
+      rules: {
+        ".Input": {
+          backgroundColor: isDark
+            ? "#111827"
+            : "#ffffff",
+
+          border: isDark
+            ? "1px solid #374151"
+            : "1px solid #d1d5db",
+
+          boxShadow: "none",
+        },
+
+        ".Input:focus": {
+          border: "1px solid #ef4444",
+          boxShadow: "0 0 0 1px #ef4444",
+        },
+
+        ".Tab": {
+          backgroundColor: isDark
+            ? "#111827"
+            : "#f9fafb",
+
+          border: isDark
+            ? "1px solid #374151"
+            : "1px solid #d1d5db",
+        },
+
+        ".Tab--selected": {
+          border: "1px solid #ef4444",
+          boxShadow: "0 0 0 1px #ef4444",
+        },
+
+        ".Label": {
+          color: isDark
+            ? "#f3f4f6"
+            : "#111827",
+        },
+      },
+    },
+  };
+}, [clientSecret, resolvedTheme]);
   const emptyAddress: Address = {
     firstName: "",
     lastName: "",
@@ -427,7 +501,10 @@ export default function CheckoutPage() {
         })
         .catch(() => {});
     }
-  }, [total, cart.length]);
+  }, [total,
+  subtotal,
+  discountAmount,
+  cart,]);
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -594,7 +671,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen dark:bg-gray-900 bg-gray-50">
       {/* Page header */}
-      <div className=" border-b border-gray-100 py-6 px-4">
+      {/* <div className=" border-b border-gray-100 py-6 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Checkout</h1>
@@ -616,7 +693,7 @@ export default function CheckoutPage() {
             Clear Cart
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -822,13 +899,7 @@ export default function CheckoutPage() {
               {clientSecret ? (
                 <Elements
                   stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: "stripe",
-                      variables: { colorPrimary: "#ef4444" },
-                    },
-                  }}
+                  options={stripeOptions}
                 >
                   <StripePaymentForm ref={stripeFormRef} />
                 </Elements>
