@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { usStates } from "../utils/usStates";
-import { processOrderStripe } from "../utils/beQuickStripeWebPaymentApi";
+import { processOrderStripe } from "../utils/stripeWebPaymentApi";
 import StripePaymentForm, { StripePaymentFormRef } from "../Components/StripePaymentForm";
 import { useTheme } from "next-themes";
 import { useMemo } from "react";
@@ -16,17 +16,6 @@ import type { StripeElementsOptions } from "@stripe/stripe-js";
 
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface Feature {
-  id: string | number;
-  title: string;
-}
-
-interface CategoryData {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 /** Raw shape coming from localStorage (as stored by the plan-selection page) */
 interface RawCartItem {
@@ -73,11 +62,6 @@ interface Address {
 interface DiscountData {
   type: "percentage" | "flat";
   discount: string | number;
-}
-
-interface ShippingOption {
-  label: string;
-  value: number;
 }
 
 interface FormErrors {
