@@ -176,6 +176,7 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
       validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
       address: selectedAddress,
+      bt_plan_id: variation?.bt_plan_id ?? zoikoPlan.bt_plan_id ?? null,
     });
   };
 

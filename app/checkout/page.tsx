@@ -43,6 +43,7 @@ interface CartItem {
   speed: string;
   serviceAddress?: string;
   _raw: RawCartItem;
+  bt_plan_id?: string | null;
 }
 
 interface Address {
