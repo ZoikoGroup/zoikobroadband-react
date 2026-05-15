@@ -751,7 +751,7 @@ export default function CheckoutPage() {
             {/* Coupon */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-bold text-gray-900 dark:text-white mb-4">Have a Coupon?</h2>
-              <div className="flex gap-2">
+              <div className="flex flex-col md:flex-row gap-2">
                 <input
                   type="text"
                   className="flex-1 rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-300"
