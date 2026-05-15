@@ -541,13 +541,17 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2️⃣ BeQuick order
+    // 2️⃣ BT Wholesale order
+    //    processOrderStripe() reads the raw cart from localStorage and forwards
+    //    it (with product.characteristics / product.offering / zoikoPlan) to
+    //    /api/BritishTelecom/process-order, which runs the full BT flow:
+    //    RoBT lookup → appointment slot search → book → place product order.
     const products = buildProducts();
     const orderData = {
       billingAddress,
       shippingAddress: showShipping ? shippingAddress : billingAddress,
       coupon: discountData ? { ...discountData } : null,
-      cart: products,
+      cart: products, // billing-summary view; the BT route uses the raw cart from localStorage
       totals: { subtotal, discount: discountAmount, total },
       agreedToTerms: agreeTerms,
       paymentMethod: "stripe",

@@ -21,9 +21,12 @@ type Plan = {
   name: string;
   price: number;
   speed: string;
+  variation?: string;
   validity?: string;
   description?: string;
+  bt_plan_id?: string | null;
   address?: FormattedAddress | null; // Store full address object or just display string
+  
 };
 
 //  Context Type
