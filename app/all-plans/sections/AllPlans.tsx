@@ -43,6 +43,18 @@ interface Plan {
   created_at: string;
   updated_at: string;
   variations: Variation[];
+  product: {
+    id: number;
+    type: string;
+  };
+  zoikoPlan: {
+    id: number;
+    name: string;
+    variationId: number | null;
+    contractType: string;
+    price: string | null;
+    salePrice: string | null;
+  };
 }
 
 interface PlansApiResponse {
@@ -136,8 +148,10 @@ function PlanCard({ plan, selectedVariationId, onSelectVariation }: PlanCardProp
       price: parseFloat(price) || 0,  
       speed: speed,
       variation: selectedVariation.duration_display,
+      product: plan.product,        
+      zoikoPlan: plan.zoikoPlan,  
     };
-    addToCart(cartItem);
+    addToCart(cartItem as any);
     alert(`Added to cart: ${cartItem.name} at £${cartItem.price}/month`);
   }
 
