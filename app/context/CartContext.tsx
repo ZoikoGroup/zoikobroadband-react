@@ -15,6 +15,11 @@ type FormattedAddress = {
   qualifier: string;
 };
 
+type ProductCharacteristic = {
+  name: string;
+  value: string;
+};
+
 //  Define FULL plan structure (IMPORTANT)
 type Plan = {
   id: string;
@@ -24,6 +29,27 @@ type Plan = {
   validity?: string;
   description?: string;
   address?: FormattedAddress | null; // Store full address object or just display string
+    product: {
+    id: string;
+    type?: string;
+    characteristics: ProductCharacteristic[];
+    offering: { id: string; name?: string } | null;
+    place: Array<{
+      id: string;
+      role?: string;
+      "@referredType"?: string;
+    }>;
+    download?: string;
+    upload?: string;
+  };
+  zoikoPlan: {
+    id: string | number;
+    name: string;
+    variationId: string | number | null;
+    contractType: string;
+    price: string | null;
+    salePrice: string | null;
+  };
 };
 
 //  Context Type
