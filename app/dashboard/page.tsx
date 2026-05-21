@@ -8,11 +8,11 @@ import ProtectedRoute from '../Components/ProtectedRoute'
 export default function page() {
   return (
     <>
-    <ProtectedRoute>
+    {/* <ProtectedRoute> */}
     <DashboardHero/>
     <DashboardOptions/>
     <QuickActions/>
-    </ProtectedRoute>
+    {/* </ProtectedRoute> */}
     </>
   )
 }

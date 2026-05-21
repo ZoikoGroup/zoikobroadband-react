@@ -15,6 +15,11 @@ type FormattedAddress = {
   qualifier: string;
 };
 
+type ProductCharacteristic = {
+  name: string;
+  value: string;
+};
+
 //  Define FULL plan structure (IMPORTANT)
 type Plan = {
   id: string;

@@ -49,11 +49,27 @@ interface ZoikoPlan {
   variations: ZoikoVariation[];
 }
 
+// interface ProductOfferingQualificationItem {
+//   id: string;
+//   product: {
+//     productOffering: { id: string; name?: string };
+//     productCharacteristic?: ProductCharacteristic[];
+//   };
+//   eligibilityUnavailabilityReason?: { cause: string }[];
+//   zoikoPlan?: ZoikoPlan | null;
+// }
 interface ProductOfferingQualificationItem {
   id: string;
+  "@type"?: string;                             
   product: {
+    "@type"?: string;                           
     productOffering: { id: string; name?: string };
     productCharacteristic?: ProductCharacteristic[];
+    place?: Array<{                             
+      id: string;
+      role?: string;
+      "@referredType"?: string;
+    }>;
   };
   eligibilityUnavailabilityReason?: { cause: string }[];
   zoikoPlan?: ZoikoPlan | null;

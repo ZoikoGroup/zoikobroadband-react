@@ -2,6 +2,8 @@
 import React from "react";
 import toast from "react-hot-toast";
 
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function ContactForm() {
   const [first_name, setFirstName] = React.useState("");
   const [last_name, setLastName] = React.useState("");
@@ -24,8 +26,7 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     agreed_to_policy,
   };
 
-  // const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
-     const API_URL = "http://127.0.0.1:8000/";
+  
   try {
     const res = await fetch(`${API_URL}/api/contact/contact-us/`, {
       method: "POST",
