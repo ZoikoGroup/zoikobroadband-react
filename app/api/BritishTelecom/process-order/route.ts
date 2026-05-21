@@ -875,7 +875,7 @@ export async function POST(req: NextRequest) {
 
   console.log(
     "[BT processOrder] Order payload:",
-    JSON.stringify(orderPayload, null, 2)
+    JSON.stringify(orderPayload, null, 4)
   );
 
   const orderResponse = await callApi<Record<string, unknown>>(
@@ -914,7 +914,7 @@ export async function POST(req: NextRequest) {
   const data       = orderResponse.data;
 
   console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
-  console.log("[BT processOrder] Response:", JSON.stringify(orderResponse, null, 2));
+  console.log("[BT processOrder] Response:", JSON.stringify(orderResponse, null, 4));
   console.log("[BT processOrder] ========== END ==========");
 
   // 201 = synchronous creation, 202 = async (accepted)
