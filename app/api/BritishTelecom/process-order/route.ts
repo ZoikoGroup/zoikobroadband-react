@@ -914,7 +914,7 @@ export async function POST(req: NextRequest) {
   const data       = orderResponse.data;
 
   console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
-  console.log("[BT processOrder] Response:", JSON.stringify(data, null, 2));
+  console.log("[BT processOrder] Response:", JSON.stringify(orderResponse, null, 2));
   console.log("[BT processOrder] ========== END ==========");
 
   // 201 = synchronous creation, 202 = async (accepted)
