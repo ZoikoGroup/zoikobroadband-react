@@ -585,7 +585,7 @@ export default function CheckoutPage() {
       setShowOrderErrorPopup(true);
       return;
     }
-    localStorage.removeItem("cart");
+    // localStorage.removeItem("cart");
     setShowThankYou(true);
     
     console.log("✅ showThankYou set to true");  // ← ADD
