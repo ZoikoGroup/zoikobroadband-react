@@ -361,9 +361,14 @@ async function searchAppointmentSlots(params: {
           ],
           place: [
             {
+              // Per BT "Complete Documentation" (Dec 2024) §5.1 and the
+              // working WP plugin: role="InstallationAddress",
+              // @referredType="OpenreachAddress". The older handover
+              // docx showed "install address"/"btNADLocationReference" —
+              // that is stale.
               id: params.addressId,
-              role: "install address",
-              "@referredType": "btNADLocationReference",
+              role: "InstallationAddress",
+              "@referredType": "OpenreachAddress",
             },
           ],
         },
@@ -432,9 +437,10 @@ async function bookAppointment(params: {
           ],
           place: [
             {
+              // Same alignment as searchTimeSlot above — see comment there.
               id: params.addressId,
-              role: "install address",
-              "@referredType": "btNADLocationReference",
+              role: "InstallationAddress",
+              "@referredType": "OpenreachAddress",
             },
           ],
         },
