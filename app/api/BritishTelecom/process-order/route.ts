@@ -877,7 +877,10 @@ export async function POST(req: NextRequest) {
     {
       method: "POST",
       body: orderPayload,
-      headers: { productFamily: productSpec.family },
+      headers: { 
+        productFamily: productSpec.family,
+        "apigw-client-id": process.env.NEXT_BT_CLIENT_ID ?? "",
+      },
     }
   );
 
