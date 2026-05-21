@@ -1,17 +1,29 @@
-// utils/beQuickStripeWebPaymentApi.ts
+// utils/stripeWebPaymentApi.ts
+//
+// Forwards the localStorage cart (with the full BT POQ-enriched `product`
+// object and matched `zoikoPlan`) to /api/BritishTelecom/process-order.
+//
+// NOTE: BeQuick has been removed. All ordering now goes through BT.
 
-function getServiceAddressFromLocalStorage() {
+/** Read the raw cart from localStorage (returns [] on the server or on error). */
+function readRawCart(): unknown[] {
   try {
-    if (typeof window === "undefined") return null;
+    if (typeof window === "undefined") return [];
     const stored = localStorage.getItem("cart");
-    if (!stored) return null;
-    const items = JSON.parse(stored);
-    const first = Array.isArray(items) ? items[0] : null;
-    if (first?.address?.id) return first.address;
-    return null;
+    if (!stored) return [];
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return null;
+    return [];
   }
+}
+
+/** Pull the address out of the first cart item — used as `serviceAddress`. */
+function getServiceAddressFromLocalStorage(): Record<string, unknown> | null {
+  const items = readRawCart();
+  const first = items[0] as { address?: { id?: string } } | undefined;
+  if (first?.address?.id) return first.address as Record<string, unknown>;
+  return null;
 }
 
 export async function processOrderStripe(orderData: any) {
@@ -21,14 +33,25 @@ export async function processOrderStripe(orderData: any) {
     if (!serviceAddress?.id) {
       return {
         status: false,
-        message: "No service address found in cart. Please go back and select your address again.",
+        message:
+          "No service address found in cart. Please go back and select your address again.",
       };
     }
+
+    // Forward the FULL raw cart item (with product + zoikoPlan) — the BT
+    // route needs those fields to build a correct product order.
+    const rawCart = readRawCart();
 
     const response = await fetch("/api/BritishTelecom/process-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...orderData, serviceAddress }),
+      body: JSON.stringify({
+        ...orderData,
+        // override the normalised cart with the raw localStorage one so the
+        // server can read product.characteristics / product.offering / zoikoPlan
+        cart: rawCart.length ? rawCart : orderData.cart,
+        serviceAddress,
+      }),
     });
 
     const result = await response.json().catch(() => ({}));

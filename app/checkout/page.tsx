@@ -43,6 +43,7 @@ interface CartItem {
   speed: string;
   serviceAddress?: string;
   _raw: RawCartItem;
+  bt_plan_id?: string | null;
 }
 
 interface Address {
@@ -344,7 +345,7 @@ export default function CheckoutPage() {
         normalizeCartItem
       );
       setCart(normalized);
-      if (typeof window !== "undefined" && localStorage.getItem("driverx_token")) {
+      if (typeof window !== "undefined" && localStorage.getItem("token")) {
         setIsLoggedIn(true);
       }
     } catch {
@@ -369,21 +370,6 @@ export default function CheckoutPage() {
 
   // ── Cart mutations ────────────────────────────────────────────────────────
 
-  const handleQuantity = (index: number, delta: number) => {
-  const newCart = [...cart];
-  
-  newCart[index] = {
-    ...newCart[index],
-    _raw: { ...newCart[index]._raw }, // ← ADD THIS
-  };
-  
-  setCart(newCart);
-  localStorage.setItem(
-    "cart",
-    JSON.stringify(newCart.map((i) => i._raw))
-  );
-};
-
   const handleRemove = (index: number) => {
     const newCart = [...cart];
     newCart.splice(index, 1);
@@ -399,7 +385,7 @@ export default function CheckoutPage() {
   // ── Coupon ────────────────────────────────────────────────────────────────
 
   const handleApplyCoupon = async () => {
-    const user = JSON.parse(localStorage.getItem("driverx_user") ?? "null");
+    const user = JSON.parse(localStorage.getItem("user") ?? "null");
     if (!user) {
       setShowLoginPopup(true);
       return;
@@ -415,7 +401,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user.driverx_token}`,
+          Authorization: `Bearer ${user.token}`,
         },
         body: JSON.stringify({ user_id: user.id, email: user.email, coupon_code: coupon }),
       });
@@ -555,13 +541,17 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2️⃣ BeQuick order
+    // 2️⃣ BT Wholesale order
+    //    processOrderStripe() reads the raw cart from localStorage and forwards
+    //    it (with product.characteristics / product.offering / zoikoPlan) to
+    //    /api/BritishTelecom/process-order, which runs the full BT flow:
+    //    RoBT lookup → appointment slot search → book → place product order.
     const products = buildProducts();
     const orderData = {
       billingAddress,
       shippingAddress: showShipping ? shippingAddress : billingAddress,
       coupon: discountData ? { ...discountData } : null,
-      cart: products,
+      cart: products, // billing-summary view; the BT route uses the raw cart from localStorage
       totals: { subtotal, discount: discountAmount, total },
       agreedToTerms: agreeTerms,
       paymentMethod: "stripe",

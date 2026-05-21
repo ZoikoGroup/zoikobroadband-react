@@ -26,30 +26,12 @@ type Plan = {
   name: string;
   price: number;
   speed: string;
+  variation?: string;
   validity?: string;
   description?: string;
+  bt_plan_id?: string | null;
   address?: FormattedAddress | null; // Store full address object or just display string
-    product: {
-    id: string;
-    type?: string;
-    characteristics: ProductCharacteristic[];
-    offering: { id: string; name?: string } | null;
-    place: Array<{
-      id: string;
-      role?: string;
-      "@referredType"?: string;
-    }>;
-    download?: string;
-    upload?: string;
-  };
-  zoikoPlan: {
-    id: string | number;
-    name: string;
-    variationId: string | number | null;
-    contractType: string;
-    price: string | null;
-    salePrice: string | null;
-  };
+  
 };
 
 //  Context Type

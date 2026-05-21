@@ -192,22 +192,7 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
       validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
       address: selectedAddress,
-      product: {
-        id: item.product?.productOffering.id ?? "",
-        characteristics: chars ?? [],
-        offering: item.product?.productOffering ?? null,
-        place: item.product?.place ?? [],
-        download: download ?? undefined,
-        upload: upload ?? undefined,
-      },
-      zoikoPlan: {
-        id: zoikoPlan.id,
-        name: zoikoPlan.name,
-        variationId: variation?.id ?? null,
-        contractType: contractType,
-        price: price ?? null,
-        salePrice: variation?.sale_price ?? null,
-      },
+      bt_plan_id: variation?.bt_plan_id ?? zoikoPlan.bt_plan_id ?? null,
     });
   };
 
