@@ -877,9 +877,14 @@ export async function POST(req: NextRequest) {
     {
       method: "POST",
       body: orderPayload,
-      headers: { 
+      // Per BT API 9 doc, the productOrder endpoint requires an
+      // `apigw-client-id` header in addition to the bearer token.
+      // Without it BT returns 401 / "Invalid ApiKey" and the order
+      // is never accepted. The other endpoints in this file don't
+      // need this header.
+      headers: {
         productFamily: productSpec.family,
-        "apigw-client-id": process.env.NEXT_BT_CLIENT_ID ?? "",
+        "apigw-client-id": process.env.BT_APIGW_CLIENT_ID ?? "",
       },
     }
   );
