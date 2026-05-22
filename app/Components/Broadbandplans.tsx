@@ -1,79 +1,30 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useCart } from "@/app/context/CartContext";
+import {
+  useCart,
+  type FormattedAddress,
+  type ProductCharacteristic,
+  type ZoikoVariation,
+  type ZoikoPlan,
+  type BTProductOfferingQualificationItem,
+  type Plan,
+} from "@/app/context/CartContext";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Local types ──────────────────────────────────────────────────────────────
 
-interface FormattedAddress {
-  id: string;
-  display: string;
-  streetNr: string;
-  streetName: string;
-  city: string;
-  postcode: string;
-  districtCode: string;
-  uprn: string;
-  exchangeGroupCode: string;
-  qualifier: string;
-}
-
-interface ProductCharacteristic {
-  name: string;
-  value: string;
-}
-
-interface ZoikoVariation {
-  id: number;
-  label: string;
-  duration_value: number;
-  duration_unit: string;
-  duration_display: string;
-  price: string;
-  sale_price: string | null;
-  bt_plan_id: string;
-  effective_bt_plan_id: string;
-  is_default: boolean;
-  is_active: boolean;
-  sort_order: number;
-}
-
-interface ZoikoPlan {
-  id: number;
-  name: string;
-  slug: string;
-  bt_plan_id: string;
-  bt_plan_name: string;
-  description: string;
-  is_active: boolean;
-  variations: ZoikoVariation[];
-}
-
-// interface ProductOfferingQualificationItem {
-//   id: string;
-//   product: {
-//     productOffering: { id: string; name?: string };
-//     productCharacteristic?: ProductCharacteristic[];
-//   };
-//   eligibilityUnavailabilityReason?: { cause: string }[];
-//   zoikoPlan?: ZoikoPlan | null;
-// }
-interface ProductOfferingQualificationItem {
-  id: string;
-  "@type"?: string;                             
-  product: {
-    "@type"?: string;                           
-    productOffering: { id: string; name?: string };
-    productCharacteristic?: ProductCharacteristic[];
-    place?: Array<{                             
-      id: string;
-      role?: string;
-      "@referredType"?: string;
-    }>;
-  };
-  eligibilityUnavailabilityReason?: { cause: string }[];
+/**
+ * What /api/BritishTelecom/get-products actually returns per row: a BT POQ
+ * item with two extra Zoiko-side fields tacked on at the top level. We strip
+ * those out before storing the canonical BT shape in the cart.
+ */
+type ApiPOQRow = BTProductOfferingQualificationItem & {
   zoikoPlan?: ZoikoPlan | null;
-}
+  bt_plan_id?: string | null;
+};
+
+// Alias used by the existing JSX/props below.
+type ProductOfferingQualificationItem = ApiPOQRow;
 
 type ContractDuration = "12-months" | "18-months" | "24-months";
 
@@ -184,7 +135,21 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
   const { addToCart } = useCart();
 
   const handleAddToCart = () => {
-    addToCart({
+    // /api/BritishTelecom/get-products returns each row as a BT POQ item with
+    // two Zoiko-side fields (`zoikoPlan`, `bt_plan_id`) bolted on at the SAME
+    // level as the canonical BT `@type`. Strip them so what we store under
+    // `productOfferingQualificationItem` is a clean BT POQ row — exactly the
+    // shape /api/BritishTelecom/process-order needs.
+    const {
+      zoikoPlan: _strippedZoikoPlan,
+      bt_plan_id: _strippedBtPlanId,
+      ...productOfferingQualificationItem
+    } = item;
+    void _strippedZoikoPlan;
+    void _strippedBtPlanId;
+
+    const plan: Plan = {
+      // — display fields (legacy) —
       id: String(variation?.id ?? item.id),
       name: planName,
       price: parseFloat(price ?? "0"),
@@ -192,8 +157,21 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
       validity: `${contractMonths}`,
       description: `${planName} broadband — up to ${formatDownload(download)} down / ${formatUpload(upload)}.`,
       address: selectedAddress,
-      bt_plan_id: variation?.bt_plan_id ?? zoikoPlan.bt_plan_id ?? null,
-    });
+      // Prefer the variation's effective_bt_plan_id ("E0000429") — that is
+      // the BT productOffering id the order endpoint expects.
+      bt_plan_id:
+        variation?.effective_bt_plan_id ??
+        variation?.bt_plan_id ??
+        zoikoPlan.bt_plan_id ??
+        null,
+
+      // — BT / Zoiko enrichment (new — needed by /process-order) —
+      productOfferingQualificationItem,
+      zoikoPlan,
+      zoikoVariation: variation,
+    };
+
+    addToCart(plan);
   };
 
   return (
