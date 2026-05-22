@@ -1,34 +1,51 @@
-// utils/stripeWebPaymentApi.ts
+// app/utils/stripeWebPaymentApi.ts
 //
-// Forwards the localStorage cart (with the full BT POQ-enriched `product`
-// object and matched `zoikoPlan`) to /api/BritishTelecom/process-order.
+// Forwards the localStorage cart (array of `Plan` items — each carrying the
+// full BT `productOfferingQualificationItem`, the matched `zoikoPlan`, the
+// chosen `zoikoVariation` and the selected `address`) to
+// /api/BritishTelecom/process-order.
 //
-// NOTE: BeQuick has been removed. All ordering now goes through BT.
+// That route then builds:
+//   • searchTimeSlot
+//   • appointment booking
+//   • productOrder
+// payloads directly from the cart row — no string sniffing.
 
-/** Read the raw cart from localStorage (returns [] on the server or on error). */
-function readRawCart(): unknown[] {
+import type { Plan, FormattedAddress } from "@/app/context/CartContext";
+
+/** Read the cart from localStorage (returns [] on the server or on error). */
+function readCart(): Plan[] {
   try {
     if (typeof window === "undefined") return [];
     const stored = localStorage.getItem("cart");
     if (!stored) return [];
     const parsed = JSON.parse(stored);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) ? (parsed as Plan[]) : [];
   } catch {
     return [];
   }
 }
 
-/** Pull the address out of the first cart item — used as `serviceAddress`. */
-function getServiceAddressFromLocalStorage(): Record<string, unknown> | null {
-  const items = readRawCart();
-  const first = items[0] as { address?: { id?: string } } | undefined;
-  if (first?.address?.id) return first.address as Record<string, unknown>;
-  return null;
+/** Pull the address out of the first cart item. */
+function getServiceAddress(): FormattedAddress | null {
+  const items = readCart();
+  return items[0]?.address ?? null;
 }
 
-export async function processOrderStripe(orderData: any) {
+export interface ProcessOrderInput {
+  billingAddress: Record<string, unknown>;
+  shippingAddress: Record<string, unknown>;
+  coupon: { type: string; discount: string | number } | null;
+  cart?: unknown; // billing-summary cart — overridden by raw cart below
+  totals: { subtotal: number; discount: number; total: number };
+  agreedToTerms: boolean;
+  paymentMethod: string;
+  createdAt: string;
+}
+
+export async function processOrderStripe(orderData: ProcessOrderInput) {
   try {
-    const serviceAddress = getServiceAddressFromLocalStorage();
+    const serviceAddress = getServiceAddress();
 
     if (!serviceAddress?.id) {
       return {
@@ -38,18 +55,29 @@ export async function processOrderStripe(orderData: any) {
       };
     }
 
-    // Forward the FULL raw cart item (with product + zoikoPlan) — the BT
-    // route needs those fields to build a correct product order.
-    const rawCart = readRawCart();
+    const rawCart = readCart();
+
+    if (!rawCart.length) {
+      return { status: false, message: "Your cart is empty." };
+    }
+
+    if (!rawCart[0].productOfferingQualificationItem) {
+      return {
+        status: false,
+        message:
+          "Cart item is missing the BT product details. " +
+          "Please go back to /fibre-packages and re-select your plan.",
+      };
+    }
 
     const response = await fetch("/api/BritishTelecom/process-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...orderData,
-        // override the normalised cart with the raw localStorage one so the
-        // server can read product.characteristics / product.offering / zoikoPlan
-        cart: rawCart.length ? rawCart : orderData.cart,
+        // Override the normalised cart with the Plan-shaped one so the
+        // server has productOfferingQualificationItem etc.
+        cart: rawCart,
         serviceAddress,
       }),
     });
@@ -66,26 +94,27 @@ export async function processOrderStripe(orderData: any) {
     return {
       status: true,
       data: {
-        btOrderId:        result.btOrderId,
-        externalId:       result.externalId,
-        appointmentId:    result.appointmentId,
+        btOrderId: result.btOrderId,
+        externalId: result.externalId,
+        appointmentId: result.appointmentId,
         appointmentStart: result.appointmentStart,
-        appointmentEnd:   result.appointmentEnd,
-        btStatus:         result.status,
-        btData:           result.data,
+        appointmentEnd: result.appointmentEnd,
+        btStatus: result.status,
+        btData: result.data,
         // fields Django needs
-        billingAddress:   orderData.billingAddress,
-        shippingAddress:  orderData.shippingAddress,
-        cart:             orderData.cart,
-        totals:           orderData.totals,
-        coupon:           orderData.coupon,
-        paymentMethod:    orderData.paymentMethod,
-        createdAt:        orderData.createdAt,
-        agreedToTerms:    orderData.agreedToTerms,
+        billingAddress: orderData.billingAddress,
+        shippingAddress: orderData.shippingAddress,
+        cart: orderData.cart, // billing-summary cart (display)
+        totals: orderData.totals,
+        coupon: orderData.coupon,
+        paymentMethod: orderData.paymentMethod,
+        createdAt: orderData.createdAt,
+        agreedToTerms: orderData.agreedToTerms,
         serviceAddress,
       },
     };
-  } catch (err: any) {
-    return { status: false, message: err?.message ?? "Unexpected error" };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unexpected error";
+    return { status: false, message };
   }
 }
