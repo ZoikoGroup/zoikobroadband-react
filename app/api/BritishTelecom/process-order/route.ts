@@ -312,10 +312,10 @@ async function searchAppointmentSlots(params: {
 }): Promise<{ start: string; end: string; id?: string } | null> {
   const body = buildSearchTimeSlotPayload(params);
 
-  console.log(
-    "[BT processOrder] searchTimeSlot payload:",
-    JSON.stringify(body, null, 2)
-  );
+  // console.log(
+  //   "[BT processOrder] searchTimeSlot payload:",
+  //   JSON.stringify(body, null, 2)
+  // );
 
   const response = await callApi<SlotSearchResponse>(
     "/common/appointmentManagement/v4/searchTimeSlot",
@@ -407,10 +407,10 @@ async function bookAppointment(params: {
 }): Promise<BookedAppointment | null> {
   const body = buildBookAppointmentPayload(params);
 
-  console.log(
-    "[BT processOrder] bookAppointment payload:",
-    JSON.stringify(body, null, 2)
-  );
+  // console.log(
+  //   "[BT processOrder] bookAppointment payload:",
+  //   JSON.stringify(body, null, 2)
+  // );
 
   const response = await callApi<{
     id?: string;
@@ -770,24 +770,24 @@ export async function POST(req: NextRequest) {
   const externalId = `WC-${Date.now()}-${orderId}`;
   const startDate = new Date().toISOString();
 
-  console.log("[BT processOrder] ========== START ==========");
-  console.log("[BT processOrder] productOfferingId:", productOfferingId);
-  console.log("[BT processOrder] POQ offering.id  :", poq.product.productOffering.id);
-  console.log("[BT processOrder] Openreach NAD id :", address.id);
-  console.log("[BT processOrder] Postcode         :", address.postcode);
-  console.log("[BT processOrder] Raw tech         :", rawTech);
-  console.log("[BT processOrder] Appointment tech :", appointmentTech);
-  console.log("[BT processOrder] Contract         :", contractTerm.value, contractTerm.unit);
-  console.log("[BT processOrder] District code    :", districtCode);
-  console.log("[BT processOrder] Min guaranteed   :", minGuaranteedSpeed);
-  console.log("[BT processOrder] Sandbox          :", isSandbox);
+  // console.log("[BT processOrder] ========== START ==========");
+  // console.log("[BT processOrder] productOfferingId:", productOfferingId);
+  // console.log("[BT processOrder] POQ offering.id  :", poq.product.productOffering.id);
+  // console.log("[BT processOrder] Openreach NAD id :", address.id);
+  // console.log("[BT processOrder] Postcode         :", address.postcode);
+  // console.log("[BT processOrder] Raw tech         :", rawTech);
+  // console.log("[BT processOrder] Appointment tech :", appointmentTech);
+  // console.log("[BT processOrder] Contract         :", contractTerm.value, contractTerm.unit);
+  // console.log("[BT processOrder] District code    :", districtCode);
+  // console.log("[BT processOrder] Min guaranteed   :", minGuaranteedSpeed);
+  // console.log("[BT processOrder] Sandbox          :", isSandbox);
 
   // ── Step A: RoBT site address ────────────────────────────────────────────
-  console.log("[BT processOrder] Step A: resolving RoBT site address…");
+  // console.log("[BT processOrder] Step A: resolving RoBT site address…");
   const robtAddressId = isSandbox
     ? address.id // sandbox: don't burn an API call
     : await resolveRobtAddressId(address);
-  console.log("[BT processOrder] ✅ RoBT site address:", robtAddressId);
+  // console.log("[BT processOrder] ✅ RoBT site address:", robtAddressId);
 
   // ── Step 5.1 / 5.2: Appointment ──────────────────────────────────────────
   let appointmentId = "";
@@ -795,7 +795,7 @@ export async function POST(req: NextRequest) {
   let appointmentEnd = "";
 
   if (isSandbox) {
-    console.log("[BT processOrder] 🟡 SANDBOX — mocking appointment");
+    // console.log("[BT processOrder] 🟡 SANDBOX — mocking appointment");
     const installDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     appointmentId = `SANDBOX-APPT-${Date.now()}`;
     appointmentStart = installDate.toISOString();
@@ -803,7 +803,7 @@ export async function POST(req: NextRequest) {
       installDate.getTime() + 5 * 60 * 60 * 1000
     ).toISOString();
   } else {
-    console.log("[BT processOrder] Step 5.1: searchTimeSlot…");
+    // console.log("[BT processOrder] Step 5.1: searchTimeSlot…");
     const slot = await searchAppointmentSlots({
       cart: cartItem,
       appointmentTech,
@@ -821,9 +821,9 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       );
     }
-    console.log("[BT processOrder] ✅ Slot:", slot.start);
+    // console.log("[BT processOrder] ✅ Slot:", slot.start);
 
-    console.log("[BT processOrder] Step 5.2: bookAppointment…");
+    // console.log("[BT processOrder] Step 5.2: bookAppointment…");
     const booked = await bookAppointment({
       cart: cartItem,
       appointmentTech,
@@ -842,11 +842,11 @@ export async function POST(req: NextRequest) {
     appointmentId = booked.id;
     appointmentStart = booked.start;
     appointmentEnd = booked.end;
-    console.log("[BT processOrder] ✅ Appointment:", appointmentId);
+    // console.log("[BT processOrder] ✅ Appointment:", appointmentId);
   }
 
   // ── Step 6: Place product order ──────────────────────────────────────────
-  console.log("[BT processOrder] Step 6: productOrder…");
+  // console.log("[BT processOrder] Step 6: productOrder…");
 
   const orderPayload = buildOrderPayload({
     orderId,
@@ -866,10 +866,10 @@ export async function POST(req: NextRequest) {
     minGuaranteedSpeed,
   });
 
-  console.log(
-    "[BT processOrder] Order payload:",
-    JSON.stringify(orderPayload, null, 2)
-  );
+  // console.log(
+  //   "[BT processOrder] Order payload:",
+  //   JSON.stringify(orderPayload, null, 2)
+  // );
 
   const orderResponse = await callApi<Record<string, unknown>>(
     "/hubco/tmf/productOrderingManagement/v4/productOrder",
@@ -901,8 +901,8 @@ export async function POST(req: NextRequest) {
   const statusCode = orderResponse.status_code;
   const data = orderResponse.data;
 
-  console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
-  console.log("[BT processOrder] ========== END ==========");
+  // console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
+  // console.log("[BT processOrder] ========== END ==========");
 
   if (statusCode === 201 || statusCode === 202) {
     const btOrderId =
