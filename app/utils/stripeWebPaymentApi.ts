@@ -33,14 +33,16 @@ function getServiceAddress(): FormattedAddress | null {
 }
 
 export interface ProcessOrderInput {
-  billingAddress: Record<string, unknown>;
-  shippingAddress: Record<string, unknown>;
+  billingAddress: object;
+  shippingAddress: object;
   coupon: { type: string; discount: string | number } | null;
   cart?: unknown; // billing-summary cart — overridden by raw cart below
   totals: { subtotal: number; discount: number; total: number };
   agreedToTerms: boolean;
   paymentMethod: string;
   createdAt: string;
+  /** Allow consumers to pass extra fields (e.g. coupon details) without TS friction. */
+  [key: string]: unknown;
 }
 
 export async function processOrderStripe(orderData: ProcessOrderInput) {
