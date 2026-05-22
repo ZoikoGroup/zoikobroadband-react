@@ -1,31 +1,37 @@
 /**
  * POST /api/BritishTelecom/process-order
  *
- * Full BT Wholesale order submission flow.
+ * Direct port of the payload-building logic from the BT Wholesale
+ * WooCommerce Integration plugin (class-bt-order-manager.php and
+ * class-bt-api-client.php), so this route produces byte-identical request
+ * bodies to the plugin's:
  *
- * The client sends the cart exactly as it was stored by Broadbandplans.tsx
- * — every item is a `Plan` from app/context/CartContext, carrying:
+ *   • searchTimeSlot  (class-bt-api-client.php :: get_appointment_slots)
+ *   • appointment     (class-bt-api-client.php :: book_appointment)
+ *   • productOrder    (class-bt-order-manager.php :: place_bt_order)
  *
- *   • productOfferingQualificationItem  ← canonical BT POQ row
- *   • zoikoPlan + zoikoVariation        ← Zoiko-side plan + chosen variation
- *   • address                           ← FormattedAddress chosen on the POQ step
- *   • bt_plan_id                        ← variation.effective_bt_plan_id (e.g. "E0000429")
+ * It reads everything off the cart item the user picked on Broadbandplans.tsx
+ * — productOfferingQualificationItem (canonical BT POQ row) + zoikoPlan +
+ * zoikoVariation + address — so nothing has to be inferred from strings.
  *
- * That means we never have to sniff `name` or guess speeds: every value
- * needed for the three BT calls is read directly off these fields.
- *
- * Flow per the BT API flow doc:
- *
- *   Step A     GET  /common/geographicAddressManagement/v1/geographicAddress
- *                       ?postcode=…&addressSource=ROBT
- *              (resolves a RoBT site id — required by the order endpoint)
- *
- *   Step 5.1   POST /common/appointmentManagement/v4/searchTimeSlot
- *   Step 5.2   POST /common/appointmentManagement/v4/appointment
- *   Step 6     POST /hubco/tmf/productOrderingManagement/v4/productOrder
- *
- * (Auth, address search and product availability — steps 1–4 in the doc —
- *  already happened earlier in the user's journey.)
+ * Key alignment points with the WP plugin (matters!):
+ *   – Repair SLA code is technology-specific: FTTP/FTTC/SOADSL/ADSL → E0000028,
+ *     SOGEA → E0000154. (`get_repair_sla_code`)
+ *   – Min guaranteed speed = floor(advertisedDownloadSpeed * 0.95), min 1.
+ *     (`calculate_minimum_guaranteed_speed`)
+ *   – Journey type ATT_X_JOURNEYTYPE values are "NewLineProvide" (no spaces)
+ *     for the order body, "New Line Provide" (with spaces) for the
+ *     appointment tech mapping. (`determine_journey_type`)
+ *   – Contract term is clamped per technology to BT-allowed values.
+ *     (`validate_contract_term`)
+ *   – AccessTechnology gets mapped for appointment endpoints
+ *     (SOGEA → "SOGEA New Line", etc.). (`map_to_bt_access_technology`)
+ *   – productSpecification: "BB1" / family "BB1hub" for broadband;
+ *     "Ethernet" / family "Ethernet" for ethernet/MPF.
+ *   – requestedCompletionDate on the order envelope = appointment_start
+ *     (the PHP code logs "+3 days" but actually assigns appointment_start).
+ *   – Optional ATT_RT_CLI + ATT_RT_PortingRequired (landline port)
+ *     and ATT_RT_IntegratedCopperCease (FTTP migration from copper).
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -38,7 +44,7 @@ import type {
   ZoikoVariation,
 } from "@/app/context/CartContext";
 
-// ─── Request / billing shape ──────────────────────────────────────────────────
+// ─── Request shape ────────────────────────────────────────────────────────────
 
 interface BillingAddress {
   firstName: string;
@@ -54,6 +60,21 @@ interface BillingAddress {
   email: string;
 }
 
+/**
+ * Optional checkout-time toggles, matching `$checkout_data` in the WP plugin.
+ * If the React checkout form doesn't collect these yet, the route still works —
+ * they just default to "no landline, new line provide, not migrating".
+ */
+interface CheckoutExtras {
+  has_landline?: "yes" | "no";
+  landline_number?: string;
+  stop_existing_service?: "stop" | "remain";
+  delivery_contact_first_name?: string;
+  delivery_contact_last_name?: string;
+  delivery_contact_email?: string;
+  delivery_contact_phone?: string;
+}
+
 interface OrderRequestBody {
   billingAddress: BillingAddress;
   shippingAddress: BillingAddress;
@@ -63,17 +84,18 @@ interface OrderRequestBody {
   agreedToTerms: boolean;
   paymentMethod: string;
   createdAt: string;
-  /** Optional explicit override. If absent we use cart[0].address. */
+  /** Optional explicit override. If absent, uses cart[0].address. */
   serviceAddress?: FormattedAddress;
+  /** Optional checkout-time toggles for porting / migration / delivery contact. */
+  checkoutExtras?: CheckoutExtras;
 }
 
-// ─── Helpers: read fields off the cart item ───────────────────────────────────
+// ─── Helpers — read fields off the cart item ──────────────────────────────────
 
 function generateOrderId(): string {
   return String(Math.floor(Math.random() * 99999) + 1);
 }
 
-/** Read a characteristic value by name (case-insensitive). */
 function readChar(
   chars: ProductCharacteristic[] | undefined,
   name: string
@@ -85,131 +107,380 @@ function readChar(
 }
 
 /**
- * Resolve the AccessTechnology value.
- *
- * `productOfferingQualificationItem.product.productCharacteristic[].name=AccessTechnology`
- * is authoritative — BT returns "SOGEA", "FTTC", "FTTP", "SOADSL", "ADSL".
- *
- * Per the BT flow doc §5, the appointment endpoints want a slightly different
- * spelling for SOGEA new installs ("SOGEA New Line"). The order endpoint keeps
- * the raw value in ATT_RT_AccessTechnology.
+ * Read the raw AccessTechnology value from the cart's POQ row. BT returns
+ * one of: "FTTP", "SOGEA", "FTTC", "SOADSL", "ADSL", …
  */
-function resolveAccessTechnology(
+function getRawAccessTechnology(
   poq: BTProductOfferingQualificationItem
-): { raw: string; appointment: string } {
+): string {
   const raw =
     readChar(poq.product.productCharacteristic, "AccessTechnology") || "FTTP";
-  const upper = raw.toUpperCase();
-
-  let appointment = raw;
-  if (upper === "SOGEA") appointment = "SOGEA New Line";
-  else if (upper === "FTTP") appointment = "FTTP";
-  else if (upper === "FTTC") appointment = "FTTC";
-  else if (upper === "SOADSL") appointment = "SOADSL";
-  else if (upper === "ADSL") appointment = "ADSL";
-
-  return { raw: upper, appointment };
+  return raw.toUpperCase();
 }
 
-/** BB1 vs Ethernet productSpecification id for appointment endpoints. */
-function getProductSpec(rawTech: string): { id: string; family: string } {
-  const t = rawTech.toLowerCase();
-  if (t.includes("ethernet") || t.includes("gea_eth")) {
-    return { id: "Ethernet", family: "Ethernet" };
-  }
-  return { id: "BB1", family: "BB1hub" };
-}
+// ─── Plugin port: determine_journey_type() ────────────────────────────────────
 
 /**
- * Contract term from the selected variation. The variation IS the choice
- * the user made on the plan card — its duration_value + duration_unit are
- * the truth.
+ * Port of `determine_journey_type()` in class-bt-order-manager.php.
+ *
+ * Returns the value used both in:
+ *   • the order body's ATT_X_JOURNEYTYPE characteristic
+ *     (where the plugin emits "NewLineProvide" / "Migration"), and
+ *   • indirectly in the appointment AccessTechnology mapping
+ *     (where the plugin also passes "New Line Provide" with spaces).
+ *
+ * We return both spellings to avoid ambiguity downstream.
  */
-function resolveContractTerm(
-  variation: ZoikoVariation | null,
-  fallbackValidity: string
-): { value: number; unit: string } {
-  if (variation) {
-    const unitRaw = (variation.duration_unit || "month").toLowerCase();
-    const unit =
-      unitRaw.charAt(0).toUpperCase() +
-      unitRaw.slice(1).replace(/s$/, "");
-    return { value: variation.duration_value || 24, unit };
-  }
+function determineJourneyType(
+  extras: CheckoutExtras,
+  rawTech: string
+): { order: "NewLineProvide" | "Migration"; appointment: string } {
+  const hasLandline = extras.has_landline === "yes";
+  const stopExisting = extras.stop_existing_service === "stop";
 
-  const m = fallbackValidity.match(/^(\d+)\s*(month|year|day)?s?$/i);
-  if (m) {
-    const value = parseInt(m[1], 10);
-    const unitRaw = (m[2] ?? "month").toLowerCase();
-    const unit =
-      unitRaw.charAt(0).toUpperCase() + unitRaw.slice(1).replace(/s$/, "");
-    return { value, unit };
+  if (
+    hasLandline &&
+    extras.landline_number &&
+    ["SOGEA", "FTTC", "SOADSL"].includes(rawTech)
+  ) {
+    return { order: "Migration", appointment: "Migration" };
   }
-  return { value: 24, unit: "Month" };
+  if (stopExisting) {
+    return { order: "Migration", appointment: "Migration" };
+  }
+  return { order: "NewLineProvide", appointment: "New Line Provide" };
 }
 
-/** Minimum guaranteed speed → POQ char, fallback to 80% advertised. */
+// ─── Plugin port: map_to_bt_access_technology() ───────────────────────────────
+
+/**
+ * Port of `map_to_bt_access_technology()` in class-bt-api-client.php.
+ *
+ * Translates the raw AccessTechnology from the POQ row into the value BT
+ * expects on the appointment endpoints. The "New Line / Existing Line"
+ * suffix depends on the journey type.
+ */
+function mapToBtAccessTechnology(
+  rawTech: string,
+  appointmentJourney: string
+): string {
+  const tech = rawTech.toUpperCase().trim();
+  const isNewLine =
+    /new/i.test(appointmentJourney) || /provide/i.test(appointmentJourney);
+
+  const exact: Record<string, string> = {
+    FTTP: "FTTP",
+    SOGEA: isNewLine ? "SOGEA New Line" : "SOGEA Existing Line",
+    "SOGEA GFAST": isNewLine ? "SOGEA GFAST New Line" : "SOGEA GFAST Existing Line",
+    SOGEA_GFAST: isNewLine ? "SOGEA GFAST New Line" : "SOGEA GFAST Existing Line",
+    FTTC: "FTTC",
+    "FTTC GFAST": "FTTC GFAST",
+    FTTC_GFAST: "FTTC GFAST",
+    "FTTC SIM2": "FTTC Sim2",
+    FTTC_SIM2: "FTTC Sim2",
+    "FTTC GFAST SIM2": "FTTC GFAST Sim2",
+    SOADSL: "SOADSL",
+    ADSL: "ADSL",
+    "FTTP SHIFT ONT": "FTTP Shift ONT",
+    FTTP_SHIFT_ONT: "FTTP Shift ONT",
+    MPF: "Generic Ethernet Access",
+    "GENERIC ETHERNET ACCESS": "Generic Ethernet Access",
+    "GEA-FTTP": "Generic Ethernet Access - FTTP",
+  };
+
+  if (exact[tech]) return exact[tech];
+
+  if (tech.includes("SOGEA")) {
+    if (tech.includes("GFAST")) {
+      return isNewLine ? "SOGEA GFAST New Line" : "SOGEA GFAST Existing Line";
+    }
+    return isNewLine ? "SOGEA New Line" : "SOGEA Existing Line";
+  }
+  if (tech.includes("FTTC")) {
+    if (tech.includes("GFAST")) return "FTTC GFAST";
+    if (tech.includes("SIM2")) return "FTTC Sim2";
+    return "FTTC";
+  }
+  return isNewLine ? "FTTP" : "SOGEA Existing Line";
+}
+
+// ─── Plugin port: get_product_specification_for_appointment() ─────────────────
+
+function getProductSpecForAppointment(
+  appointmentTech: string
+): { id: string; family: string; referredType: string } {
+  if (
+    /generic ethernet/i.test(appointmentTech) ||
+    /\bmpf\b/i.test(appointmentTech)
+  ) {
+    return {
+      id: "Ethernet",
+      family: "Ethernet",
+      referredType: "btProductOfferingFamily",
+    };
+  }
+  return {
+    id: "BB1",
+    family: "BB1hub",
+    referredType: "btProductOfferingFamily",
+  };
+}
+
+// ─── Plugin port: validate_contract_term() ────────────────────────────────────
+
+/**
+ * BT-allowed contract terms per technology (from plugin `validate_contract_term`).
+ * If the user picks something outside this list, we clamp to the closest valid
+ * value — same behaviour as the plugin (which logs a warning and proceeds).
+ *
+ * IMPORTANT: These are BT's hard rules. Zoiko's variations (12/18/24 months)
+ * are MARKETING terms — what BT actually accepts in the order body is much
+ * narrower:
+ *   FTTP   → 12 months
+ *   SOGEA  → 1  month
+ *   FTTC   → 1  month
+ *   SOADSL → 3  months
+ *   ADSL   → 1  month
+ */
+const BT_ALLOWED_CONTRACT_MONTHS: Record<string, number[]> = {
+  FTTP: [12],
+  SOGEA: [1],
+  FTTC: [1],
+  SOADSL: [3],
+  ADSL: [1],
+};
+
+function parseContractTerm(
+  variation: ZoikoVariation | null,
+  fallbackValidity: string
+): number {
+  if (variation?.duration_value && variation.duration_value > 0) {
+    return variation.duration_value;
+  }
+  const m = fallbackValidity.match(/(\d+)\s*(day|month|year)?s?/i);
+  if (m) return parseInt(m[1], 10);
+  return 12;
+}
+
+function validateContractTerm(
+  variation: ZoikoVariation | null,
+  fallbackValidity: string,
+  rawTech: string
+): { value: number; unit: "Month" } {
+  const parsed = parseContractTerm(variation, fallbackValidity);
+  const allowed =
+    BT_ALLOWED_CONTRACT_MONTHS[rawTech] ?? [12];
+
+  if (allowed.includes(parsed)) {
+    return { value: parsed, unit: "Month" };
+  }
+
+  // Clamp to the closest allowed value (same algorithm as the plugin).
+  let closest = allowed[0];
+  let minDiff = Math.abs(parsed - closest);
+  for (const a of allowed) {
+    const diff = Math.abs(parsed - a);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = a;
+    }
+  }
+  console.warn(
+    `[BT processOrder] ⚠️ Contract term ${parsed} not allowed for ${rawTech}, clamping to ${closest}`
+  );
+  return { value: closest, unit: "Month" };
+}
+
+// ─── Plugin port: calculate_minimum_guaranteed_speed() ────────────────────────
+
+/**
+ * Plugin: `floor($speed * 0.95)`, with `max(1, …)`. We prefer the explicit
+ * `productMinimumGuaranteedSpeed` from the POQ row if BT supplied one;
+ * otherwise compute from the advertised download.
+ */
 function resolveMinGuaranteedSpeed(
   poq: BTProductOfferingQualificationItem
 ): string {
   const chars = poq.product.productCharacteristic;
 
   const fromChar = readChar(chars, "productMinimumGuaranteedSpeed");
-  if (fromChar) return String(Math.floor(parseFloat(fromChar) || 0));
+  if (fromChar) {
+    const n = parseFloat(fromChar);
+    if (!isNaN(n) && n > 0) return String(Math.max(1, Math.floor(n)));
+  }
 
   const adv = parseFloat(readChar(chars, "productAdvertisedDownloadSpeed"));
-  if (!adv || isNaN(adv)) return "0";
-  return String(Math.floor(adv * 0.8));
+  if (!adv || isNaN(adv)) return "1";
+  return String(Math.max(1, Math.floor(adv * 0.95)));
 }
 
-/** District code: FormattedAddress, then poq.product.place[].districtId, else "NS". */
+// ─── Plugin port: extract_district_code() ─────────────────────────────────────
+
 function resolveDistrictCode(
   address: FormattedAddress,
   poq: BTProductOfferingQualificationItem
 ): string {
   if (address.districtCode) return address.districtCode;
   const placeWithDistrict = poq.product.place?.find((p) => p.districtId);
-  return placeWithDistrict?.districtId ?? "NS";
+  if (placeWithDistrict?.districtId) return placeWithDistrict.districtId;
+
+  // Derive from postcode: leading letters before the first digit.
+  if (address.postcode) {
+    const m = address.postcode.toUpperCase().match(/^([A-Z]{1,2})\d/);
+    if (m) return m[1];
+  }
+  return "NS";
 }
 
-/** Repair SLA sub-product code (mirrors WP plugin — Standard Care for all). */
-function getRepairSlaCode(_rawTech: string): string {
-  return "E0000704";
-}
+// ─── Plugin port: get_repair_sla_code() ───────────────────────────────────────
 
 /**
- * Resolve the BT productOffering id we send on the order.
- *   1. Plan.bt_plan_id              (variation.effective_bt_plan_id, e.g. "E0000429")
- *   2. variation.effective_bt_plan_id
- *   3. zoikoPlan.bt_plan_id
- *   4. poq.product.productOffering.id   (e.g. "SOGEA 40_10M" — legacy)
+ * Per the plugin (NOT what I had previously):
+ *   FTTP    → E0000028 (Standard Care)
+ *   SOGEA   → E0000154 (Basic Care)
+ *   FTTC    → E0000028
+ *   SOADSL  → E0000028
+ *   ADSL    → E0000028
  */
-function resolveProductOfferingId(cart: Plan): string {
-  return (
-    cart.bt_plan_id ??
-    cart.zoikoVariation?.effective_bt_plan_id ??
-    cart.zoikoPlan?.bt_plan_id ??
-    cart.productOfferingQualificationItem.product.productOffering.id
-  );
+function getRepairSlaCode(rawTech: string): string {
+  switch (rawTech.toUpperCase()) {
+    case "SOGEA":
+      return "E0000154";
+    case "FTTP":
+    case "FTTC":
+    case "SOADSL":
+    case "ADSL":
+    default:
+      return "E0000028";
+  }
 }
 
-// ─── Step A: RoBT site address lookup ─────────────────────────────────────────
+// ─── Plugin port: build_managed_install_item() ────────────────────────────────
+
+function buildManagedInstallItem(
+  rawTech: string,
+  installType: string,
+  baseId: string
+): Record<string, unknown> {
+  const productCharacteristic: ProductCharacteristic[] = [];
+  const tech = rawTech.toUpperCase();
+
+  if (tech === "FTTP") {
+    productCharacteristic.push(
+      { name: "ATT_RT_ECCChargeband", value: "0" },
+      { name: "ATT_RT_FTTPInstallType", value: "1 Stage" },
+      { name: "ATT_RT_SiteVisitReason", value: installType }
+    );
+  } else if (["SOGEA", "SOADSL", "FTTC"].includes(tech)) {
+    productCharacteristic.push(
+      { name: "ATT_RT_TRChargeBand", value: "0" },
+      { name: "ATT_RT_UpperCostBand", value: "Standard" },
+      { name: "ATT_RT_SiteVisitReason", value: installType }
+    );
+  } else {
+    productCharacteristic.push({
+      name: "ATT_RT_SiteVisitReason",
+      value: installType,
+    });
+  }
+
+  return {
+    "@type": "BTProductOrderItem",
+    id: `${baseId}.3`,
+    action: "add",
+    product: {
+      "@type": "BTProductRefOrValue",
+      productOffering: { id: "E0000153" }, // Managed Install
+      productCharacteristic,
+    },
+  };
+}
+
+// ─── Plugin port: build_product_characteristics_v2() ──────────────────────────
 
 /**
- * The BT productOrder endpoint expects a RoBT site address id (starts with
- * "R…"), not the Openreach NAD id (starts with "A…"). The cart only carries
- * the Openreach id, so we hit /geographicAddress with addressSource=ROBT.
+ * Builds the productCharacteristic array on the MAIN product order item.
  *
- * Returns the RoBT id, or the Openreach id as a graceful fallback.
+ * Order of characteristics matches the plugin exactly:
+ *   ATT_RT_AccessTechnology, ATT_RT_InstallType, ATT_RT_EndUserType,
+ *   ATT_RT_TrafficWeighting, ATT_RT_ContractTerm, ATT_RT_ContractTermUnit,
+ *   ATT_RT_ResellerID, ATT_X_JOURNEYTYPE, [tech-specific],
+ *   [optional landline porting], ATT_RT_ProductMinimumGuaranteedSpeed
+ */
+function buildMainProductCharacteristics(args: {
+  rawTech: string;
+  contract: { value: number; unit: "Month" };
+  resellerId: string;
+  journeyOrder: "NewLineProvide" | "Migration";
+  extras: CheckoutExtras;
+  minGuaranteedSpeed: string;
+}): ProductCharacteristic[] {
+  const {
+    rawTech,
+    contract,
+    resellerId,
+    journeyOrder,
+    extras,
+    minGuaranteedSpeed,
+  } = args;
+
+  if (!resellerId || resellerId === "ABC") {
+    console.warn(
+      "[BT processOrder] ⚠️ Using placeholder Reseller ID. Set BT_RESELLER_ID env."
+    );
+  }
+
+  const chars: ProductCharacteristic[] = [
+    { name: "ATT_RT_AccessTechnology", value: rawTech },
+    { name: "ATT_RT_InstallType", value: "M" },
+    { name: "ATT_RT_EndUserType", value: "Residential" },
+    { name: "ATT_RT_TrafficWeighting", value: "Standard" },
+    { name: "ATT_RT_ContractTerm", value: String(contract.value) },
+    { name: "ATT_RT_ContractTermUnit", value: contract.unit },
+    { name: "ATT_RT_ResellerID", value: resellerId },
+    { name: "ATT_X_JOURNEYTYPE", value: journeyOrder },
+  ];
+
+  // Technology-specific
+  if (rawTech === "FTTP") {
+    chars.push({ name: "ATT_RT_ONTType", value: "New ONT" });
+
+    // Migrating from copper? (plugin: is_migrating_from_copper)
+    const migrating =
+      extras.stop_existing_service === "stop" ||
+      (extras.has_landline === "yes" && !!extras.landline_number);
+    if (migrating) {
+      chars.push({ name: "ATT_RT_IntegratedCopperCease", value: "Y" });
+    }
+  }
+
+  // Optional landline porting (plugin: has_landline=yes branch)
+  if (extras.has_landline === "yes" && extras.landline_number) {
+    chars.push(
+      { name: "ATT_RT_CLI", value: extras.landline_number },
+      { name: "ATT_RT_PortingRequired", value: "Y" }
+    );
+  }
+
+  chars.push({
+    name: "ATT_RT_ProductMinimumGuaranteedSpeed",
+    value: minGuaranteedSpeed,
+  });
+
+  return chars;
+}
+
+// ─── Plugin port: get_robt_address_for_place() ────────────────────────────────
+
+/**
+ * Direct port of `get_robt_address_for_place` — hits RoBT via
+ * /common/geographicAddressManagement/v1/geographicAddress?addressSource=ROBT
+ * and tries five matching strategies in order.
  */
 async function resolveRobtAddressId(
   address: FormattedAddress
 ): Promise<string> {
   if (!address.postcode) return address.id;
-
-  const endpoint =
-    `/common/geographicAddressManagement/v1/geographicAddress` +
-    `?postcode=${encodeURIComponent(address.postcode)}&addressSource=ROBT`;
 
   type RobtAddress = {
     id?: string;
@@ -217,7 +488,12 @@ async function resolveRobtAddressId(
     streetName?: string;
     postcode?: string;
     uprn?: string;
+    alternateIds?: { type?: string; id?: string }[];
   };
+
+  const endpoint =
+    `/common/geographicAddressManagement/v1/geographicAddress` +
+    `?postcode=${encodeURIComponent(address.postcode)}&addressSource=ROBT`;
 
   const res = await callApi<RobtAddress[]>(endpoint, { method: "GET" });
   if (!res.success) return address.id;
@@ -225,54 +501,76 @@ async function resolveRobtAddressId(
   const list = Array.isArray(res.data) ? res.data : [];
   if (!list.length) return address.id;
 
+  const normPostcode = (s: string) =>
+    s.replace(/\s+/g, "").toUpperCase();
   const eqPostcode = (a: string, b: string) =>
-    a.replace(/\s+/g, "").toUpperCase() === b.replace(/\s+/g, "").toUpperCase();
+    normPostcode(a) === normPostcode(b);
 
-  // 1. exact streetNr + streetName + postcode
+  // Strategy 1: exact streetNr + streetName + postcode
   if (address.streetNr && address.streetName) {
-    const exact = list.find(
+    const hit = list.find(
       (r) =>
-        (r.streetNr ?? "").trim() === (address.streetNr ?? "").trim() &&
+        (r.streetNr ?? "").trim() === address.streetNr.trim() &&
         (r.streetName ?? "").trim().toLowerCase() ===
-          (address.streetName ?? "").trim().toLowerCase() &&
+          address.streetName.trim().toLowerCase() &&
         eqPostcode(r.postcode ?? "", address.postcode)
     );
-    if (exact?.id) return exact.id;
+    if (hit?.id) return hit.id;
   }
 
-  // 2. UPRN match
+  // Strategy 2: UPRN
   if (address.uprn) {
-    const byUprn = list.find((r) => r.uprn === address.uprn);
-    if (byUprn?.id) return byUprn.id;
+    const hit = list.find((r) => r.uprn === address.uprn);
+    if (hit?.id) return hit.id;
   }
 
-  // 3. First entry
+  // Strategy 3: alternateIds OpenreachAddressId correlation
+  for (const r of list) {
+    if (!r.alternateIds?.length) continue;
+    const match = r.alternateIds.find(
+      (alt) => alt.type === "OpenreachAddressId" && alt.id === address.id
+    );
+    if (match && r.id) return r.id;
+  }
+
+  // Strategy 4: partial — streetNr + postcode
+  if (address.streetNr) {
+    const hit = list.find(
+      (r) =>
+        (r.streetNr ?? "").trim() === address.streetNr.trim() &&
+        eqPostcode(r.postcode ?? "", address.postcode)
+    );
+    if (hit?.id) return hit.id;
+  }
+
+  // Strategy 5: first entry
   return list[0]?.id ?? address.id;
 }
 
-// ─── Step 5.1: search appointment time slots ──────────────────────────────────
+// ─── Plugin port: get_appointment_slots() / book_appointment() ────────────────
 
-/**
- * Build the searchTimeSlot payload per BT flow doc §5.1.
- *
- *   POST /common/appointmentManagement/v4/searchTimeSlot
- *   relatedEntity[0].product.place[0] = { id, role: "InstallationAddress",
- *                                         "@referredType": "OpenreachAddress" }
- */
 function buildSearchTimeSlotPayload(params: {
-  cart: Plan;
+  addressId: string;
   appointmentTech: string;
-  productSpec: { id: string; family: string };
+  productSpec: { id: string };
   startDate: string;
+  appointmentType?: string;
+  siteVisitReason?: string;
 }) {
-  const { cart, appointmentTech, productSpec, startDate } = params;
-  const address = cart.address!;
+  const {
+    addressId,
+    appointmentTech,
+    productSpec,
+    startDate,
+    appointmentType = "Standard",
+    siteVisitReason = "Standard",
+  } = params;
 
   return {
     relatedEntity: [
       {
-        appointmentType: "Standard",
-        siteVisitReason: "Standard",
+        appointmentType,
+        siteVisitReason,
         product: {
           productSpecification: { id: productSpec.id },
           characteristic: [
@@ -280,7 +578,7 @@ function buildSearchTimeSlotPayload(params: {
           ],
           place: [
             {
-              id: address.id, // Openreach NAD id from the cart
+              id: addressId,
               role: "InstallationAddress",
               "@referredType": "OpenreachAddress",
             },
@@ -297,6 +595,57 @@ function buildSearchTimeSlotPayload(params: {
   };
 }
 
+function buildBookAppointmentPayload(params: {
+  addressId: string;
+  appointmentTech: string;
+  productSpec: { id: string };
+  startTime: string;
+  endTime: string;
+  appointmentType?: string;
+  siteVisitReason?: string;
+}) {
+  const {
+    addressId,
+    appointmentTech,
+    productSpec,
+    startTime,
+    endTime,
+    appointmentType = "Standard",
+    siteVisitReason = "Standard",
+  } = params;
+
+  return {
+    relatedEntity: [
+      {
+        appointmentType,
+        siteVisitReason,
+        product: {
+          productSpecification: { id: productSpec.id },
+          characteristic: [
+            { name: "AccessTechnology", value: appointmentTech },
+          ],
+          place: [
+            {
+              id: addressId,
+              role: "InstallationAddress",
+              "@referredType": "OpenreachAddress",
+            },
+          ],
+        },
+        id: "1",
+        role: "OrderInformation",
+        "@referredType": "BTProductAppointmentSpecification",
+        "@type": "BTProductAppointmentSpecification",
+        "@baseType": "RelatedEntity",
+      },
+    ],
+    validFor: {
+      startDateTime: startTime,
+      endDateTime: endTime,
+    },
+  };
+}
+
 interface SlotSearchResponse {
   availableTimeSlot?: Array<{
     id?: string;
@@ -305,17 +654,16 @@ interface SlotSearchResponse {
 }
 
 async function searchAppointmentSlots(params: {
-  cart: Plan;
+  addressId: string;
   appointmentTech: string;
   productSpec: { id: string; family: string };
   startDate: string;
 }): Promise<{ start: string; end: string; id?: string } | null> {
   const body = buildSearchTimeSlotPayload(params);
-
-  // console.log(
-  //   "[BT processOrder] searchTimeSlot payload:",
-  //   JSON.stringify(body, null, 2)
-  // );
+  console.log(
+    "[BT processOrder] searchTimeSlot payload:",
+    JSON.stringify(body, null, 2)
+  );
 
   const response = await callApi<SlotSearchResponse>(
     "/common/appointmentManagement/v4/searchTimeSlot",
@@ -342,56 +690,6 @@ async function searchAppointmentSlots(params: {
   };
 }
 
-// ─── Step 5.2: book the chosen slot ───────────────────────────────────────────
-
-/**
- * Build the appointment booking payload per BT flow doc §5.2.
- *   POST /common/appointmentManagement/v4/appointment
- *
- * Same relatedEntity shape as searchTimeSlot, plus a concrete validFor.
- */
-function buildBookAppointmentPayload(params: {
-  cart: Plan;
-  appointmentTech: string;
-  productSpec: { id: string; family: string };
-  startTime: string;
-  endTime: string;
-}) {
-  const { cart, appointmentTech, productSpec, startTime, endTime } = params;
-  const address = cart.address!;
-
-  return {
-    relatedEntity: [
-      {
-        appointmentType: "Standard",
-        siteVisitReason: "Standard",
-        product: {
-          productSpecification: { id: productSpec.id },
-          characteristic: [
-            { name: "AccessTechnology", value: appointmentTech },
-          ],
-          place: [
-            {
-              id: address.id,
-              role: "InstallationAddress",
-              "@referredType": "OpenreachAddress",
-            },
-          ],
-        },
-        id: "1",
-        role: "OrderInformation",
-        "@referredType": "BTProductAppointmentSpecification",
-        "@type": "BTProductAppointmentSpecification",
-        "@baseType": "RelatedEntity",
-      },
-    ],
-    validFor: {
-      startDateTime: startTime,
-      endDateTime: endTime,
-    },
-  };
-}
-
 interface BookedAppointment {
   id: string;
   start: string;
@@ -399,18 +697,17 @@ interface BookedAppointment {
 }
 
 async function bookAppointment(params: {
-  cart: Plan;
+  addressId: string;
   appointmentTech: string;
   productSpec: { id: string; family: string };
   startTime: string;
   endTime: string;
 }): Promise<BookedAppointment | null> {
   const body = buildBookAppointmentPayload(params);
-
-  // console.log(
-  //   "[BT processOrder] bookAppointment payload:",
-  //   JSON.stringify(body, null, 2)
-  // );
+  console.log(
+    "[BT processOrder] bookAppointment payload:",
+    JSON.stringify(body, null, 2)
+  );
 
   const response = await callApi<{
     id?: string;
@@ -441,94 +738,64 @@ async function bookAppointment(params: {
   };
 }
 
-// ─── Step 6: build & submit product order (TMF622) ────────────────────────────
+// ─── Plugin port: place_bt_order() ────────────────────────────────────────────
 
-/**
- * Build the productOrder payload per BT flow doc §6.
- *
- *   POST /hubco/tmf/productOrderingManagement/v4/productOrder
- *
- * One envelope ({"@type":"BTProductOrder"}) with one productOrderItem,
- * which itself nests sub-items for Repair SLA, IP allocation and Managed
- * Install.
- */
 function buildOrderPayload(params: {
   orderId: string;
   externalId: string;
   cart: Plan;
   robtAddressId: string;
+  openreachAddressId: string;
   districtCode: string;
   billingAddress: BillingAddress;
+  extras: CheckoutExtras;
   appointmentId: string;
   appointmentStart: string;
   rawTech: string;
-  productOfferingId: string;
-  contractTerm: { value: number; unit: string };
+  btProductCode: string; // E0000xxx — the main product offering id
+  contract: { value: number; unit: "Month" };
   btAccount: string;
   btCug: string;
   resellerId: string;
   minGuaranteedSpeed: string;
+  installType: string; // "Standard" | "Premium" | "Advanced"
+  journeyOrder: "NewLineProvide" | "Migration";
 }) {
   const {
     orderId,
     externalId,
-    cart,
     robtAddressId,
+    openreachAddressId,
     districtCode,
     billingAddress,
+    extras,
     appointmentId,
     appointmentStart,
     rawTech,
-    productOfferingId,
-    contractTerm,
+    btProductCode,
+    contract,
     btAccount,
     btCug,
     resellerId,
     minGuaranteedSpeed,
+    installType,
+    journeyOrder,
   } = params;
 
-  const openreachId = cart.address!.id;
-  const firstName = billingAddress.firstName;
-  const lastName = billingAddress.lastName;
-  const email = billingAddress.email;
-  const phone = billingAddress.phone;
+  const { firstName, lastName, email, phone, companyName } = billingAddress;
 
-  // ── Main product characteristics (ATT_RT_*) ──
-  const productCharacteristic: ProductCharacteristic[] = [
-    { name: "ATT_RT_AccessTechnology", value: rawTech },
-    { name: "ATT_RT_InstallType", value: "M" },
-    { name: "ATT_RT_EndUserType", value: "Residential" },
-    { name: "ATT_RT_TrafficWeighting", value: "Standard" },
-    { name: "ATT_RT_ContractTerm", value: String(contractTerm.value) },
-    { name: "ATT_RT_ContractTermUnit", value: contractTerm.unit },
-    { name: "ATT_RT_ResellerID", value: resellerId },
-    { name: "ATT_X_JOURNEYTYPE", value: "New Line Provide" },
-    {
-      name: "ATT_RT_ProductMinimumGuaranteedSpeed",
-      value: minGuaranteedSpeed,
-    },
-  ];
+  // Main product characteristics (matches plugin's build_product_characteristics_v2)
+  const productCharacteristic = buildMainProductCharacteristics({
+    rawTech,
+    contract,
+    resellerId,
+    journeyOrder,
+    extras,
+    minGuaranteedSpeed,
+  });
 
-  if (rawTech === "FTTP") {
-    productCharacteristic.push({ name: "ATT_RT_ONTType", value: "New ONT" });
-  }
-
-  // Managed install characteristics — technology-specific
-  const managedInstallChars =
-    rawTech === "FTTP"
-      ? [
-          { name: "ATT_RT_ECCChargeband", value: "0" },
-          { name: "ATT_RT_FTTPInstallType", value: "1 Stage" },
-          { name: "ATT_RT_SiteVisitReason", value: "Standard" },
-        ]
-      : [
-          { name: "ATT_RT_TRChargeBand", value: "0" },
-          { name: "ATT_RT_UpperCostBand", value: "Standard" },
-          { name: "ATT_RT_SiteVisitReason", value: "Standard" },
-        ];
-
-  // ── Sub-items: Repair SLA + IP + Managed Install ──
-  const subItems = [
+  // Sub-items (Repair SLA + IP + Managed Install) — matches sub_items in plugin
+  const subItems: Record<string, unknown>[] = [
     {
       "@type": "BTProductOrderItem",
       id: `${orderId}.1`,
@@ -547,25 +814,101 @@ function buildOrderPayload(params: {
         productOffering: { id: "E0000703" }, // IP address
       },
     },
-    {
-      "@type": "BTProductOrderItem",
-      id: `${orderId}.3`,
-      action: "add",
-      product: {
-        "@type": "BTProductRefOrValue",
-        productOffering: { id: "E0000153" }, // Managed install
-        productCharacteristic: managedInstallChars,
-      },
-    },
+    buildManagedInstallItem(rawTech, installType, orderId),
   ];
 
-  // ── Main product order item ──
+  // Primary site contact
+  const primaryRelatedParty = {
+    "@type": "BTRelatedParty",
+    "@baseType": "RelatedParty",
+    "@referredType": "Individual",
+    id: "-1",
+    role: "PrimarySiteContact",
+    givenName: firstName,
+    familyName: lastName,
+    contactMedium: [
+      {
+        mediumType: "email",
+        characteristic: {
+          contactType: "Primary Work",
+          emailAddress: email,
+        },
+      },
+      {
+        mediumType: "telephone",
+        characteristic: {
+          contactType: "Primary Work",
+          phoneNumber: phone,
+        },
+      },
+    ],
+  };
+
+  // Optional delivery contact (plugin: if checkout_data has delivery_contact_*)
+  const deliveryContactMedium: Record<string, unknown>[] = [];
+  if (extras.delivery_contact_email) {
+    deliveryContactMedium.push({
+      mediumType: "email",
+      characteristic: {
+        contactType: "Primary Work",
+        emailAddress: extras.delivery_contact_email,
+      },
+    });
+  }
+  if (extras.delivery_contact_phone) {
+    deliveryContactMedium.push({
+      mediumType: "telephone",
+      characteristic: {
+        contactType: "Primary Work",
+        phoneNumber: extras.delivery_contact_phone,
+      },
+    });
+  }
+  const deliveryRelatedParty =
+    deliveryContactMedium.length > 0
+      ? {
+          "@type": "BTRelatedParty",
+          "@baseType": "RelatedParty",
+          "@referredType": "Individual",
+          id: "-1",
+          role: "DeliveryContact",
+          givenName: extras.delivery_contact_first_name ?? "Delivery",
+          familyName: extras.delivery_contact_last_name ?? "Contact",
+          contactMedium: deliveryContactMedium,
+        }
+      : null;
+
+  const relatedParty = deliveryRelatedParty
+    ? [primaryRelatedParty, deliveryRelatedParty]
+    : [primaryRelatedParty];
+
+  // Main item
   const mainItem = {
     "@type": "BTProductOrderItem",
     "@baseType": "ProductOrderItem",
     id: orderId,
     action: "add",
     billingAccount: { id: btAccount },
+    product: {
+      "@type": "BTProductRefOrValue",
+      "@baseType": "Product",
+      productOffering: { id: btProductCode },
+      place: [
+        {
+          "@type": "btRelatedPlaceRefOrValue",
+          id: robtAddressId,
+          role: "SiteAddress",
+        },
+        {
+          "@type": "btRelatedPlaceRefOrValue",
+          id: openreachAddressId,
+          role: "OpenreachAddress",
+          address: { districtCode },
+        },
+      ],
+      productCharacteristic,
+      relatedParty,
+    },
     appointment: {
       "@type": "AppointmentRef",
       id: appointmentId,
@@ -573,66 +916,30 @@ function buildOrderPayload(params: {
       appointmentStart,
     },
     additionalNotes: [
-      { text: "Engineering instruction", type: "Engineering", "@type": "BTNote" },
-      { text: "PT Hazards Note", type: "HazardNote", "@type": "BTNote" },
+      {
+        text: "Engineering instruction",
+        type: "Engineering",
+        "@type": "BTNote",
+      },
+      {
+        text: "PT Hazards Note",
+        type: "HazardNote",
+        "@type": "BTNote",
+      },
     ],
-    product: {
-      "@type": "BTProductRefOrValue",
-      "@baseType": "Product",
-      productOffering: { id: productOfferingId },
-      place: [
-        // SiteAddress = RoBT id (R…) — required by BT order endpoint
-        {
-          "@type": "btRelatedPlaceRefOrValue",
-          id: robtAddressId,
-          role: "SiteAddress",
-        },
-        // OpenreachAddress = NAD id (A…)
-        {
-          "@type": "btRelatedPlaceRefOrValue",
-          id: openreachId,
-          role: "OpenreachAddress",
-          address: { districtCode },
-        },
-      ],
-      productCharacteristic,
-      relatedParty: [
-        {
-          "@type": "BTRelatedParty",
-          "@baseType": "RelatedParty",
-          "@referredType": "Individual",
-          id: "-1",
-          role: "PrimarySiteContact",
-          givenName: firstName,
-          familyName: lastName,
-          contactMedium: [
-            {
-              mediumType: "email",
-              characteristic: {
-                contactType: "Primary Work",
-                emailAddress: email,
-              },
-            },
-            {
-              mediumType: "telephone",
-              characteristic: {
-                contactType: "Primary Work",
-                phoneNumber: phone,
-              },
-            },
-          ],
-        },
-      ],
-    },
     productOrderItem: subItems,
   };
 
-  // ── Top-level order envelope ──
+  // EndCustomer name — plugin uses billing_company if set, else full name
+  const endCustomerName =
+    (companyName && companyName.trim()) ||
+    `${firstName} ${lastName}`.trim();
+
   return {
     "@type": "BTProductOrder",
     "@baseType": "ProductOrder",
     externalId,
-    requestedCompletionDate: appointmentStart,
+    requestedCompletionDate: appointmentStart, // plugin uses appointment_start
     productOrderItem: [mainItem],
     relatedParty: [
       {
@@ -647,7 +954,7 @@ function buildOrderPayload(params: {
         "@type": "BTRelatedParty",
         "@baseType": "RelatedParty",
         "@referredType": "Customer",
-        id: `${firstName} ${lastName}`.trim(),
+        id: endCustomerName,
         role: "EndCustomer",
       },
       {
@@ -679,6 +986,22 @@ function buildOrderPayload(params: {
   };
 }
 
+// ─── Resolve the BT product code (E0000xxx) ───────────────────────────────────
+
+function resolveBtProductCode(cart: Plan): string {
+  // Order of preference:
+  //   1. Plan.bt_plan_id            (variation.effective_bt_plan_id, e.g. "E0000429")
+  //   2. variation.effective_bt_plan_id
+  //   3. zoikoPlan.bt_plan_id
+  //   4. POQ.product.productOffering.id  (legacy fallback, e.g. "SOGEA 40_10M")
+  return (
+    cart.bt_plan_id ??
+    cart.zoikoVariation?.effective_bt_plan_id ??
+    cart.zoikoPlan?.bt_plan_id ??
+    cart.productOfferingQualificationItem.product.productOffering.id
+  );
+}
+
 // ─── Route handler ────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
@@ -694,6 +1017,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { billingAddress, cart, serviceAddress } = body;
+  const extras: CheckoutExtras = body.checkoutExtras ?? {};
 
   // ── Validate ─────────────────────────────────────────────────────────────
   if (!billingAddress?.email || !billingAddress?.firstName) {
@@ -713,7 +1037,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const cartItem = cart[0]; // single-line broadband checkout
+  const cartItem = cart[0];
   const address: FormattedAddress | null =
     serviceAddress ?? cartItem.address ?? null;
 
@@ -743,21 +1067,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Make sure the cart row knows its address (used by the payload builders).
   cartItem.address = address;
 
   // ── Resolve everything from the cart item ────────────────────────────────
   const poq = cartItem.productOfferingQualificationItem;
-  const { raw: rawTech, appointment: appointmentTech } =
-    resolveAccessTechnology(poq);
-  const productSpec = getProductSpec(rawTech);
-  const contractTerm = resolveContractTerm(
+  const rawTech = getRawAccessTechnology(poq);
+
+  const journey = determineJourneyType(extras, rawTech);
+  const appointmentTech = mapToBtAccessTechnology(rawTech, journey.appointment);
+  const productSpec = getProductSpecForAppointment(appointmentTech);
+
+  const contract = validateContractTerm(
     cartItem.zoikoVariation ?? null,
-    cartItem.validity ?? ""
+    cartItem.validity ?? "",
+    rawTech
   );
   const minGuaranteedSpeed = resolveMinGuaranteedSpeed(poq);
   const districtCode = resolveDistrictCode(address, poq);
-  const productOfferingId = resolveProductOfferingId(cartItem);
+  const btProductCode = resolveBtProductCode(cartItem);
+
+  // Install type — plugin defaults to "Standard" when no order meta exists
+  const installType = "Standard";
 
   // ── Env config ───────────────────────────────────────────────────────────
   const btAccount = process.env.BT_ACCOUNT_ID ?? "";
@@ -766,28 +1096,45 @@ export async function POST(req: NextRequest) {
   const isSandbox =
     process.env.NEXT_BT_ENDPOINT_URI?.includes("sandbox") ?? false;
 
+  if (!btAccount) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: "BT_ACCOUNT_ID env var is not set — cannot place order.",
+      },
+      { status: 500 }
+    );
+  }
+
   const orderId = generateOrderId();
   const externalId = `WC-${Date.now()}-${orderId}`;
   const startDate = new Date().toISOString();
 
-  // console.log("[BT processOrder] ========== START ==========");
-  // console.log("[BT processOrder] productOfferingId:", productOfferingId);
-  // console.log("[BT processOrder] POQ offering.id  :", poq.product.productOffering.id);
-  // console.log("[BT processOrder] Openreach NAD id :", address.id);
-  // console.log("[BT processOrder] Postcode         :", address.postcode);
-  // console.log("[BT processOrder] Raw tech         :", rawTech);
-  // console.log("[BT processOrder] Appointment tech :", appointmentTech);
-  // console.log("[BT processOrder] Contract         :", contractTerm.value, contractTerm.unit);
-  // console.log("[BT processOrder] District code    :", districtCode);
-  // console.log("[BT processOrder] Min guaranteed   :", minGuaranteedSpeed);
-  // console.log("[BT processOrder] Sandbox          :", isSandbox);
+  console.log("[BT processOrder] ========== START ==========");
+  console.log("[BT processOrder] btProductCode    :", btProductCode);
+  console.log("[BT processOrder] POQ offering.id  :", poq.product.productOffering.id);
+  console.log("[BT processOrder] Openreach NAD id :", address.id);
+  console.log("[BT processOrder] Postcode         :", address.postcode);
+  console.log("[BT processOrder] Raw tech         :", rawTech);
+  console.log("[BT processOrder] Appointment tech :", appointmentTech);
+  console.log("[BT processOrder] Journey (order)  :", journey.order);
+  console.log("[BT processOrder] Contract         :", contract.value, contract.unit);
+  console.log("[BT processOrder] District code    :", districtCode);
+  console.log("[BT processOrder] Min guaranteed   :", minGuaranteedSpeed);
+  console.log("[BT processOrder] Repair SLA       :", getRepairSlaCode(rawTech));
+  console.log("[BT processOrder] Sandbox          :", isSandbox);
 
   // ── Step A: RoBT site address ────────────────────────────────────────────
-  // console.log("[BT processOrder] Step A: resolving RoBT site address…");
+  console.log("[BT processOrder] Step A: resolving RoBT site address…");
   const robtAddressId = isSandbox
-    ? address.id // sandbox: don't burn an API call
+    ? address.id
     : await resolveRobtAddressId(address);
-  // console.log("[BT processOrder] ✅ RoBT site address:", robtAddressId);
+  console.log("[BT processOrder] ✅ RoBT site address:", robtAddressId);
+  if (robtAddressId === address.id) {
+    console.warn(
+      "[BT processOrder] ⚠️ RoBT lookup returned the Openreach id (fallback). Order may be rejected by BT."
+    );
+  }
 
   // ── Step 5.1 / 5.2: Appointment ──────────────────────────────────────────
   let appointmentId = "";
@@ -795,7 +1142,7 @@ export async function POST(req: NextRequest) {
   let appointmentEnd = "";
 
   if (isSandbox) {
-    // console.log("[BT processOrder] 🟡 SANDBOX — mocking appointment");
+    console.log("[BT processOrder] 🟡 SANDBOX — mocking appointment");
     const installDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     appointmentId = `SANDBOX-APPT-${Date.now()}`;
     appointmentStart = installDate.toISOString();
@@ -803,9 +1150,9 @@ export async function POST(req: NextRequest) {
       installDate.getTime() + 5 * 60 * 60 * 1000
     ).toISOString();
   } else {
-    // console.log("[BT processOrder] Step 5.1: searchTimeSlot…");
+    console.log("[BT processOrder] Step 5.1: searchTimeSlot…");
     const slot = await searchAppointmentSlots({
-      cart: cartItem,
+      addressId: address.id,
       appointmentTech,
       productSpec,
       startDate,
@@ -821,11 +1168,11 @@ export async function POST(req: NextRequest) {
         { status: 422 }
       );
     }
-    // console.log("[BT processOrder] ✅ Slot:", slot.start);
+    console.log("[BT processOrder] ✅ Slot:", slot.start);
 
-    // console.log("[BT processOrder] Step 5.2: bookAppointment…");
+    console.log("[BT processOrder] Step 5.2: bookAppointment…");
     const booked = await bookAppointment({
-      cart: cartItem,
+      addressId: address.id,
       appointmentTech,
       productSpec,
       startTime: slot.start,
@@ -842,34 +1189,38 @@ export async function POST(req: NextRequest) {
     appointmentId = booked.id;
     appointmentStart = booked.start;
     appointmentEnd = booked.end;
-    // console.log("[BT processOrder] ✅ Appointment:", appointmentId);
+    console.log("[BT processOrder] ✅ Appointment:", appointmentId);
   }
 
   // ── Step 6: Place product order ──────────────────────────────────────────
-  // console.log("[BT processOrder] Step 6: productOrder…");
+  console.log("[BT processOrder] Step 6: productOrder…");
 
   const orderPayload = buildOrderPayload({
     orderId,
     externalId,
     cart: cartItem,
     robtAddressId,
+    openreachAddressId: address.id,
     districtCode,
     billingAddress,
+    extras,
     appointmentId,
     appointmentStart,
     rawTech,
-    productOfferingId,
-    contractTerm,
+    btProductCode,
+    contract,
     btAccount,
     btCug,
     resellerId,
     minGuaranteedSpeed,
+    installType,
+    journeyOrder: journey.order,
   });
 
-  // console.log(
-  //   "[BT processOrder] Order payload:",
-  //   JSON.stringify(orderPayload, null, 2)
-  // );
+  console.log(
+    "[BT processOrder] productOrder payload:",
+    JSON.stringify(orderPayload, null, 2)
+  );
 
   const orderResponse = await callApi<Record<string, unknown>>(
     "/hubco/tmf/productOrderingManagement/v4/productOrder",
@@ -901,8 +1252,8 @@ export async function POST(req: NextRequest) {
   const statusCode = orderResponse.status_code;
   const data = orderResponse.data;
 
-  // console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
-  // console.log("[BT processOrder] ========== END ==========");
+  console.log("[BT processOrder] ✅ Order submitted. Status:", statusCode);
+  console.log("[BT processOrder] ========== END ==========");
 
   if (statusCode === 201 || statusCode === 202) {
     const btOrderId =
