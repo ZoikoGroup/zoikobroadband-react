@@ -620,22 +620,7 @@ export default function CheckoutPage() {
         </div>
         <h2 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8">Looks like you haven't added anything yet.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
-          {[
-            { href: "/prepaid-plans",  label: "Prepaid Plans" },
-            { href: "/postpaid-plans", label: "Postpaid Plans" },
-            { href: "/business-deals", label: "Business Deals" },
-            { href: "/travel-plans",   label: "Travel Plans" },
-          ].map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
+        
       </div>
     );
   }
