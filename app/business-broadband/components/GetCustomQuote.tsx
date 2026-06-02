@@ -1,6 +1,66 @@
-import React from "react";
+"use client";
+import { useState } from "react";
+import toast from "react-hot-toast";
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function GetCustomQuote() {
+  const [business_name, setBusinessName] = useState("");
+  const [contact_name, setContactName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone_number, setPhoneNumber] = useState("");
+  const [business_postcode, setBusinessPostcode] = useState("");
+  const [business_size, setBusinessSize] = useState("");
+  const [additional_requirements, setAdditionalRequirements] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  const payload = {
+    business_name,
+    contact_name,
+    email,
+    phone_number,
+    business_postcode,
+    business_size,
+    additional_requirements,
+  };
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/business-broadband/business-inquiry/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+    if(data.success) {
+      toast.success("Your inquiry has been submitted successfully!");
+      // Clear form fields after successful submission
+      setBusinessName("");
+      setContactName("");
+      setEmail("");
+      setPhoneNumber("");
+      setBusinessPostcode("");
+      setBusinessSize("");
+      setAdditionalRequirements("");
+    } else {
+      toast.error("Failed to submit your inquiry. Please try again.");
+    }
+
+  } catch (error) {
+    toast.error("An error occurred while submitting your inquiry. Please try again.");
+  }
+  setIsSubmitting(false);
+};
+
   return (
     <section
       aria-labelledby="business-quote-heading"
