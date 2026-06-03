@@ -1,4 +1,5 @@
 import React from 'react'
+import Link from 'next/link'
 
 export default function JoinOurCommitment() {
   return (
@@ -36,9 +37,9 @@ export default function JoinOurCommitment() {
           </div>
 
           {/* Button */}
-          <button className="bg-[#f5c241] text-[#10446C] px-6 py-3 rounded-xl text-lg font-bold hover:scale-105 transition-transform duration-200">
+          <Link href="/contact-us" className="bg-[#f5c241] text-[#10446C] px-6 py-3 rounded-xl text-lg font-bold hover:scale-105 transition-transform duration-200">
             Take Action Today
-          </button>
+          </Link>
         </div>
 
       </section>

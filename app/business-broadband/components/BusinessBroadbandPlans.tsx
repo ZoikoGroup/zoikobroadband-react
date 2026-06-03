@@ -1,8 +1,10 @@
+// import BroadbandPlans from "@/app/Components/Broadbandplans";
 import React from "react";
 
 export default function BusinessBroadbandPlans() {
   return (
-    <section
+   <>
+      <section
       aria-labelledby="business-broadband-plans-heading"
       className="w-full bg-gray-100 dark:bg-gray-900 py-16 px-4"
     >
@@ -47,5 +49,8 @@ export default function BusinessBroadbandPlans() {
 
       </div>
     </section>
+
+   {/* <BroadbandPlans/> */}
+   </>
   );
 }
