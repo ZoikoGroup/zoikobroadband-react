@@ -75,7 +75,13 @@ export default function page() {
             {/* Render forms */}
             {activeTab === "login" && <LoginForm setActiveTab={setActiveTab} />}
             {activeTab === "register" && <RegisterForm />}
-            {activeTab === "reset-password" && <ResetPasswordForm />}
+            {activeTab === "reset-password" && (
+              <ResetPasswordForm
+                setActiveTab={(tab: string) =>
+                  setActiveTab(tab as "login" | "register" | "reset-password")
+                }
+              />
+            )}
           </div>
         </div>
       </div>

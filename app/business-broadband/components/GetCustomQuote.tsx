@@ -1,6 +1,67 @@
-import React from "react";
+"use client";
+import { useState } from "react";
+import toast from "react-hot-toast";
+
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function GetCustomQuote() {
+  const [business_name, setBusinessName] = useState("");
+  const [contact_name, setContactName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone_number, setPhoneNumber] = useState("");
+  const [business_postcode, setBusinessPostcode] = useState("");
+  const [business_size, setBusinessSize] = useState("");
+  const [additional_requirements, setAdditionalRequirements] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+
+  const payload = {
+    business_name,
+    contact_name,
+    email,
+    phone_number,
+    business_postcode,
+    business_size,
+    additional_requirements,
+  };
+
+  try {
+    const response = await fetch(
+      `${API_URL}/api/business-broadband/business-inquiry/`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
+    if(data.success) {
+      toast.success("Your inquiry has been submitted successfully!");
+      // Clear form fields after successful submission
+      setBusinessName("");
+      setContactName("");
+      setEmail("");
+      setPhoneNumber("");
+      setBusinessPostcode("");
+      setBusinessSize("");
+      setAdditionalRequirements("");
+    } else {
+      toast.error("Failed to submit your inquiry. Please try again.");
+    }
+
+  } catch (error) {
+    toast.error("An error occurred while submitting your inquiry. Please try again.");
+  }
+  setIsSubmitting(false);
+};
+
   return (
     <section
       aria-labelledby="business-quote-heading"
@@ -25,7 +86,7 @@ export default function GetCustomQuote() {
 
         {/* Form Card */}
         <div className="mt-10 bg-white dark:bg-gray-800  rounded-xl shadow-xl max-w-xl mx-auto p-8 text-left">
-          <form className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
             {/* Business Name */}
             <div>
@@ -41,6 +102,8 @@ export default function GetCustomQuote() {
                 type="text"
                 placeholder="Your Business Name"
                 required
+                value={business_name}
+                onChange={(e) => setBusinessName(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
             </div>
@@ -59,6 +122,8 @@ export default function GetCustomQuote() {
                 type="text"
                 placeholder="Your Name"
                 required
+                value={contact_name}
+                onChange={(e) => setContactName(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
             </div>
@@ -77,6 +142,8 @@ export default function GetCustomQuote() {
                 type="email"
                 placeholder="Your Email Address"
                 required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
             </div>
@@ -95,6 +162,8 @@ export default function GetCustomQuote() {
                 type="tel"
                 placeholder="Your Phone Number"
                 required
+                value={phone_number}
+                onChange={(e) => setPhoneNumber(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
             </div>
@@ -113,6 +182,8 @@ export default function GetCustomQuote() {
                 type="text"
                 placeholder="Business Postcode"
                 required
+                value={business_postcode}
+                onChange={(e) => setBusinessPostcode(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
             </div>
@@ -130,12 +201,14 @@ export default function GetCustomQuote() {
                 id="business-size"
                 name="business_size"
                 required
+                value={business_size}
+                onChange={(e) => setBusinessSize(e.target.value)}
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               >
                 <option value="">Select Size</option>
-                <option value="1-10">1-10 employees</option>
-                <option value="11-50">11-50 employees</option>
-                <option value="50+">50+ employees</option>
+                <option value="1-10 employees">1-10 employees</option>
+                <option value="11-50 employees">11-50 employees</option>
+                <option value="50+ employees">50+ employees</option>
               </select>
             </div>
 
@@ -152,6 +225,8 @@ export default function GetCustomQuote() {
                 id="requirements"
                 name="requirements"
                 rows={3}
+                value={additional_requirements}
+                onChange={(e) => setAdditionalRequirements(e.target.value)}
                 placeholder="Tell us about your connectivity needs..."
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
@@ -163,7 +238,7 @@ export default function GetCustomQuote() {
                 type="submit"
                 className="bg-[#10446C] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#0d3555] transition"
               >
-                Get My Business Quote
+                {isSubmitting ? "Submitting..." : "Get My Custom Quote"}
               </button>
             </div>
 

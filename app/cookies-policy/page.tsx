@@ -30,15 +30,15 @@ export default function page() {
             analyse website traffic.
 
             <div className="mt-5 flex justify-center space-x-2 font-semibold">
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm hover:bg-[#0C3A5A] transition-colors">
+              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
                 Accept All
               </button>
 
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm hover:bg-[#0C3A5A] transition-colors">
+              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
                 Reject All
               </button>
 
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm hover:bg-[#0C3A5A] transition-colors">
+              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
                 Customise
               </button>
             </div>
@@ -82,11 +82,11 @@ export default function page() {
             Users can change preferences via floating icon or link.
           </p>
 
-          <p className="md:text-lg sm:text-base text-gray-700 sm:leading-relaxed md:leading-10 max-w-3xl dark:text-gray-300">
+          {/* <p className="md:text-lg sm:text-base text-gray-700 sm:leading-relaxed md:leading-10 max-w-3xl dark:text-gray-300">
             <Link href="/cookie-preferences" className="text-blue-600 hover:underline">
               Go to Manage My Cookie Settings
             </Link>
-          </p>
+          </p> */}
 
         </div>
       </section>

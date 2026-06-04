@@ -94,7 +94,7 @@ export default function AccessibilityPage() {
           </ul>
 
           <div className="bg-[#0C3A5A] dark:bg-[#07283f] text-xs md:text-base text-white font-semibold px-6 py-4 rounded-md shadow-sm w-fit">
-            <Link href="/speed-check">
+            <Link href="/report-a-fault">
               Let Us Know If You Encounter a Problem
             </Link>
           </div>

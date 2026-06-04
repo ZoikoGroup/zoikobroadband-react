@@ -46,11 +46,25 @@ export default function CustomerAction() {
                   {/* Benefits */}
                   <ul className="text-left space-y-2 mb-6 w-fit">
                     <li className="flex items-center gap-2 text-gray-600 dark:text-white">
-                      <span className="text-green-500 font-bold">✓</span>
+                      <span className="text-green-500 font-bold"><Image
+                        src="/Images/Oursustainability/tree1.png"
+                        alt="Checkmark"                
+                        width={20}
+                        height={20}
+                        className="object-contain"
+                        priority={false}
+                      /></span>
                       Save 12 trees per year
                     </li>
                     <li className="flex items-center gap-2 text-gray-600 dark:text-white">
-                      <span className="text-green-500 font-bold">✓</span>
+                      <span className="text-green-500 font-bold"><Image
+                        src="/Images/Oursustainability/water.png"
+                        alt="Checkmark"
+                        width={20}
+                        height={20}
+                        className="object-contain"
+                        priority={false}
+                      /></span>
                       Save 1,500L water annually
                     </li>
                   </ul>

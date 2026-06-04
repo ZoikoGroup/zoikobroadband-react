@@ -62,7 +62,7 @@ export default function SpecialOffer() {
               {/* CTA Button */}
               <Link
                 href="/fibre-packages"
-                className="inline-flex items-center justify-center bg-white text-[#10446C] font-semibold px-10 py-4 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white"
+                className="inline-flex items-center justify-center bg-white text-[#336EF9] font-semibold px-10 py-4 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white"
               >
                 Buy Plan Now
               </Link>

@@ -5,6 +5,7 @@ import CheckYourPost from './components/CheckYourPost'
 import BenefitsOfZB from './components/BenefitsOfZB'
 import SpecialOffer from './components/SpecialOffer'
 import BroadbandPlans from '../Components/Broadbandplans'
+import TestimonialLoader from '../Components/TestimonialLoader'
 
 export default function page() {
   return (
@@ -15,6 +16,7 @@ export default function page() {
     {/* <CheckYourPost/> */}
     <BenefitsOfZB/>
     <SpecialOffer/>
+    <TestimonialLoader/>
     </div>
   )
 }

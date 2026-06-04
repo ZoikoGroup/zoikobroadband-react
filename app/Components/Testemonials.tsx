@@ -38,7 +38,7 @@ export default function Testemonials() {
 ">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-2xl font-bold 
-dark:text-[#63a7db] text-[#10446C]">
+dark:text-[#63a7db] text-black">
             What they say about us
           </h2>
           <p className="text-sm dark:text-white

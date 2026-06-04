@@ -1,9 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState } from "react";
 import toast from "react-hot-toast";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
-const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function RegisterForm() {
   const [username, setUsername] = useState("");
@@ -11,6 +12,9 @@ export default function RegisterForm() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleRegister = async () => {
@@ -32,9 +36,27 @@ export default function RegisterForm() {
 
       const data = await res.json();
 
+      // if (!res.ok) {
+      //   console.error("Backend Error:", data);
+      //   toast.error(JSON.stringify(data));
+      //   return;
+      // }
       if (!res.ok) {
         console.error("Backend Error:", data);
-        toast.error(JSON.stringify(data));
+
+        let errorMessage = "Something went wrong";
+
+        if (typeof data === "object") {
+          const firstKey = Object.keys(data)[0];
+
+          if (Array.isArray(data[firstKey])) {
+            errorMessage = data[firstKey][0];
+          } else {
+            errorMessage = data[firstKey];
+          }
+        }
+
+        toast.error(errorMessage);
         return;
       }
 
@@ -43,6 +65,7 @@ export default function RegisterForm() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      setShowVerificationMessage(true);
 
       // ONLY redirect on success
       router.push("/login");
@@ -66,6 +89,18 @@ export default function RegisterForm() {
           Fill in your details to get started.
         </p>
       </header>
+      {showVerificationMessage && (
+        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
+          <h4 className="font-semibold text-green-700">
+            Verify Your Email
+          </h4>
+
+          <p className="mt-2 text-sm text-green-600">
+            A verification link has been sent to your email address.
+            If you don't see the email, check your Spam or Junk folder.
+          </p>
+        </div>
+      )}
 
       {/* Form */}
       <form
@@ -132,18 +167,29 @@ export default function RegisterForm() {
             Password *
           </label>
 
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Create a strong password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-          />
+          <div className="relative mt-1">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Create a strong password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-lg
+               focus:ring-2 focus:ring-[#10446C] focus:outline-none
+               dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            >
+              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </button>
+          </div>
+
         </div>
 
         {/* Confirm Password */}
@@ -155,18 +201,28 @@ export default function RegisterForm() {
             Confirm Password *
           </label>
 
-          <input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            placeholder="Re-enter your password"
-            required
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
+          <div className="relative mt-1">
+            <input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Re-enter your password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-lg
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-          />
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400"
+            >
+              {showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+            </button>
+          </div>
         </div>
 
         {/* Submit */}
