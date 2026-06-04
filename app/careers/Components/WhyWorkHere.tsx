@@ -76,7 +76,7 @@ export default function WhyWorkHere() {
                     className="flex items-center justify-center gap-2"
                   >
                     <span className="text-emerald-500 font-bold">✓</span>
-                    <span>{benefit}</span>
+                    <span className="text-[#338A83]">{benefit}</span>
                   </li>
                 ))}
               </ul>

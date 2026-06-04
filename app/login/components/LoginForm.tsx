@@ -2,6 +2,7 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 
 type Tab = "login" | "register" | "reset-password";
@@ -15,6 +16,8 @@ export default function LoginForm({ setActiveTab }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -106,10 +109,10 @@ export default function LoginForm({ setActiveTab }: Props) {
           >
             Password
           </label>
-
+        <div className="relative mt-1">
           <input
             id="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             autoComplete="new-password"
             placeholder="Enter your password"
             value={password}
@@ -119,6 +122,14 @@ export default function LoginForm({ setActiveTab }: Props) {
                        focus:ring-2 focus:ring-[#10446C] focus:outline-none
                        dark:bg-gray-900 dark:border-gray-700 dark:text-white"
           />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+          >
+            {showPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
+          </div>
         </div>
 
         {/* GOOGLE + REMEMBER */}

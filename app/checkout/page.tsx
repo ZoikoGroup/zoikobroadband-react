@@ -852,7 +852,7 @@ export default function CheckoutPage() {
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   I have read and agree to the website{" "}
-                  <a href="/terms-and-conditions" className="text-red-500 hover:underline">
+                  <a href="/terms-conditions" className="text-red-500 hover:underline">
                     terms and conditions
                   </a>
                   .

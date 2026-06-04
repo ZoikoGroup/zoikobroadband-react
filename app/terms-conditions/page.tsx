@@ -30,7 +30,7 @@ export default function page() {
       <section className="w-full bg-white py-16 px-4 sm:px-6 lg:px-8 dark:bg-gray-950  dark:text-white">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-10 dark:bg-gray-950  dark:text-white">
           {/* ================= Sidebar ================= */}
-          <aside className="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm h-fit dark:bg-gray-950  dark:text-white">
+          <aside className="lg:col-span-1 bg-gray-100 p-6 rounded-xl shadow-sm h-fit dark:bg-gray-950  dark:text-white">
             <h3 className="text-lg md:text-xl font-semibold text-[#10446C] mb-6 dark:bg-gray-950  dark:text-white">
               Quick Navigation
             </h3>
@@ -125,9 +125,12 @@ dark:text-[#63a7db] text-[#10446C]">
                 4.2 Charges may vary if you exceed your usage cap or request
                 additional services.
               </p>
-              <p className="mt-2 text-base md:text-lg dark:bg-gray-950  dark:text-white text-gray-700 leading-relaxed">
+              <p className="mt-2 mb-4 text-base md:text-lg dark:bg-gray-950  dark:text-white text-gray-700 leading-relaxed">
                 4.3 All pricing includes VAT unless otherwise stated.
               </p>
+              <a href="/checkout" className="text-[#10446C] text-base md:text-lg mt-6 md:mt-10 underline">
+                See Our Billing & Payment Page
+              </a>
             </div>
 
             <hr className="border-gray-200" />

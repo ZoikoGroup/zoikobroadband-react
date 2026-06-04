@@ -7,34 +7,40 @@ const features = [
     label: "Why Zoiko Broadband?",
     description:
       "We offer full fibre (FTTP) and SOGEA connections - tailored to what's available at your address.",
+      badge: false,
   },
   {
     src: "/Images/Whyzoiko/whyzoiko-card2.png",
     label: "Transparent Pricing",
     description:
       "No hidden fees, no surprises. Choose from 12, 18, or 24-month options.",
+    badge: false,
   },
   {
     src: "/Images/Whyzoiko/whyzoiko-card3.png",
     label: "UK-Based Customer Support",
     description:
       "Speak to real people who understand your needs - and get help when it matters.",
+    badge: false,
   },
   {
     src: "/Images/Whyzoiko/whyzoiko-card4.png",
     label: "Designed for Modern Living",
     description:
       "Whether you're streaming, gaming, or working remotely, our network delivers.",
+    badge: false,
   },
   {
     src: "/Images/Whyzoiko/whyzoiko-card5.png",
     label: "Hassle-Free Setup",
     description: "We make switching simple and installation fast.",
+    badge: false,
   },
   {
     src: "/Images/Whyzoiko/whyzoiko-card6.png",
     label: "Future-Proof Performance",
     description: "Because your home deserves the best internet available.",
+    badge: true,
   },
 ];
 
@@ -78,6 +84,12 @@ export default function WhyChooseZoiko() {
                   <p className="text-left text-base md:text-lg text-gray-700 dark:text-gray-300 leading-relaxed mt-3 flex-1">
                     {item.description}
                   </p>
+
+                  {item.badge && (
+                    <p className="text-left bg-gradient-to-r from-[#0F3F63] to-[#5FA5DA] max-w-fit rounded-4xl text-white px-4 py-3 text-sm md:text-base text-white mt-4">
+                      Up to 1Gbps
+                    </p>
+                  )}
 
                 </article>
               </li>

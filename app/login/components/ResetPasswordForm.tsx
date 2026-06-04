@@ -1,10 +1,11 @@
 "use client";
 import React, { useState }  from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
 
-export default function ResetPasswordForm() {
+export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const [email, setEmail] = useState("");
   const handleForgotPassword = async () => {
   try {
@@ -19,10 +20,14 @@ export default function ResetPasswordForm() {
 
     const data = await res.json();
 
-    alert(data.message || data.error);
+    if (res.ok) {
+      toast.success(data.message);
+    } else {
+      toast.error(data.error);
+    }
 
   } catch (err) {
-    alert("Something went wrong");
+    toast.error("Something went wrong");
   }
 };
 
@@ -86,12 +91,12 @@ export default function ResetPasswordForm() {
 
       {/* Footer */}
       <footer className="text-sm text-center text-gray-600 dark:text-gray-400 mt-6">
-        <Link
-          href="/login"
+        <button
+          onClick={() => setActiveTab("login")}
           className="text-[#10446C] dark:text-blue-400 hover:underline"
         >
           Back to Login
-        </Link>
+        </button>
       </footer>
     </section>
   );
