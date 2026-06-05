@@ -7,11 +7,21 @@ export default function EditProfile() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
 
   // ── Profile state ──────────────────────────────────────────────
+  const getStoredUser = () => {
+    try {
+      const raw = typeof window !== "undefined" ? localStorage.getItem("user") : null;
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+  const storedUser = getStoredUser();
+
   const [profile, setProfile] = useState({
-    first_name: "",
-    last_name: "",
-    username: "",
-    email: "",
+    first_name: storedUser.first_name || "",
+    last_name: storedUser.last_name || "",
+    username: storedUser.username || "",
+    email: storedUser.email || "",
   });
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
