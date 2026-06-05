@@ -12,7 +12,6 @@ export default function EditProfile() {
     last_name: "",
     username: "",
     email: "",
-    vc_enrollment_id: "",
   });
   const [profileLoading, setProfileLoading] = useState(false);
   const [profileMsg, setProfileMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -210,17 +209,6 @@ export default function EditProfile() {
                 value={profile.email}
                 onChange={handleProfileChange}
                 placeholder="john@example.com"
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>VC Enrollment ID</label>
-              <input
-                name="vc_enrollment_id"
-                value={profile.vc_enrollment_id}
-                onChange={handleProfileChange}
-                placeholder="VC-XXXXXXXX"
                 className={inputClass}
               />
             </div>
