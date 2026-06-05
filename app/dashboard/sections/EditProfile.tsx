@@ -152,7 +152,7 @@ export default function EditProfile() {
       </div>
 
       {/* ── Body ── */}
-      <div className="px-6 sm:px-8 lg:px-20 py-10 max-w-3xl">
+      <div className="px-6 sm:px-8 lg:px-20 py-10 max-w-3xl mx-auto">
 
         {/* Tabs */}
         <div className="flex gap-2 bg-white dark:bg-gray-800 rounded-xl p-1.5 shadow-sm mb-8 border border-gray-200 dark:border-gray-700">
