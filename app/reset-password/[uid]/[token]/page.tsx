@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 
 const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function ResetPassword() {
@@ -14,6 +15,8 @@ export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleReset = async () => {
     if (!uid || !token) {
@@ -72,24 +75,44 @@ export default function ResetPassword() {
         </p>
 
         {/* Password */}
-        <input
-          type="password"
-          placeholder="New Password"
-          className="w-full mb-4 px-4 py-3 border border-gray-300 rounded-lg
-                     focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                     dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <div className="relative mt-1">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="New Password"
+            className="w-full mb-4 px-4 py-2.5 border border-gray-300 rounded-lg
+                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
+                       dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute inset-y-0 right-2 bottom-3 pr-3 flex items-center"
+          >
+            {showPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
+        </div>
+      
 
         {/* Confirm Password */}
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          className="w-full mb-6 px-4 py-3 border border-gray-300 rounded-lg
-                     focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                     dark:bg-gray-800 dark:border-gray-700 dark:text-white"
-          onChange={(e) => setConfirmPassword(e.target.value)}
-        />
+        <div className="relative mt-1">
+          <input
+            type={showConfirmPassword ? "text" : "password"}
+            placeholder="Confirm Password"
+            className="w-full mb-4 px-4 py-2.5 border border-gray-300 rounded-lg
+                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
+                       dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+            onChange={(e) => setConfirmPassword(e.target.value)}
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute inset-y-0 right-2 bottom-3 pr-3 flex items-center"
+          >
+            {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
+          </button>
+        </div>
+    
 
         {/* Button */}
         <button

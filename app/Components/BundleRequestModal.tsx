@@ -24,12 +24,16 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
     phone: "",
     email: "",
   });
+  const [phoneError, setPhoneError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (e.target.name === "phone") {
+      setPhoneError("");
+    }
   };
 
-  
+
   const handleSubmit = async () => {
     setLoading(true);
     if (!form.name || !form.phone) {
@@ -38,47 +42,61 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
       return;
     }
 
-  try {
-    const res = await fetch(`${API_URL}/api/bundle-request/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: form.name,
-        phone: form.phone,
-        email: form.email,
-        bundle_name: bundle?.label,
-        bundle_price: bundle?.price,
-      }),
-    });
+    try {
+      const res = await fetch(`${API_URL}/api/bundle-request/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          bundle_name: bundle?.label,
+          bundle_price: bundle?.price,
+        }),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      console.error(data);
-      toast.error("Failed to submit");
+      if (!res.ok) {
+        console.error(data);
+
+        let errorMessage = "Failed to submit";
+
+        if (typeof data === "object") {
+          const firstKey = Object.keys(data)[0];
+
+          if (Array.isArray(data[firstKey])) {
+            errorMessage = data[firstKey][0];
+          } else {
+            errorMessage = data[firstKey];
+          }
+        }
+
+        setPhoneError(errorMessage);
+
+        setLoading(false);
+        return;
+      }
+
+      toast.success("Request submitted successfully!");
+
+      // reset form
+      setForm({
+        name: "",
+        phone: "",
+        email: "",
+      });
       setLoading(false);
-      return;
+
+      onClose();
+    } catch (error) {
+      console.error(error);
+      toast.error("Server error");
+      setLoading(false);
     }
-
-    toast.success("Request submitted successfully!");
-
-    // reset form
-    setForm({
-      name: "",
-      phone: "",
-      email: "",
-    });
-    setLoading(false);
-
-    onClose();
-  } catch (error) {
-    console.error(error);
-    toast.error("Server error");
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <Modal open={open} onClose={onClose}>
@@ -146,8 +164,19 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
                 placeholder="Your phone number..."
                 onChange={handleChange}
                 name="phone"
-                className="flex-1 px-4 py-2 md:py-3 outline-none text-sm border border-gray-300 dark:border-gray-700 rounded-xl w-full mb-3"
+                className={`flex-1 px-4 py-2 md:py-3 outline-none text-sm border rounded-xl w-full
+    ${phoneError
+                    ? "border-red-500"
+                    : "border-gray-300 dark:border-gray-700"
+                  }`}
               />
+
+              {phoneError && (
+                <p className="mt-1 mb-3 text-sm text-red-500">
+                  {phoneError}
+                </p>
+              )}
+
               <label
                 htmlFor="email"
                 className=" py-2 text-sm md:text-base font-bold text-left w-full"

@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import BroadbandPlans from "@/app/Components/Broadbandplans";
 
 export default function ReportAFaultHero() {
   return (
@@ -45,16 +46,16 @@ export default function ReportAFaultHero() {
       </section>
 
       {/* Check your postcode */}
-      <section className="w-full bg-[#F4F8FC] dark:bg-gray-800 py-20 px-4 transition-colors duration-300">
+      {/* <section className="w-full bg-[#F4F8FC] dark:bg-gray-800 py-20 px-4 transition-colors duration-300">
   <div className="max-w-3xl mx-auto flex flex-col justify-center items-center">
-    {/* Card */}
+    
     <div className="w-full text-center border border-gray-200 dark:border-gray-800 p-8 rounded-2xl bg-white dark:bg-gray-900 shadow-sm">
-      {/* Text */}
+     
       <h2 className="text-xl sm:text-2xl font-bold text-[#10446C] dark:text-blue-400">
         Check Service Status in Your Area
       </h2>
 
-      {/* Form */}
+      
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
         <input
           type="text"
@@ -74,7 +75,9 @@ export default function ReportAFaultHero() {
       </div>
     </div>
   </div>
-</section>
+      </section> */}
+
+      <BroadbandPlans/>
     </>
   );
 }

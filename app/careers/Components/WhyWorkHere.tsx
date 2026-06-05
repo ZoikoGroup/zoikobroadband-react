@@ -6,11 +6,11 @@ export default function WhyWorkHere() {
     <section className=" w-full py-10 px-5 sm:px-10 dark:bg-gray-950 dark:text-white">
       <div className="max-w-7xl mx-auto text-center dark:bg-gray-950 ">
         <h2 className="text-2xl sm:text-4xl font-bold text-[#10446C] dark:bg-gray-950 dark:text-white ">
-          Our M
-          <span className="underline decoration-amber-400 underline-offset-14">
-            easurable
+          Why
+          {" "}<span className="underline decoration-amber-400 underline-offset-14">
+             Work
           </span>{" "}
-          Goals
+          Here
         </h2>
         {/* Cards container */}
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-7xl mx-auto">
