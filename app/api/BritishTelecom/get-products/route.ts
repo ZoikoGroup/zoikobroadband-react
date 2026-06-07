@@ -160,6 +160,7 @@ export async function POST(req: NextRequest) {
       return {
         ...item,
         zoikoPlan: zoikoPlan ?? null,
+        bt_plan_id: zoikoPlan?.bt_plan_id ?? null,  // ← add this
       };
     });
 

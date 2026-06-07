@@ -3,29 +3,19 @@ import { useEffect, useState, useRef } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { usStates } from "../utils/usStates";
-import { processOrderStripe } from "../utils/beQuickStripeWebPaymentApi";
+import { processOrderStripe } from "../utils/stripeWebPaymentApi";
 import StripePaymentForm, { StripePaymentFormRef } from "../Components/StripePaymentForm";
-
+import { useTheme } from "next-themes";
+import { useMemo } from "react";
+import type { StripeElementsOptions } from "@stripe/stripe-js";
 // ── Stub data for standalone compilation ──────────────────────────────────────
 
 // const processOrderStripe = async (data: unknown) => ({ status: true, data });
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ACTIVATION_FEE_PER_ESIM = 13.99;
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-
-interface Feature {
-  id: string | number;
-  title: string;
-}
-
-interface CategoryData {
-  id: number;
-  name: string;
-  slug: string;
-}
 
 /** Raw shape coming from localStorage (as stored by the plan-selection page) */
 interface RawCartItem {
@@ -53,6 +43,7 @@ interface CartItem {
   speed: string;
   serviceAddress?: string;
   _raw: RawCartItem;
+  bt_plan_id?: string | null;
 }
 
 interface Address {
@@ -72,11 +63,6 @@ interface Address {
 interface DiscountData {
   type: "percentage" | "flat";
   discount: string | number;
-}
-
-interface ShippingOption {
-  label: string;
-  value: number;
 }
 
 interface FormErrors {
@@ -138,7 +124,7 @@ const billingFieldMeta: Record<string, { label: string; placeholder: string; dis
   firstName:   { label: "First Name",       placeholder: "Enter your first name" },
   lastName:    { label: "Last Name",        placeholder: "Enter your last name" },
   companyName: { label: "Company Name",     placeholder: "Company name (optional)" },
-  region:      { label: "Country / Region", placeholder: "United States (US)", disabled: true },
+  region:      { label: "Country / Region", placeholder: "United States (US)"},
   state:       { label: "State",            placeholder: "Select state" },
   city:        { label: "City",             placeholder: "Enter your city" },
   street:      { label: "Street Address",   placeholder: "Enter your street address" },
@@ -176,21 +162,7 @@ const AddressForm = ({
 
       return (
         <InputField key={key} label={meta.label} required={isRequired} error={errors[errKey]}>
-          {key === "state" ? (
-            <select
-              className={selectClass(errors[errKey])}
-              value={address.state}
-              onChange={(e) => setAddress({ ...address, state: e.target.value })}
-              disabled={loading}
-            >
-              <option value="">Select state</option>
-              {usStates.map((s) => (
-                <option key={s.code} value={s.code}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          ) : (
+          
             <input
               type="text"
               className={inputClass(errors[errKey])}
@@ -199,7 +171,7 @@ const AddressForm = ({
               disabled={meta.disabled || loading}
               onChange={(e) => setAddress({ ...address, [key]: e.target.value })}
             />
-          )}
+          
         </InputField>
       );
     })}
@@ -257,8 +229,80 @@ export default function CheckoutPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [showTermsPopup, setShowTermsPopup] = useState(false);
-  
+  const { resolvedTheme } = useTheme();
+  const stripeOptions: StripeElementsOptions = useMemo(() => {
+  const isDark = resolvedTheme === "dark";
 
+  return {
+    clientSecret,
+
+    appearance: {
+      theme: isDark ? "night" : "stripe",
+
+      variables: {
+        colorPrimary: "#ef4444",
+
+        colorBackground: isDark
+          ? "#1f2937"
+          : "#ffffff",
+
+        colorText: isDark
+          ? "#f9fafb"
+          : "#111827",
+
+        colorDanger: "#ef4444",
+
+        colorTextPlaceholder: isDark
+          ? "#9ca3af"
+          : "#6b7280",
+
+        borderRadius: "12px",
+
+        fontFamily: "Inter, sans-serif",
+      },
+
+      rules: {
+        ".Input": {
+          backgroundColor: isDark
+            ? "#111827"
+            : "#ffffff",
+
+          border: isDark
+            ? "1px solid #374151"
+            : "1px solid #d1d5db",
+
+          boxShadow: "none",
+        },
+
+        ".Input:focus": {
+          border: "1px solid #ef4444",
+          boxShadow: "0 0 0 1px #ef4444",
+        },
+
+        ".Tab": {
+          backgroundColor: isDark
+            ? "#111827"
+            : "#f9fafb",
+
+          border: isDark
+            ? "1px solid #374151"
+            : "1px solid #d1d5db",
+        },
+
+        ".Tab--selected": {
+          border: "1px solid #ef4444",
+          boxShadow: "0 0 0 1px #ef4444",
+        },
+
+        ".Label": {
+          color: isDark
+            ? "#f3f4f6"
+            : "#111827",
+        },
+      },
+    },
+  };
+}, [clientSecret, resolvedTheme]);
   const emptyAddress: Address = {
     firstName: "",
     lastName: "",
@@ -287,7 +331,7 @@ export default function CheckoutPage() {
         normalizeCartItem
       );
       setCart(normalized);
-      if (typeof window !== "undefined" && localStorage.getItem("driverx_token")) {
+      if (typeof window !== "undefined" && localStorage.getItem("token")) {
         setIsLoggedIn(true);
       }
     } catch {
@@ -312,21 +356,6 @@ export default function CheckoutPage() {
 
   // ── Cart mutations ────────────────────────────────────────────────────────
 
-  const handleQuantity = (index: number, delta: number) => {
-  const newCart = [...cart];
-  
-  newCart[index] = {
-    ...newCart[index],
-    _raw: { ...newCart[index]._raw }, // ← ADD THIS
-  };
-  
-  setCart(newCart);
-  localStorage.setItem(
-    "cart",
-    JSON.stringify(newCart.map((i) => i._raw))
-  );
-};
-
   const handleRemove = (index: number) => {
     const newCart = [...cart];
     newCart.splice(index, 1);
@@ -342,7 +371,7 @@ export default function CheckoutPage() {
   // ── Coupon ────────────────────────────────────────────────────────────────
 
   const handleApplyCoupon = async () => {
-    const user = JSON.parse(localStorage.getItem("driverx_user") ?? "null");
+    const user = JSON.parse(localStorage.getItem("user") ?? "null");
     if (!user) {
       setShowLoginPopup(true);
       return;
@@ -358,7 +387,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user.driverx_token}`,
+          Authorization: `Bearer ${user.token}`,
         },
         body: JSON.stringify({ user_id: user.id, email: user.email, coupon_code: coupon }),
       });
@@ -427,7 +456,10 @@ export default function CheckoutPage() {
         })
         .catch(() => {});
     }
-  }, [total, cart.length]);
+  }, [total,
+  subtotal,
+  discountAmount,
+  cart,]);
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -495,13 +527,17 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2️⃣ BeQuick order
+    // 2️⃣ BT Wholesale order
+    //    processOrderStripe() reads the raw cart from localStorage and forwards
+    //    it (with product.characteristics / product.offering / zoikoPlan) to
+    //    /api/BritishTelecom/process-order, which runs the full BT flow:
+    //    RoBT lookup → appointment slot search → book → place product order.
     const products = buildProducts();
     const orderData = {
       billingAddress,
       shippingAddress: showShipping ? shippingAddress : billingAddress,
       coupon: discountData ? { ...discountData } : null,
-      cart: products,
+      cart: products, // billing-summary view; the BT route uses the raw cart from localStorage
       totals: { subtotal, discount: discountAmount, total },
       agreedToTerms: agreeTerms,
       paymentMethod: "stripe",
@@ -535,7 +571,7 @@ export default function CheckoutPage() {
       setShowOrderErrorPopup(true);
       return;
     }
-    localStorage.removeItem("cart");
+    // localStorage.removeItem("cart");
     setShowThankYou(true);
     
     console.log("✅ showThankYou set to true");  // ← ADD
@@ -570,22 +606,7 @@ export default function CheckoutPage() {
         </div>
         <h2 className="text-2xl font-bold dark:text-white text-gray-900 mb-2">Your cart is empty</h2>
         <p className="text-gray-500 dark:text-gray-400 mb-8">Looks like you haven't added anything yet.</p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
-          {[
-            { href: "/prepaid-plans",  label: "Prepaid Plans" },
-            { href: "/postpaid-plans", label: "Postpaid Plans" },
-            { href: "/business-deals", label: "Business Deals" },
-            { href: "/travel-plans",   label: "Travel Plans" },
-          ].map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold text-sm transition-colors"
-            >
-              {link.label}
-            </a>
-          ))}
-        </div>
+        
       </div>
     );
   }
@@ -594,7 +615,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen dark:bg-gray-900 bg-gray-50">
       {/* Page header */}
-      <div className=" border-b border-gray-100 py-6 px-4">
+      {/* <div className=" border-b border-gray-100 py-6 px-4">
         <div className="max-w-6xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Checkout</h1>
@@ -616,7 +637,7 @@ export default function CheckoutPage() {
             Clear Cart
           </button>
         </div>
-      </div>
+      </div> */}
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
@@ -822,13 +843,7 @@ export default function CheckoutPage() {
               {clientSecret ? (
                 <Elements
                   stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: "stripe",
-                      variables: { colorPrimary: "#ef4444" },
-                    },
-                  }}
+                  options={stripeOptions}
                 >
                   <StripePaymentForm ref={stripeFormRef} />
                 </Elements>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 // @ts-ignore
 import "./globals.css";
 import Header from "./Components/Header/Header";
@@ -41,10 +42,12 @@ export default function RootLayout({
       >
         <CartProvider>
           <Header />
+          <ThemeProvider attribute="class">
           <main className="flex-1 pt-20 md:pt-24 lg:pt-28">
             {children}
             <Toaster position="top-center" reverseOrder={false} />
           </main>
+          </ThemeProvider>
         </CartProvider>
         <Footer />
       </body>

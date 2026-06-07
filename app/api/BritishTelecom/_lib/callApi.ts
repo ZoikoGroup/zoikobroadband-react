@@ -7,6 +7,37 @@
  */
 
 import { getAccessToken } from "./authToken";
+import { inspect } from "node:util";
+
+// ─── Console output: print full nested objects, not "[Object]" ────────────────
+//
+// Node's default `util.inspect.defaultOptions.depth` is 2, which is why a
+// payload like:
+//   { relatedEntity: [ { product: { productSpecification: {...} } } ] }
+// logs as `product: [Object]`. Setting depth to `null` removes the limit
+// for every `console.log` call across the BT routes (and anywhere else that
+// uses console in the same Node process). We also widen line length so the
+// payloads aren't wrapped mid-key. Doing this once at module load is enough
+// because Node's REPL/console inspector reads from this global object every
+// time it formats output.
+inspect.defaultOptions.depth   = null;
+inspect.defaultOptions.maxArrayLength    = null;
+inspect.defaultOptions.maxStringLength   = null;
+inspect.defaultOptions.breakLength        = 120;
+inspect.defaultOptions.compact            = false;
+
+/**
+ * Pretty-print a value as JSON when possible, falling back to util.inspect
+ * for non-JSON-safe things (circular refs, functions, BigInt). Used for the
+ * two payload logs below so the output is literally the JSON we send to BT.
+ */
+function dumpJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return inspect(value, { depth: null, colors: false });
+  }
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -54,6 +85,30 @@ function generateUUID(): string {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Redact sensitive header values before logging. Authorization always; any
+ * future secret-bearing header can be added here.
+ */
+function redactHeaders(
+  headers: Record<string, string>
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers)) {
+    const lk = k.toLowerCase();
+    if (lk === "authorization") {
+      // Show scheme + last 4 chars only — enough to distinguish env, not enough
+      // to replay the token.
+      const tail = v.slice(-4);
+      out[k] = v.startsWith("Bearer ")
+        ? `Bearer ****${tail}`
+        : `**** (${v.length} chars)`;
+    } else {
+      out[k] = v;
+    }
+  }
+  return out;
 }
 
 /** Retryable HTTP status codes */
@@ -121,12 +176,19 @@ export async function callApi<T = unknown>(
   if (["POST", "PUT", "PATCH"].includes(method) && body !== undefined) {
     fetchOptions.body = JSON.stringify(body);
     if (!silent) {
-      console.log(`[BT API] [${method}] ${endpoint} → request body:`, body);
+      console.log(
+        `[BT API] [${method}] ${endpoint} → request body:\n${dumpJson(body)}`
+      );
     }
   }
 
   if (!silent) {
-    console.log(`[BT API] REQUEST [${method}] ${url} (tracking: ${trackingUUID})`);
+    console.log(
+      `[BT API] REQUEST [${method}] ${url} (tracking: ${trackingUUID})`
+    );
+    console.log(
+      `[BT API] REQUEST headers:\n${dumpJson(redactHeaders(mergedHeaders))}`
+    );
   }
 
   // ── 3. Execute request ───────────────────────────────────────────────────
@@ -167,7 +229,12 @@ export async function callApi<T = unknown>(
   }
 
   if (!silent) {
-    console.log(`[BT API] RESPONSE [${method}] ${endpoint} → status: ${statusCode}`);
+    console.log(
+      `[BT API] RESPONSE [${method}] ${endpoint} → status: ${statusCode}`
+    );
+    console.log(
+      `[BT API] RESPONSE body:\n${dumpJson(responseData)}`
+    );
   }
 
   // ── 5. Handle HTTP errors ────────────────────────────────────────────────

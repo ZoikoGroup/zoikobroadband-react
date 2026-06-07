@@ -16,9 +16,24 @@ interface TokenStore {
   updated_at: string;
 }
 
+/**
+ * BT's token endpoint response keys differ between environments:
+ *
+ *   - "Complete Documentation" (2024-12) shows camelCase:
+ *       { accessToken, tokenType, expiresIn }
+ *   - "Final Handover Documentation" shows snake_case:
+ *       { access_token, token_type, expires_in }
+ *
+ * The WordPress plugin reads `accessToken` for sandbox and `access_token`
+ * for production via a separate token-manager module, so both shapes
+ * are known to occur in practice. We accept whichever is present.
+ */
 interface TokenResponse {
-  access_token: string;
+  accessToken?: string;
+  access_token?: string;
+  tokenType?: string;
   token_type?: string;
+  expiresIn?: number;
   expires_in?: number;
 }
 
@@ -81,31 +96,37 @@ async function generateToken(name = "BritishTelecom"): Promise<string> {
 
   const data: TokenResponse = await response.json();
 
-  if (!data?.access_token) {
+  // Accept both camelCase (current BT doc) and snake_case (legacy/handover doc).
+  const accessToken = data.accessToken  ?? data.access_token;
+  const tokenType   = data.tokenType    ?? data.token_type   ?? "Bearer";
+  const expiresIn   = data.expiresIn    ?? data.expires_in   ?? 0;
+
+  if (!accessToken) {
     throw new Error(
-      `BT Auth returned an invalid response (no access_token): ${JSON.stringify(data)}`
+      `BT Auth returned an invalid response (no access token under either ` +
+      `'accessToken' or 'access_token'): ${JSON.stringify(data)}`
     );
   }
 
   const now = new Date();
-  const expiresAt = data.expires_in
-    ? new Date(Date.now() + data.expires_in * 1000).toISOString()
+  const expiresAt = expiresIn
+    ? new Date(Date.now() + expiresIn * 1000).toISOString()
     : "";
 
   const store: TokenStore = {
     name,
-    access_token: data.access_token,
-    token_type: data.token_type ?? "Bearer",
-    expires_in: data.expires_in ?? 0,
-    expires_at: expiresAt,
-    created_at: now.toISOString(),
-    updated_at: now.toISOString(),
+    access_token: accessToken,
+    token_type:   tokenType,
+    expires_in:   expiresIn,
+    expires_at:   expiresAt,
+    created_at:   now.toISOString(),
+    updated_at:   now.toISOString(),
   };
 
   // Persist in memory
   _cachedToken = store;
 
-  return data.access_token;
+  return accessToken;
 }
 
 /**
