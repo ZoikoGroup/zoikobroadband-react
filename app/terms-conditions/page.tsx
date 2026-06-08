@@ -1,5 +1,11 @@
 import React from "react";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Terms and Conditions | Zoiko Broadband Service",
+  description:
+    "Read Zoiko Broadband’s Terms and Conditions to understand your rights, responsibilities, and our service policies. Stay informed before using our services."
 
+};
 export default function page() {
   return (
     <div>

@@ -2,7 +2,13 @@
 'use client';
 import Link from "next/link";
 import React, { useState } from "react";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Cookies Policy & Usage | Zoiko Broadband",
+  description:
+    "Read Zoiko Broadband’s Cookies Policy to understand how we use cookies to enhance your browsing experience and how you can manage or disable them."
 
+};
 export default function page() {
   const [necessary, setNecessary] = useState(true);
   const [analytics, setAnalytics] = useState(false);

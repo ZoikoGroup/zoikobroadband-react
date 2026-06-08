@@ -1,6 +1,12 @@
 import Link from "next/link";
 import React from "react";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Ofcom Speed Commitment | Zoiko Broadband",
+  description:
+    "Learn how Zoiko Broadband meets Ofcom’s speed commitments, delivering the broadband speeds we promise with transparency and reliability."
 
+};
 export default function page() {
   return (
     <div className="dark:text-white">

@@ -2,7 +2,11 @@ import React from "react";
 import DigitalLinesHero from "./sections/DigitalLinesHero";
 import FAQ from "../Components/FAQs/FAQ";
 import Wizard from "./sections/Wizard";
-
+export const metadata = {
+  title: "Zoiko Broadband Digital Lines | Reliable VoIP Services",
+  description:
+    "Zoiko Broadband Digital Lines offer reliable VoIP services with clear calls, scalable plans, and expert support designed to meet your business needs.",
+};
 const DlFaq = [
   {
     id: 1,

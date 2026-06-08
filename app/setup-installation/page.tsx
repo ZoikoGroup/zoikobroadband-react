@@ -3,7 +3,13 @@ import SetupInstallationHero from "./sections/SetupInstallationHero";
 import VisualSetupGuides from "./sections/VisualSetupGuides";
 import FAQ from "../Components/FAQs/FAQ";
 import StillNeedHelp from "./sections/StillNeedHelp";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Zoiko Broadband Setup & Installation | Easy Guide Here",
+  description:
+    "Get fast, easy setup and installation help for your Zoiko Broadband service. Step-by-step guides and expert support to get you connected quickly."
 
+};
 const setupfaqs = [
   {
     id: 1,

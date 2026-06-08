@@ -5,7 +5,11 @@ import WhyZoiko from "./home/Components/WhyZoiko";
 import ExploreBundles from "./home/Components/ExploreBundles";
 import CheckYourPostcode from "./home/Components/CheckYourPostcode";
 import PlansWrapper from "./Components/PlansWrapper";
-
+export const metadata = {
+  title: "Zoiko Broadband | Affordable Broadband Plans UK",
+  description:
+    "Get the best broadband plans from Zoiko Broadband— leveraging BT’s Tier 1 network, with a free router, no setup fees, and UK-based customer support.",
+};
 export default function Home() {
 
   return (
