@@ -7,6 +7,7 @@ import Equipment from "../steps/Equipment";
 import AddOns from "../steps/AddOns";
 import ChargeChanges from "../steps/ChargeChanges";
 import Checkout from "../steps/Checkout";
+import toast from "react-hot-toast";
 
 // ── Step Labels ──────────────────────────────────────────────────────────────
 const STEPS = [
@@ -32,6 +33,7 @@ export interface Selections {
 
 export default function Wizard() {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
   const [selections, setSelections] = useState<Selections>({
     plan: null,
@@ -44,6 +46,65 @@ export default function Wizard() {
     chargeChanges: [],
   });
 
+
+  const handleSubmit = async () => {
+    const payload = {
+      plan: selections.plan,
+      duration: selections.duration,
+
+      number_option: selections.numberOption,
+      number_sub_allocation: selections.numberSubAllocation,
+      number_import: selections.numberImport,
+
+      equipment: selections.equipment,
+      addons: selections.addons,
+      charge_changes: selections.chargeChanges,
+    };
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/digital-lines/digital-line-order/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to submit order");
+      }
+
+      toast.success("Order submitted successfully!");
+      setSelections({
+        plan: null,
+        duration: "60 Months",
+        numberOption: null,
+        numberSubAllocation: null,
+        numberImport: null,
+        equipment: [],
+        addons: [],
+        chargeChanges: [],
+      });
+
+      setStep(1);
+
+      console.log(data);
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const update = (key: keyof Selections, value: string | string[] | null) => {
     setSelections((prev) => ({ ...prev, [key]: value }));
   };
@@ -52,7 +113,7 @@ export default function Wizard() {
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
-   <div className="min-h-screen bg-white dark:bg-gray-800 transition-colors duration-300 px-4 py-8">
+    <div className="min-h-screen bg-white dark:bg-gray-800 transition-colors duration-300 px-4 py-8">
 
       {/* ── Progress Bar ───────────────────────────── */}
       <div className="w-full max-w-4xl mx-auto mb-12 px-4">
@@ -63,15 +124,14 @@ export default function Wizard() {
 
               {/* Step */}
               <div className="flex flex-col items-center">
-                
+
                 {/* Circle */}
                 <div
                   className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-all duration-300
-                  ${
-                    s.id <= step
+                  ${s.id <= step
                       ? "bg-[#F6C140] border-[#F6C140] text-gray-900"
                       : "bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-300"
-                  }`}
+                    }`}
                 >
                   {s.id < step ? (
                     <svg
@@ -95,11 +155,10 @@ export default function Wizard() {
                 {/* Label */}
                 <span
                   className={`hidden md:block mt-3 text-xs text-center w-20
-                  ${
-                    s.id === step
+                  ${s.id === step
                       ? "text-[#F6C140] font-semibold"
                       : "text-gray-500 dark:text-gray-400"
-                  }`}
+                    }`}
                 >
                   {s.label}
                 </span>
@@ -109,11 +168,10 @@ export default function Wizard() {
               {index < STEPS.length - 1 && (
                 <div
                   className={`flex-1 h-0.5 mx-2 transition-colors duration-300
-                  ${
-                    s.id < step
+                  ${s.id < step
                       ? "bg-[#F6C140]"
                       : "bg-gray-300 dark:bg-gray-600"
-                  }`}
+                    }`}
                 />
               )}
             </div>
@@ -153,14 +211,16 @@ export default function Wizard() {
         )}
 
         <button
-          onClick={goNext}
+          onClick={step === STEPS.length ? handleSubmit : goNext}
           className="bg-[#F6C140] text-gray-900 dark:text-black px-8 py-2 rounded-md text-sm font-semibold hover:bg-[#e0ad30] transition"
         >
           {step === STEPS.length
-            ? "Finish"
+            ? loading
+              ? "Submitting..."
+              : "Confirm Order"
             : step === 4
-            ? "Proceed to Checkout"
-            : "Continue"}
+              ? "Proceed to Checkout"
+              : "Continue"}
         </button>
 
       </div>

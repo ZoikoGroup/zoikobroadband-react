@@ -1,6 +1,8 @@
 import React from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
 
- const ledStatusData = [
+const ledStatusData = [
   {
     title: "Solid Blue",
     color: "#4F7CFF",
@@ -92,6 +94,32 @@ import React from 'react'
       "Reconnect another router device. Refer to the setup instructions in your Hub Manager if needed.",
   },
 ];
+const troubleshootingCards = [
+  {
+    title: "Restart Your Hub",
+    icon: "/images/restart.png",
+    description:
+      "Have connectivity issues? Try restarting your hub. Wait at least 30 seconds before turning it back on.",
+  },
+  {
+    title: "Check Cable Connections",
+    icon: "/images/cable.png",
+    description:
+      "Ensure all cables are securely connected, including the broadband cable and the power lead.",
+  },
+  {
+    title: "Contact Support",
+    icon: "/images/support.png",
+    description:
+      "If the issue remains unresolved, contact Zoiko Broadband Support for further assistance.",
+  },
+  {
+    title: "Factory Reset",
+    icon: "/images/reset.png",
+    description:
+      "If problems persist, perform a factory reset. Press and hold the reset button for 10 seconds.",
+  },
+];
 
 export default function page() {
   return (
@@ -114,13 +142,14 @@ export default function page() {
         </div>
       </section>
 
+      {/* LED Status Cards */}
       <section className="bg-[#f5f5f5] dark:bg-gray-900 py-12 px-4">
-  <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto">
 
-    {/* Info Banner */}
+          {/* Info Banner */}
 
-    <div
-      className="
+          <div
+            className="
         mb-10
         rounded-xl
         border-2
@@ -132,25 +161,25 @@ export default function page() {
         py-5
         text-center
       "
-    >
-      <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
-        The LED lights on your BT Hub indicate its current status and can help
-        you identify any issues. Below is a comprehensive guide to understanding
-        these indications.
-      </p>
-    </div>
+          >
+            <p className="text-sm md:text-base text-gray-700 dark:text-gray-300 leading-relaxed">
+              The LED lights on your BT Hub indicate its current status and can help
+              you identify any issues. Below is a comprehensive guide to understanding
+              these indications.
+            </p>
+          </div>
 
-    {/* Cards */}
+          {/* Cards */}
 
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {ledStatusData.map((item, index) => (
-        <div
-          key={index}
-          className={`
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {ledStatusData.map((item, index) => (
+              <div
+                key={index}
+                className={`
             bg-white
             dark:bg-gray-800
             rounded-xl
-            border
+            border-2
             ${item.borderColor}
             shadow-sm
             p-5
@@ -159,54 +188,254 @@ export default function page() {
             hover:-translate-y-1
             hover:shadow-lg
           `}
+              >
+                {/* Header */}
+
+                <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+                  <span
+                    className="w-5 h-5 md:w-8 md:h-8 rounded-full border border-gray-300 shrink-0"
+                    style={{ backgroundColor: item.color }}
+                  />
+
+                  <h3 className="font-bold text-[#0C4A7C] dark:text-white text-lg">
+                    {item.title}
+                  </h3>
+                </div>
+
+                {/* Content */}
+
+                <div className="mt-5 space-y-5">
+
+                  <div>
+                    <h4 className="font-semibold text-[#0C4A7C] dark:text-blue-400 text-sm mb-2">
+                      Meaning
+                    </h4>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {item.meaning}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-[#0C4A7C] dark:text-blue-400 text-sm mb-2">
+                      Recommended Action
+                    </h4>
+
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                        {item.action}
+                      </p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+      
+      {/* Troubleshooting Tips */}
+      <section className="bg-[#f5f5f5] dark:bg-gray-900 py-10 px-4">
+        <div className="max-w-5xl mx-auto">
+
+          {/* Heading */}
+
+          <h2
+            className="
+            text-center
+            text-2xl
+            md:text-3xl
+            font-bold
+            text-[#0C4A7C]
+            dark:text-white
+            mb-8
+          "
+          >
+            Troubleshooting Tips
+          </h2>
+
+          {/* Cards Grid */}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
+
+            {troubleshootingCards.map((card, index) => (
+              <div
+                key={index}
+                className="
+                bg-white
+                dark:bg-gray-800
+                border-2
+                border-[#F0B12D]
+                rounded-lg
+                px-6 md:px-8
+                py-8 md:py-10
+                text-center
+                shadow-sm
+                transition-all
+                duration-300
+                hover:shadow-lg
+                hover:-translate-y-1
+              "
+              >
+                {/* Icon Circle */}
+
+                <div
+                  className="
+                  // mx-auto
+                  relative
+                  w-16 h-16 md:w-20 md:h-20
+                  flex items-center justify-center
+                  mb-4
+                  rounded-full
+                "
+                >
+                  <Image
+                    src={card.icon}
+                    alt={card.title}
+                    width={88}
+                    height={88}
+                    className="w-16 h-16 object-cover md:w-22 md:h-22"
+                  />
+                </div>
+
+                {/* Title */}
+
+                <h3
+                  className="
+                  text-base
+                  md:text-lg
+                  font-extrabold
+                  text-[#0C4A7C]
+                  dark:text-white
+                  mb-3
+                "
+                >
+                  {card.title}
+                </h3>
+
+                {/* Description */}
+
+                <p
+                  className="
+                  text-sm md:text-base
+                  leading-6
+                  text-gray-600
+                  dark:text-gray-300
+                  max-w-xs
+                  mx-auto
+                "
+                >
+                  {card.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Support Card */}
+      <section className="px-4 py-12 bg-transparent">
+        <div
+          className="
+      relative
+      max-w-6xl
+      mx-auto
+      rounded-2xl
+      border-2
+      border-[#F0B12D]
+      bg-[#F7E8BA]
+      dark:bg-amber-950/30
+      dark:border-amber-700
+      px-6
+      md:px-10
+      py-14
+      md:py-16
+      text-center
+    "
         >
-          {/* Header */}
-
-          <div className="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
-            <span
-              className="w-5 h-5 rounded-full border border-gray-300 shrink-0"
-              style={{ backgroundColor: item.color }}
-            />
-
-            <h3 className="font-bold text-[#0C4A7C] dark:text-white text-lg">
-              {item.title}
-            </h3>
+          {/* Floating Icon */}
+          <div
+            className="
+        absolute
+        left-1/2
+        top-5 md:top-7
+        -translate-x-1/2
+        w-16
+        h-16
+        mb-4
+        rounded-full
+        bg-[#F0B12D]
+        flex
+        items-center
+        justify-center
+        shadow-[0_8px_20px_rgba(240,177,45,0.35)]
+      "
+          >
+            <svg
+              className="w-7 h-7 text-white"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 18h.01M9.09 9a3 3 0 115.82 1c0 2-3 3-3 3"
+              />
+            </svg>
           </div>
 
           {/* Content */}
+          <div className="mt-6">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#0D4B7C] dark:text-amber-300">
+              Need More Help?
+            </h2>
 
-          <div className="mt-5 space-y-5">
+            <p
+              className="
+          mt-3
+          text-sm
+          md:text-base
+          text-gray-600
+          dark:text-gray-300
+          max-w-xl
+          mx-auto
+        "
+            >
+              Contact Zoiko Broadband Support. We're here for you 24/7.
+            </p>
 
-            <div>
-              <h4 className="font-semibold text-[#0C4A7C] dark:text-blue-400 text-sm mb-2">
-                Meaning
-              </h4>
-
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {item.meaning}
-                </p>
-              </div>
+            <div className="mt-6">
+              <Link
+                href="/contact-us"
+                className="
+            inline-flex
+            items-center
+            justify-center
+            min-w-[170px]
+            h-12
+            rounded-lg
+            bg-[#0D4B7C]
+            hover:bg-[#08365a]
+            text-white
+            font-semibold
+            text-sm md:text-base
+            transition-all
+            duration-300
+            shadow-[0_8px_18px_rgba(13,75,124,0.35)]
+            hover:-translate-y-0.5
+          "
+              >
+                Contact Support
+              </Link>
             </div>
-
-            <div>
-              <h4 className="font-semibold text-[#0C4A7C] dark:text-blue-400 text-sm mb-2">
-                Recommended Action
-              </h4>
-
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
-                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {item.action}
-                </p>
-              </div>
-            </div>
-
           </div>
         </div>
-      ))}
-    </div>
-  </div>
-</section>
+      </section>
     </>
   )
 }
