@@ -4,7 +4,12 @@ import HowWeHelp from "./sections/HowWeHelp";
 import SelectCustomerType from "./sections/SelectCustomerType";
 import FAQ from "../Components/FAQs/FAQ";
 import NeedMoreSupport from "./sections/NeedMoreSupport";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Zoiko Broadband Get Help | Account, Setup & Support Hub",
+  description:"Need help with Zoiko Broadband? Get support for setup, billing, outages, slow speeds, and account issues quickly through our easy-to-use Help Center."
 
+};
 const gethelpfaqs = [
   {
     id: 1,

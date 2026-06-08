@@ -6,6 +6,13 @@ import FromOurLeadership from "./Components/FromOurLeadership";
 import DigitalInclusionSec1 from "./Components/DigitalInclusionSec1";
 import DigitalInclusionSec2 from "./Components/DigitalInclusionSec2";
 import AboutusHero from "./Components/AboutusHero";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "About Us | Zoiko Broadband Mission & Vision",
+  description:
+    "Discover Zoiko Broadband’s mission to deliver reliable, high-speed internet and our vision to connect every home and business with smarter technology."
+
+};
 
 export default function page() {
   return (

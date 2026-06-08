@@ -6,7 +6,11 @@ import TrustAndTransparency from "./components/TrustAndTransparency";
 import StartEarningToday from "./components/StartEarningToday";
 import MyPortalPreview from "./components/MyPortalPreview";
 import ReferralLeaderboard from "./components/ReferralLeaderboard";
-
+export const metadata = {
+  title: "Zoiko Refer a Friend | Earn £50 for You & Friend",
+  description:
+    "Refer a friend to Zoiko Broadband and you both get £50! Start sharing your referral link today and enjoy fast, reliable internet with great rewards.",
+};
 
 export default function page() {
   return (

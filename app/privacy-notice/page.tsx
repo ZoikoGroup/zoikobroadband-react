@@ -1,5 +1,11 @@
 import React from "react";
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "Privacy Notice & Data Protection | Zoiko Broadband",
+  description:
+    "Discover how Zoiko Broadband protects your personal data. Our Privacy Notice ensures your information is handled securely and responsibly."
 
+};
 export default function page() {
   return (
     <div>

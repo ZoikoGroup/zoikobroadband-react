@@ -4,7 +4,11 @@ import FibreBroadband from './components/FibreBroadband'
 import WhyChooseZoiko from '../why-zoiko/Components/WhyChooseZoiko'
 import FAQ from '../Components/FAQs/FAQ'
 import  BroadbandPlans  from '../Components/Broadbandplans';
-
+export const metadata = {
+  title: "Affordable Fibre Broadband Packages | Zoiko Broadband",
+  description:
+    "Explore fibre broadband packages from Zoiko Broadband with fast speeds, reliable connectivity, and flexible internet plans for homes and businesses.",
+};
 const fibrefaqs = [
   {
     id: 1,
