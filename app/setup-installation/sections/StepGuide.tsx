@@ -19,18 +19,43 @@ const Items = [
   },
 ];
 
-const stepData = {
+type stepdata = {
+  new: step[];
+  replacement: step[];
+  fibre: step[];
+};
+
+type step = {
+  id: number;
+  title: string;
+  description: string;
+  indicators?: {
+    color: string;
+    text: string;
+  }[];
+};
+
+const stepData: stepdata = {
   new: [
     {
       id: 1,
       title: "Check Your Kit",
-      description: `Ensure all equipment is included before setup.
-      Watch the LED lights on your router:
-
-      Red/Orange: Starting up (1–2 minutes)
-      Amber: Connecting to network (2–5 minutes)
-      Green/Blue: Connected and ready to use
-      If lights remain red after 10 minutes, try unplugging and reconnecting the power.`,
+      description:
+        "Ensure all equipment is included before setup. Watch the LED lights on your router:",
+      indicators: [
+        {
+          color: "bg-red-500",
+          text: "Red/Orange: Starting up (1–2 minutes)",
+        },
+        {
+          color: "bg-amber-500",
+          text: "Amber: Connecting to network (2–5 minutes)",
+        },
+        {
+          color: "bg-green-500",
+          text: "Green/Blue: Connected and ready to use",
+        },
+      ],
     },
     {
       id: 2,
@@ -129,48 +154,47 @@ export default function StepGuide({
 
   return (
     <section className="w-full dark:bg-gray-950 dark:text-white">
-    <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12 dark:bg-gray-950 dark:text-white">
-      {/* Section Title */}
-      <h2
-        id="select-your-setup-type-heading"
-        className="text-xl md:text-2xl font-semibold text-[#10446C] mb-2 text-center"
-      >
-        Step-by-Step Setup Guide
-      </h2>
+      <div className="max-w-4xl mx-auto space-y-4 mt-8 py-12 dark:bg-gray-950 dark:text-white">
+        {/* Section Title */}
+        <h2
+          id="select-your-setup-type-heading"
+          className="text-xl md:text-2xl font-semibold text-[#10446C] mb-2 text-center"
+        >
+          Step-by-Step Setup Guide
+        </h2>
 
-      <p className="mb-6 text-center text-sm md:text-base text-[#555555] leading-relaxed max-w-2xl mx-auto">
-        Follow these steps to get your broadband up and running
-      </p>
+        <p className="mb-6 text-center text-sm md:text-base text-[#555555] leading-relaxed max-w-2xl mx-auto">
+          Follow these steps to get your broadband up and running
+        </p>
 
         {steps.map((step) => {
           const isOpen = openStep === step.id;
 
-        return (
-          <div
-            key={step.id}
-            className="w-full bg-white dark:bg-gray-900  rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
-          >
-            {/* Header */}
-            <button
-              onClick={() => toggleStep(step.id)}
-              className="w-full flex items-center justify-between  text-left"
+          return (
+            <div
+              key={step.id}
+              className="w-full bg-white dark:bg-gray-900  rounded-xl shadow-md overflow-hidden p-3 md:p-8 border border-gray-200"
             >
-              <div className="flex items-center gap-4">
-                {/* Step Number */}
-                <div className="bg-yellow-400 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full font-bold">
-                  {step.id}
-                </div>
+              {/* Header */}
+              <button
+                onClick={() => toggleStep(step.id)}
+                className="w-full flex items-center justify-between  text-left"
+              >
+                <div className="flex items-center gap-4">
+                  {/* Step Number */}
+                  <div className="bg-yellow-400 w-8 h-8 md:w-12 md:h-12 flex items-center justify-center rounded-full font-bold">
+                    {step.id}
+                  </div>
 
-                <h3 className="text-lg md:text-xl font-semibold text-blue-900 dark:text-white">
-                  {step.title}
-                </h3>
-              </div>
+                  <h3 className="text-lg md:text-xl font-semibold text-blue-900 dark:text-white">
+                    {step.title}
+                  </h3>
+                </div>
 
                 {/* Arrow */}
                 <svg
-                  className={`w-5 h-5 transition-transform duration-500 ${
-                    isOpen ? "rotate-180" : ""
-                  }`}
+                  className={`w-5 h-5 transition-transform duration-500 ${isOpen ? "rotate-180" : ""
+                    }`}
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -184,18 +208,32 @@ export default function StepGuide({
                 </svg>
               </button>
 
-            {/* Content */}
-            <div
-              className={`transition-all duration-300 ease-in-out overflow-hidden ${
-                isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
-              }`}
-            >
-              <p className="text-gray-600 dark:text-white text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
-            </div>
+              {/* Content */}
+              <div
+                className={`transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? "max-h-auto opacity-100 mt-4" : "max-h-0 opacity-0"
+                  }`}
+              >
+                <p className="text-gray-800 dark:text-white text-sm md:text-base ml-12 pb-4 whitespace-pre-line">{step.description}</p>
+                {step.indicators?.length && (
+                  <div className="mt-3 ml-12 space-y-3">
+                    {step.indicators.map((indicator, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 text-gray-600 dark:text-white text-sm md:text-base"
+                      >
+                        <span
+                          className={`w-3 h-3 rounded-full flex-shrink-0 ${indicator.color}`}
+                        />
+                        <span>{indicator.text}</span>
+                      </div>
+                    ))}
+                    </div>
+                )}
+                  </div>
           </div>
-        );
+              );
       })}
-    </div>
+            </div>
     </section>
   );
 }

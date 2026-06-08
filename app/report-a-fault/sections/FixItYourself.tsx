@@ -18,7 +18,7 @@ const Items = [
     label: "Wired vs Wireless Speed",
     description: "Compare connection methods",
     btn: "View Guide",
-    btnlink: "/wired-a-wireless-speedcta",
+    btnlink: "/wired-a-wireless-speed",
   },
   {
     label: "LED Light Meanings",
@@ -285,12 +285,12 @@ export default function FixItYourself() {
       {/* ====================================== */}
 
       {/* Accessibility Support... */}
-      <section
+      {/* <section
         aria-labelledby="accessibility-support-heading"
         className="bg-white dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-10"
       >
         <div className="max-w-6xl mx-auto">
-          {/* Heading */}
+          
           <h2
             id="accessibility-support-heading"
             className="text-xl md:text-2xl font-bold text-[#10446C] dark:text-white mb-6 text-center md:text-left"
@@ -298,7 +298,7 @@ export default function FixItYourself() {
             Accessibility Support
           </h2>
 
-          {/* Cards */}
+          
           <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {AccessibilityItems.map((item) => (
               <li key={item.label}>
@@ -307,12 +307,12 @@ export default function FixItYourself() {
             rounded-xl p-5 flex flex-col justify-between items-center text-center
             shadow-sm "
                 >
-                  {/* Title */}
+                  
                   <h3 className="text-base sm:text-lg font-semibold text-[#10446C] dark:text-white">
                     {item.label}
                   </h3>
 
-                  {/* Button */}
+                 
                   <Link
                     href={item.link}
                     aria-label={`Access ${item.label}`}
@@ -328,7 +328,7 @@ export default function FixItYourself() {
             ))}
           </ul>
         </div>
-      </section>
+      </section> */}
     </>
   );
 }

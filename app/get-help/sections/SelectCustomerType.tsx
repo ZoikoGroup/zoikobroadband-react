@@ -118,7 +118,7 @@ export default function SelectCustomerType() {
 
       {/* Search Input */}
       
-      <div
+      {/* <div
         aria-labelledby="search-section"
         className="relative  max-w-4xl mx-auto mt-8 pt-10 dark:bg-gray-950 "
       >
@@ -146,10 +146,10 @@ export default function SelectCustomerType() {
             height={16}
           />
         </button>
-      </div>
+      </div> */}
 
       {/* Popular Searches */}
-      <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 dark:bg-gray-950  text-base  dark:text-white text-gray-500">
+      {/* <div className="mt-8 mb-10 pb-8 flex flex-wrap justify-center items-center gap-2 md:gap-5 dark:bg-gray-950  text-base  dark:text-white text-gray-500">
         <span className="mr-1">Popular searches:</span>
 
         {popularSearches.map((item, index) => (
@@ -160,7 +160,7 @@ export default function SelectCustomerType() {
             {item}
           </button>
         ))}
-      </div>
+      </div> */}
     </>
   );
 }

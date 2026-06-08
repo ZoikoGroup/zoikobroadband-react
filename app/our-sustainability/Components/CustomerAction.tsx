@@ -70,10 +70,11 @@ export default function CustomerAction() {
                   </ul>
     
                   {/* Button */}
+                  <Link href="/contact-us" >
                   <button className="bg-[#10446C] w-full text-white px-6 py-3 rounded-xl hover:bg-[#0c3654] transition duration-300">
                     Contact Us
                   </button>
-    
+                  </Link>
                   {/* Progress text */}
                   <p className="text-sm text-gray-500 mt-5">
                     100% of customers already paperless

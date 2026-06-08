@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export default function Diversity() {
   return (
@@ -27,14 +28,14 @@ export default function Diversity() {
                 </p>
 
                 {/* Button */}
-                <button className=" dark:text-white dark:bg-gray-950 bg-gray-300 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
-                   Equal opportunities for all
+                <button className="text-left dark:text-white dark:bg-gray-950 bg-gray-100 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
+                  <span><Image src="/Images/Careers/hands.png" alt="Equal Opportunity" width={25} height={25} className="inline mr-2" /></span> Equal opportunities for all
                 </button>
-                <button className=" dark:text-white dark:bg-gray-950 bg-gray-300 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
-                   Inclusive workplace culture
+                <button className="text-left dark:text-white dark:bg-gray-950 bg-gray-100 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
+                  <span><Image src="/Images/Careers/earth.png" alt="Inclusive Workplace" width={25} height={25} className="inline mr-2" /></span> Inclusive workplace culture
                 </button>
-                <button className="dark:text-white dark:bg-gray-950 bg-gray-300 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
-                   Equal opportunities for all
+                <button className="text-left dark:text-white dark:bg-gray-950 bg-gray-100 text-[#10446C] font-semibold w-full px-6 py-3 rounded-xl mb-3">
+                  <span><Image src="/Images/Careers/bars.png" alt="Diversity" width={25} height={25} className="inline mr-2" /></span> Diversity initiatives
                 </button>
               </div>
             </div>
@@ -71,16 +72,6 @@ export default function Diversity() {
                     <p className="text-gray-500 text-base dark:text-white dark:bg-gray-950">Above UK average</p>
                   </div>
 
-                  <div className=" bg-gray-100 rounded-2xl p-5 text-center dark:text-white dark:bg-gray-950">
-                    <span className="text-[#f5c241] text-3xl font-bold">
-                      £0
-                    </span>
-                    <p className="text-[#10446C] text-xl font-semibold dark:text-white dark:bg-gray-950">
-                      Gender Pay Gap
-                    </p>
-                    <p className=" dark:text-white dark:bg-gray-950 text-gray-500 text-base">Achieved in 2023</p>
-                  </div>
-
                   <div className=" bg-gray-100 rounded-2xl p-6 text-center  dark:bg-gray-950">
                     <span className="text-[#f5c241] text-3xl font-bold  dark:text-white">
                       4.8/5
@@ -92,6 +83,17 @@ export default function Diversity() {
                       Employee survey 2024
                     </p>
                   </div>
+
+                  <div className=" bg-gray-100 rounded-2xl p-5 text-center dark:text-white dark:bg-gray-950">
+                    <span className="text-[#f5c241] text-3xl font-bold">
+                      £0
+                    </span>
+                    <p className="text-[#10446C] text-xl font-semibold dark:text-white dark:bg-gray-950">
+                      Gender Pay Gap
+                    </p>
+                    <p className=" dark:text-white dark:bg-gray-950 text-gray-500 text-base">Achieved in 2023</p>
+                  </div>
+
                 </div>
               </div>
             </div>

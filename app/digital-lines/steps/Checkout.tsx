@@ -148,13 +148,13 @@ export default function Checkout({ selections }: Props) {
       </div>
 
       {/* ── Confirm Button ────────────────────────────────────────────── */}
-      <button
+      {/* <button
         type="button"
         onClick={() => console.log("Order confirmed:", selections)}
         className="w-full mt-6 py-3 bg-[#F6C140] text-white font-bold rounded-md hover:bg-[#e0ad30] transition text-sm"
       >
         Confirm Order
-      </button>
+      </button> */}
     </div>
   );
 }

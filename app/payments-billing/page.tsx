@@ -14,11 +14,11 @@ export const metadata: Metadata = {
 export default function page() {
   return (
     <>
-    <ProtectedRoute>
+    {/* <ProtectedRoute> */}
     <PaymentBillingHero/>
     <ManageYourBilling/>
     <FrequentlyAskedQues/>
-    </ProtectedRoute>
+    {/* </ProtectedRoute> */}
     </>
   )
 }
