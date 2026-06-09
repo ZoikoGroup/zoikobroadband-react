@@ -222,12 +222,17 @@ export default function StepGuide({
                         className="flex items-center gap-3 text-gray-600 dark:text-white text-sm md:text-base"
                       >
                         <span
-                          className={`w-3 h-3 rounded-full flex-shrink-0 ${indicator.color}`}
+                          className={`w-3 h-3 md:w-5 md:h-5 rounded-full flex-shrink-0 ${indicator.color}`}
                         />
                         <span>{indicator.text}</span>
                       </div>
                     ))}
                     </div>
+                )}
+                {activeTab === "new" && step.id === 1 && (
+                  <p className="text-gray-700 dark:text-white text-sm md:text-base ml-12 pb-4 whitespace-pre-line mt-3">
+                    If lights remain red after 10 minutes, try unplugging and reconnecting the power.
+                  </p>
                 )}
                   </div>
           </div>
