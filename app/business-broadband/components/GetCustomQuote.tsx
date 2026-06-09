@@ -14,53 +14,151 @@ export default function GetCustomQuote() {
   const [additional_requirements, setAdditionalRequirements] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: { preventDefault: () => void; }) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+  const [errors, setErrors] = useState({
+    business_name: "",
+    contact_name: "",
+    email: "",
+    phone_number: "",
+    business_postcode: "",
+    business_size: "",
+  });
 
-  const payload = {
-    business_name,
-    contact_name,
-    email,
-    phone_number,
-    business_postcode,
-    business_size,
-    additional_requirements,
-  };
+  const validateForm = () => {
+    const newErrors = {
+      business_name: "",
+      contact_name: "",
+      email: "",
+      phone_number: "",
+      business_postcode: "",
+      business_size: "",
+    };
 
-  try {
-    const response = await fetch(
-      `${API_URL}/api/business-broadband/business-inquiry/`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      }
-    );
+    let isValid = true;
 
-    const data = await response.json();
-    console.log(data);
-    if(data.success) {
-      toast.success("Your inquiry has been submitted successfully!");
-      // Clear form fields after successful submission
-      setBusinessName("");
-      setContactName("");
-      setEmail("");
-      setPhoneNumber("");
-      setBusinessPostcode("");
-      setBusinessSize("");
-      setAdditionalRequirements("");
-    } else {
-      toast.error("Failed to submit your inquiry. Please try again.");
+    const nameRegex = /^[A-Za-z\s'-]+$/;
+
+    const emailRegex =
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const phoneRegex =
+      /^\+?[1-9]\d{9,14}$/;
+
+    const postcodeRegex =
+      /^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
+
+    // Business Name
+    if (!business_name.trim()) {
+      newErrors.business_name = "Business name is required";
+      isValid = false;
     }
 
-  } catch (error) {
-    toast.error("An error occurred while submitting your inquiry. Please try again.");
-  }
-  setIsSubmitting(false);
-};
+    // Contact Name
+    if (!contact_name.trim()) {
+      newErrors.contact_name = "Contact name is required";
+      isValid = false;
+    } else if (!nameRegex.test(contact_name)) {
+      newErrors.contact_name = "Enter a valid name";
+      isValid = false;
+    }
+
+    // Email
+    if (!email.trim()) {
+      newErrors.email = "Email address is required";
+      isValid = false;
+    } else if (!emailRegex.test(email)) {
+      newErrors.email = "Enter a valid email address";
+      isValid = false;
+    }
+
+    // Phone
+    const digitCount = phone_number.trim().replace(/^\+/, '').length;
+
+    if (!phone_number.trim()) {
+      newErrors.phone_number = "Phone number is required";
+      isValid = false;
+    } else if (digitCount < 10) {
+      newErrors.phone_number = "Phone number must be at least 10 digits";
+      isValid = false;
+    } else if (digitCount > 15) {
+      newErrors.phone_number = "Phone number must be 15 digits or less";
+      isValid = false;
+    } else if (!phoneRegex.test(phone_number)) {
+      newErrors.phone_number = "Enter a valid UK phone number";
+      isValid = false;
+    }
+    
+
+    // Postcode
+    if (!business_postcode.trim()) {
+      newErrors.business_postcode = "Postcode is required";
+      isValid = false;
+    } else if (!postcodeRegex.test(business_postcode)) {
+      newErrors.business_postcode = "Enter a valid UK postcode";
+      isValid = false;
+    }
+
+    // Business Size
+    if (!business_size) {
+      newErrors.business_size = "Please select a business size";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+
+    return isValid;
+  };
+
+
+  const handleSubmit = async (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
+    setIsSubmitting(true);
+
+    const payload = {
+      business_name,
+      contact_name,
+      email,
+      phone_number,
+      business_postcode,
+      business_size,
+      additional_requirements,
+    };
+
+    try {
+      const response = await fetch(
+        `${API_URL}/api/business-broadband/business-inquiry/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await response.json();
+      console.log(data);
+      if (data.success) {
+        toast.success("Your inquiry has been submitted successfully!");
+        // Clear form fields after successful submission
+        setBusinessName("");
+        setContactName("");
+        setEmail("");
+        setPhoneNumber("");
+        setBusinessPostcode("");
+        setBusinessSize("");
+        setAdditionalRequirements("");
+      } else {
+        toast.error("Failed to submit your inquiry. Please try again.");
+      }
+
+    } catch (error) {
+      toast.error("An error occurred while submitting your inquiry. Please try again.");
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <section
@@ -103,9 +201,21 @@ export default function GetCustomQuote() {
                 placeholder="Your Business Name"
                 required
                 value={business_name}
-                onChange={(e) => setBusinessName(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setBusinessName(e.target.value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    business_name: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.business_name ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               />
+              {errors.business_name && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.business_name}
+                </p>
+              )}
             </div>
 
             {/* Contact Name */}
@@ -123,9 +233,21 @@ export default function GetCustomQuote() {
                 placeholder="Your Name"
                 required
                 value={contact_name}
-                onChange={(e) => setContactName(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setContactName(e.target.value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    contact_name: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.contact_name ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               />
+              {errors.contact_name && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.contact_name}
+                </p>
+              )}
             </div>
 
             {/* Email */}
@@ -143,9 +265,21 @@ export default function GetCustomQuote() {
                 placeholder="Your Email Address"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    email: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.email ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             {/* Phone */}
@@ -163,9 +297,21 @@ export default function GetCustomQuote() {
                 placeholder="Your Phone Number"
                 required
                 value={phone_number}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setPhoneNumber(e.target.value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    phone_number: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.phone_number ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               />
+              {errors.phone_number && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.phone_number}
+                </p>
+              )}
             </div>
 
             {/* Postcode */}
@@ -183,9 +329,21 @@ export default function GetCustomQuote() {
                 placeholder="Business Postcode"
                 required
                 value={business_postcode}
-                onChange={(e) => setBusinessPostcode(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setBusinessPostcode(e.target.value);
+
+                  setErrors((prev) => ({
+                    ...prev,
+                    business_postcode: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.business_postcode ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               />
+              {errors.business_postcode && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.business_postcode}
+                </p>
+              )}
             </div>
 
             {/* Business Size */}
@@ -202,14 +360,25 @@ export default function GetCustomQuote() {
                 name="business_size"
                 required
                 value={business_size}
-                onChange={(e) => setBusinessSize(e.target.value)}
-                className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
+                onChange={(e) => {
+                  setBusinessSize(e.target.value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    business_size: "",
+                  }));
+                }}
+                className={'w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C] ${errors.business_size ? "border-red-500" : "border-gray-300 dark:border-gray-700"}'}
               >
                 <option value="">Select Size</option>
                 <option value="1-10 employees">1-10 employees</option>
                 <option value="11-50 employees">11-50 employees</option>
                 <option value="50+ employees">50+ employees</option>
               </select>
+              {errors.business_size && (
+                <p className="mt-1 text-sm text-red-500">
+                  {errors.business_size}
+                </p>
+              )}
             </div>
 
             {/* Requirements */}
@@ -226,7 +395,13 @@ export default function GetCustomQuote() {
                 name="requirements"
                 rows={3}
                 value={additional_requirements}
-                onChange={(e) => setAdditionalRequirements(e.target.value)}
+                onChange={(e) => {
+                  setAdditionalRequirements(e.target.value);
+                  setErrors((prev) => ({
+                    ...prev,
+                    additional_requirements: "",
+                  }));
+                }}
                 placeholder="Tell us about your connectivity needs..."
                 className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#10446C]"
               />
