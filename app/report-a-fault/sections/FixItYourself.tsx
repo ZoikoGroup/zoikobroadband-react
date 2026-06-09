@@ -263,8 +263,8 @@ export default function FixItYourself() {
 
                   {/* Link / CTA */}
                   {item.linkText && (
-                    <Link
-                      href={item.link}
+                    <p
+                      // href={item.link}
                       className={`mt-4 inline-block text-sm sm:text-base font-semibold
                 ${
                   item.isHighlighted
@@ -273,7 +273,7 @@ export default function FixItYourself() {
                 }`}
                     >
                       {item.linkText}
-                    </Link>
+                    </p>
                   )}
                 </article>
               </li>

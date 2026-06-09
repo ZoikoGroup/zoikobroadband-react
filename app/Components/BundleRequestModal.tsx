@@ -24,23 +24,31 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
     phone: "",
     email: "",
   });
-  const [phoneError, setPhoneError] = useState("");
-
+  const [error, setError] = useState({
+    name: "",
+    phone: "",
+    email: "",
+  });
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    if (e.target.name === "phone") {
-      setPhoneError("");
-    }
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+
+    setError((prev) => ({
+      ...prev,
+      [e.target.name]: "",
+    }));
   };
 
 
   const handleSubmit = async () => {
     setLoading(true);
-    if (!form.name || !form.phone) {
-      toast.error("Name and phone are required");
-      setLoading(false);
-      return;
-    }
+    // if (!form.name || !form.phone) {
+    //   toast.error("Name and phone are required");
+    //   setLoading(false);
+    //   return;
+    // }
 
     try {
       const res = await fetch(`${API_URL}/api/bundle-request/`, {
@@ -74,7 +82,26 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
           }
         }
 
-        setPhoneError(errorMessage);
+        if (data.email) {
+          setError((prev) => ({
+            ...prev,
+            email: data.email[0],
+          }));
+        }
+
+        if (data.phone) {
+          setError((prev) => ({
+            ...prev,
+            phone: data.phone[0],
+          }));
+        }
+
+        if (data.name) {
+          setError((prev) => ({
+            ...prev,
+            name: data.name[0],
+          }));
+        }
 
         setLoading(false);
         return;
@@ -150,8 +177,18 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
                 placeholder="Your name..."
                 onChange={handleChange}
                 name="name"
-                className="flex-1 px-4 py-2 md:py-3 outline-none text-sm border border-gray-300 dark:border-gray-700 rounded-xl w-full mb-3"
+                className={`flex-1 px-4 py-2 md:py-3 outline-none text-sm border border-gray-300 dark:border-gray-700 rounded-xl w-full mb-3
+                   ${error.name
+                    ? "border-red-500"
+                    : "border-gray-300 dark:border-gray-700"
+                  }`}
+
               />
+              {error.name && (
+                <p className="mt-1 mb-3 text-sm text-red-500">
+                  {error.name}
+                </p>
+              )}
               <label
                 htmlFor="phone"
                 className=" py-2 text-sm md:text-base font-bold text-left w-full"
@@ -165,15 +202,15 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
                 onChange={handleChange}
                 name="phone"
                 className={`flex-1 px-4 py-2 md:py-3 outline-none text-sm border rounded-xl w-full
-    ${phoneError
+    ${error.phone
                     ? "border-red-500"
                     : "border-gray-300 dark:border-gray-700"
                   }`}
               />
 
-              {phoneError && (
+              {error.phone && (
                 <p className="mt-1 mb-3 text-sm text-red-500">
-                  {phoneError}
+                  {error.phone}
                 </p>
               )}
 
@@ -189,8 +226,17 @@ export default function BundleRequestModal({ open, onClose, bundle }: Props) {
                 placeholder="Email addresses..."
                 onChange={handleChange}
                 name="email"
-                className="flex-1 px-4 py-2 md:py-3 outline-none text-sm border border-gray-300 dark:border-gray-700 rounded-xl w-full mb-3"
+                className={`flex-1 px-4 py-2 md:py-3 outline-none text-sm border border-gray-300 dark:border-gray-700 rounded-xl w-full mb-3
+                   ${error.email
+                    ? "border-red-500"
+                    : "border-gray-300 dark:border-gray-700"
+                  }`}
               />
+              {error.email && (
+                <p className="mt-1 mb-3 text-sm text-red-500">
+                  {error.email}
+                </p>
+              )}
             </div>
             <button
               type="submit"
