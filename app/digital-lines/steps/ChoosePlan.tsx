@@ -1,18 +1,25 @@
+"use client";
 import { Selections } from "../sections/Wizard";
+import { useState } from "react";
 
 interface Props {
   selections: Selections;
   update: (key: keyof Selections, value: string | string[] | null) => void;
 }
 
-const DURATIONS = ["60 Months", "24 Months", "36 Months", "12 Months"];
+const DURATIONS = ["60 Months", "36 Months", "24 Months", "12 Months"];
 
 const PLANS = [
   {
     id: "essential",
     name: "Essential Line",
-    price: "£10.91",
     popular: false,
+    prices: {
+      60: 10.91,
+      36: 12.0,
+      24: 13.09,
+      12: 14.18,
+    },
     features: [
       "Unlimited UK landline calls",
       "Voicemail",
@@ -24,8 +31,13 @@ const PLANS = [
   {
     id: "unlimited",
     name: "Unlimited Talk Line",
-    price: "£18.95",
     popular: true,
+    prices: {
+      60: 18.95,
+      36: 20.85,
+      24: 22.74,
+      12: 24.64,
+    },
     features: [
       "Unlimited landline + mobile calls",
       "Voicemail-to-email",
@@ -37,8 +49,13 @@ const PLANS = [
   {
     id: "business",
     name: "Business Pro Line",
-    price: "£29.99",
     popular: false,
+    prices: {
+      60: 29.99,
+      36: 32.99,
+      24: 35.99,
+      12: 38.99,
+    },
     features: [
       "Multi-line capable",
       "Call recording",
@@ -48,8 +65,23 @@ const PLANS = [
     ],
   },
 ];
-
 export default function ChoosePlan({ selections, update }: Props) {
+
+  // const durationMonths = parseInt(
+  //   (selections.duration ?? "60 Months").split(" ")[0],
+  //   10
+  // ) as 60 | 36 | 24 | 12;
+  //Fix — define a lookup map instead
+const durationMap: Record<string, 60 | 36 | 24 | 12> = {
+  "60 Months": 60,
+  "36 Months": 36,
+  "24 Months": 24,
+  "12 Months": 12,
+};
+
+const durationMonths = durationMap[selections.duration ?? "60 Months"] ?? 60;
+
+ console.log("duration state:", selections.duration, "→ months:", durationMonths);
   return (
     <div>
       <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
@@ -62,11 +94,10 @@ export default function ChoosePlan({ selections, update }: Props) {
           <button
             key={d}
             onClick={() => update("duration", d)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
-              selections.duration === d
-                ? "bg-[#F6C140] text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${selections.duration === d
+              ? "bg-[#F6C140] text-white"
+              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
           >
             {d}
           </button>
@@ -78,13 +109,12 @@ export default function ChoosePlan({ selections, update }: Props) {
         {PLANS.map((plan) => (
           <div
             key={plan.id}
-            className={`relative dark:bg-gray-800 border-2 rounded-xl px-6 py-8 flex flex-col transition ${
-              selections.plan === plan.id
-                ? "border-green-500 shadow-lg"
-                : plan.popular
+            className={`relative dark:bg-gray-800 border-2 rounded-xl px-6 py-8 flex flex-col transition ${selections.plan === plan.id
+              ? "border-green-500 shadow-lg"
+              : plan.popular
                 ? "border-[#F6C140]"
                 : "border-gray-200 hover:border-gray-300"
-            }`}
+              }`}
           >
             {/* Most Popular Badge */}
             {plan.popular && (
@@ -100,7 +130,9 @@ export default function ChoosePlan({ selections, update }: Props) {
 
             {/* Price */}
             <div className="mb-4">
-              <span className="text-2xl font-extrabold text-gray-900 dark:text-white">{plan.price}</span>
+              <span className="text-2xl font-extrabold text-gray-900 dark:text-white">
+                £{plan.prices[durationMonths].toFixed(2)}
+              </span>
               <span className="text-sm text-gray-400 dark:text-white ml-1">/month</span>
             </div>
 
