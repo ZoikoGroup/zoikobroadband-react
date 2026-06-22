@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import SocialButtons from "./SocialButtons";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -238,13 +239,18 @@ export default function RegisterForm() {
 
       {/* Footer */}
       <footer className="text-sm text-center text-gray-600 dark:text-gray-400 mt-6">
-        Already have an account?
-        <a
-          href="/login"
-          className="text-[#10446C] dark:text-blue-400 ml-1 hover:underline"
-        >
-          Sign In
-        </a>
+        {/* Social signup (Google + Facebook) */}
+        <SocialButtons redirectTo="/dashboard" />
+
+        <p className="mt-4">
+          Already have an account?
+          <a
+            href="/login"
+            className="text-[#10446C] dark:text-blue-400 ml-1 hover:underline"
+          >
+            Sign In
+          </a>
+        </p>
       </footer>
     </section>
   );

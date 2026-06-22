@@ -1,8 +1,8 @@
-import Image from "next/image";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import SocialButtons from "./SocialButtons";
 
 
 type Tab = "login" | "register" | "reset-password";
@@ -176,34 +176,11 @@ export default function LoginForm({ setActiveTab }: Props) {
             Create Account
           </button>
         </p>
-        
-        {/* OR continue with */}
-        <div className="flex items-center gap-4 my-6">
-          <div className="flex-1 border-t border-gray-300 "></div>
 
-          <span className="text-sm text-gray-500 whitespace-nowrap">
-            Or continue with
-          </span>
-
-          <div className="flex-1 border-t border-gray-300 "></div>
+        {/* Social login (Google + Facebook) */}
+        <div className="mt-4">
+          <SocialButtons redirectTo="/dashboard" />
         </div>
-
-        {/* Login with google */}
-        <button
-          type="button"
-          className="w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg text-sm 
-                       hover:bg-gray-50 transition
-                       dark:border-gray-700 dark:hover:bg-gray-800"
-        >
-          <Image
-            src="/google-logo.png"
-            alt="Google login"
-            height={60}
-            width={60}
-            className="w-10 h-10 md:w-12 md:h-12 object-contain"
-          />
-          <span>Login with Google</span>
-        </button>
       </footer>
     </section>
   );
