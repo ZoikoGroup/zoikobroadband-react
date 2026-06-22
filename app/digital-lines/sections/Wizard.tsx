@@ -29,6 +29,13 @@ export interface Selections {
   equipment: string[];
   addons: string[];
   chargeChanges: string[];
+  plan_summary?: object;
+  equipment_summary?: object[];
+  addons_summary?: object[];
+  charge_changes_summary?: object[];
+  monthly_total?: number;
+  one_off_total?: number;
+  total_due_today?: number;
 }
 
 export default function Wizard() {
@@ -44,6 +51,13 @@ export default function Wizard() {
     equipment: [],
     addons: [],
     chargeChanges: [],
+    plan_summary: [],
+    equipment_summary: [],
+    addons_summary: [],
+    charge_changes_summary: [],
+    monthly_total: 0,
+    one_off_total: 0,
+    total_due_today: 0,
   });
 
 
@@ -59,6 +73,13 @@ export default function Wizard() {
       equipment: selections.equipment,
       addons: selections.addons,
       charge_changes: selections.chargeChanges,
+      plan_summary: selections.plan_summary,
+      equipment_summary: selections.equipment_summary,
+      addons_summary: selections.addons_summary,
+      charge_changes_summary: selections.charge_changes_summary,
+      monthly_total: Number(selections.monthly_total?.toFixed(2) ?? 0),
+      one_off_total: Number(selections.one_off_total?.toFixed(2) ?? 0),
+      total_due_today: Number(selections.total_due_today?.toFixed(2) ?? 0),
     };
 
     try {
@@ -75,10 +96,18 @@ export default function Wizard() {
         }
       );
 
+      // const data = await response.json();
+
+      // if (!response.ok) {
+      //   throw new Error(data.message || "Failed to submit order");
+      // }
       const data = await response.json();
 
+      console.log("Response:", data);
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to submit order");
+        console.error("Backend Error:", data);
+        throw new Error(JSON.stringify(data));
       }
 
       toast.success("Order submitted successfully!");
@@ -91,6 +120,13 @@ export default function Wizard() {
         equipment: [],
         addons: [],
         chargeChanges: [],
+        plan_summary: [],
+        equipment_summary: [],
+        addons_summary: [],
+        charge_changes_summary: [],
+        monthly_total: 0,
+        one_off_total: 0,
+        total_due_today: 0,
       });
 
       setStep(1);
@@ -105,8 +141,17 @@ export default function Wizard() {
     }
   };
 
-  const update = (key: keyof Selections, value: string | string[] | null) => {
-    setSelections((prev) => ({ ...prev, [key]: value }));
+  // const update = (key: keyof Selections, value: string | string[] | null) => {
+  //   setSelections((prev) => ({ ...prev, [key]: value }));
+  // };
+  const update = (
+    key: keyof Selections,
+    value: string | string[] | number | object | object[] | null
+  ) => {
+    setSelections((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
   };
 
   const goNext = () => setStep((s) => Math.min(s + 1, STEPS.length));
@@ -194,7 +239,7 @@ export default function Wizard() {
         {step === 3 && <Equipment selections={selections} update={update} />}
         {step === 4 && <AddOns selections={selections} update={update} />}
         {step === 5 && <ChargeChanges selections={selections} update={update} />}
-        {step === 6 && <Checkout selections={selections} />}
+        {step === 6 && <Checkout selections={selections} update={update} />}
 
       </div>
 
@@ -218,7 +263,7 @@ export default function Wizard() {
             ? loading
               ? "Submitting..."
               : "Confirm Order"
-            : step === 4
+            : step === 5
               ? "Proceed to Checkout"
               : "Continue"}
         </button>
