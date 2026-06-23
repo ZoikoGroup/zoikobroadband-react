@@ -318,9 +318,9 @@ export default function BroadbandPlans() {
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  // useEffect(() => {
+  //   inputRef.current?.focus();
+  // }, []);
 
   // ── Postcode search ──────────────────────────────────────────────────────
 
