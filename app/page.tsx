@@ -32,7 +32,7 @@ export default function Home() {
       <ExploreBundles/>
 
       {/* Check your postcode */}
-      <BroadbandPlans/>
+      {/* <BroadbandPlans/> */}
 
       {/* TESTIMONIAL SLIDER SECTION */}
       <TestimonialLoader />
