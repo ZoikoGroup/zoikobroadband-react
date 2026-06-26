@@ -27,7 +27,7 @@ export default function ReportAFaultHero() {
           {/* Buttons */}
           <div className="mt-6 flex flex-col sm:flex-row justify-center items-center gap-4">
             <Link
-              href="#"
+              href="#report-a-fault"
               className="bg-white text-[#10446C] dark:bg-gray-200 dark:text-gray-900 px-6 py-4 rounded-md font-semibold text-sm md:text-base hover:bg-gray-100 transition"
             >
               Start Fault Report
