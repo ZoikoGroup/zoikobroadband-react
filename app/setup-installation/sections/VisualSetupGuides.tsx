@@ -17,6 +17,7 @@ export default function VisualSetupGuides() {
       ),
       button: "Watch Video",
       buttonStyle: "bg-[#1f4f73] text-white ",
+      buttonLink: "https://youtu.be/D3Rw_ykAPJc?si=NzgINpyi76WtLxCw",
     },
     {
       id: 2,

@@ -8,6 +8,7 @@ export default function ReportFault() {
   const [formData, setFormData] = useState({
     issueType: "",
     isBusinessCustomer: false,
+    testType: "",
     fullName: "",
     email: "",
     phone: "",
@@ -219,6 +220,7 @@ export default function ReportFault() {
       setFormData({
         issueType: "",
         isBusinessCustomer: false,
+        testType: "",
         fullName: "",
         email: "",
         phone: "",
@@ -246,7 +248,7 @@ export default function ReportFault() {
     }
   };
   const problems = ["No Internet", "Slow Broadband", "Router Not Working", "Wi-Fi Dropping", "Faulty Socket", "Other"];
-  const tools = ["Speed Test", "Line Check", "Wi-Fi Signal Check", "Device Check"];
+  const tools = ["Speed Test", "Line Check", "Wi-Fi Signal Check", "Device Check" ,"None"];
 
 
   return (
@@ -331,32 +333,37 @@ export default function ReportFault() {
             {step === 2 && (
               <>
                 <h3 className="font-semibold text-[#10446C] dark:text-white mb-4">
-                  Step 2/3: Run Diagnostics (Optional)
+                  Step 2/3: Select Diagnostics (Optional)
                 </h3>
 
                 <div className="bg-yellow-100 text-yellow-800 p-3 rounded-md text-sm mb-6">
                   Tip: Most broadband issues are resolved by restarting your router.
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {tools.map((tool) => (
-                    <div
+                    <button
                       key={tool}
-                      className="bg-[#f8f9fa] dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-5 text-center"
+                      onClick={() => setFormData((prev) => ({ ...prev, testType: tool }))}
+                      className={`bg-[#f8f9fa] dark:bg-gray-700 border-2 dark:border-gray-600 rounded-lg p-4 text-center
+                        ${formData.testType === tool
+                            ? "border-[#10446C] bg-blue-100 dark:border-blue-400 dark:bg-gray-800 dark:text-white"
+                            : "border-gray-300 dark:border-gray-700 dark:text-gray-400 dark:hover:border-white dark:hover:text-white"
+                          }`}
                     >
                       <div className="text-xl mb-2">⚙️</div>
                       <p className="font-semibold text-[#10446C] dark:text-white">{tool}</p>
-                      <button className="mt-3 bg-[#10446C] text-white px-4 py-2 rounded-md text-sm">
+                      {/* <button className="mt-3 bg-[#10446C] text-white px-4 py-2 rounded-md text-sm">
                         Run Test
-                      </button>
-                    </div>
+                      </button> */}
+                    </button>
                   ))}
                 </div>
 
-                <div className="mt-6 bg-[#f8f9fa] dark:bg-gray-700 p-4 rounded-lg">
+                {/* <div className="mt-6 bg-[#f8f9fa] dark:bg-gray-700 p-4 rounded-lg">
                   <p className="text-sm text-gray-600 dark:text-gray-300">Diagnostic Summary</p>
                   <div className="h-1 bg-[#F6C140] mt-2 rounded"></div>
-                </div>
+                </div> */}
 
                 <div className="flex gap-3 mt-6">
                   <button
@@ -369,7 +376,8 @@ export default function ReportFault() {
                     onClick={() => setStep(3)}
                     className="bg-[#10446C] text-white px-4 py-2 rounded-md"
                   >
-                    Skip Diagnostics
+                    {formData.testType ? "Next Step" : "Skip Diagnostics"}
+                    {/* Skip Diagnostics */}
                   </button>
                 </div>
               </>
