@@ -152,7 +152,7 @@ export default function ReportFault() {
     if (!token) {
 
       toast.error(
-        "Please login to report a fault."
+        "Please login first , to report a fault."
       );
 
       return;
@@ -169,7 +169,7 @@ export default function ReportFault() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/faults/report/",
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/faults/report/`,
         {
           method: "POST",
           headers: {
@@ -725,7 +725,7 @@ export default function ReportFault() {
                     />
                     <span>
                       I confirm this Fault Report is accurate to the best of my knowledge and I am aware of the{" "}
-                      <a href="#" className="text-[#10446C] underline">Privacy Policy</a>.
+                      <a href="/privacy-notice" className="text-[#10446C] underline">Privacy Policy</a>.
                     </span>
                   </label>
                   <label className="flex items-start gap-2 text-sm text-gray-600 cursor-pointer">
