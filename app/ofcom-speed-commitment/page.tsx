@@ -112,7 +112,7 @@ export default function page() {
         </div>
 
         <div className="mt-8 bg-[#0C3A5A] dark:bg-gray-800 text-white font-semibold px-6 md:px-8 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
-          <Link href="/report-a-fault">Run a Speed Check at Your Address</Link>
+          <Link href="/check-my-postcode">Run Availability Check at Your Address</Link>
         </div>
 
       </section>

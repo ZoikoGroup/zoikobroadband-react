@@ -59,7 +59,7 @@ export default function FaultTrackingModal({
             const token = localStorage.getItem("token");
 
             const response = await fetch(
-                "http://127.0.0.1:8000/api/faults/my-faults/",
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/faults/my-faults/`,
                 {
                     headers: {
                         Authorization: `Token ${token}`,
@@ -89,7 +89,7 @@ export default function FaultTrackingModal({
             const token = localStorage.getItem("token");
 
             const response = await fetch(
-                `http://127.0.0.1:8000/api/faults/${id}/`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/faults/${id}/`,
                 {
                     headers: {
                         Authorization: `Token ${token}`,

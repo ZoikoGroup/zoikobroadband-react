@@ -32,8 +32,9 @@ export default function Home() {
       <ExploreBundles/>
 
       {/* Check your postcode */}
-      <BroadbandPlans/>
-
+      <div id="check-postcode">
+        <BroadbandPlans/>
+      </div>
       {/* TESTIMONIAL SLIDER SECTION */}
       <TestimonialLoader />
     </div>
