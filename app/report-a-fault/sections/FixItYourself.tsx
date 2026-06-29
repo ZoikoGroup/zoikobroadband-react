@@ -45,7 +45,7 @@ const Items2 = [
     label: "Email Support",
     description: "Send a detailed report to our support team",
     btn: "Send Report",
-    btnlink: "mailto:Support@https://zoikobroadband.com",
+    btnlink: "mailto:Support@zoikobroadband.com",
   },
   {
     label: "Escalate Issue",
@@ -194,16 +194,17 @@ export default function FixItYourself() {
                   </div>
 
                   {/* Button */}
-                  <Link
-                    href={item.btnlink}
-                    aria-label={`Open ${item.label}`}
-                    className="mt-4 inline-block text-sm md:text-base font-semibold
-              bg-[#10446C] text-white
+                  <a href={item.btnlink} target="_blank" rel="noopener noreferrer">
+                    <button
+                      aria-label={`Open ${item.label}`}
+                      className="mt-4 inline-block w-full text-sm md:text-base font-semibold
+                bg-[#10446C] text-white
               px-3 py-3 md:py-4 rounded-md
               hover:bg-[#0c3656] transition"
                   >
                     {item.btn}
-                  </Link>
+                  </button>
+                  </a>
                 </article>
               </li>
             ))}

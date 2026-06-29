@@ -24,9 +24,9 @@ export default function AccessibilityPage() {
           </p>
         </div>
 
-        <div className="mt-8 bg-white dark:bg-gray-800 text-black dark:text-white font-semibold px-6 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
+        {/* <div className="mt-8 bg-white dark:bg-gray-800 text-black dark:text-white font-semibold px-6 py-4 rounded-xl shadow-sm max-w-fit mx-auto">
           Request Accessibility Support
-        </div>
+        </div> */}
       </section>
 
       {/* Our Accessibility Commitment */}

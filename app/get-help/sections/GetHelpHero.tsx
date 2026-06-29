@@ -46,10 +46,10 @@ export default function GetHelpHero() {
           No known service issues in your area
         </p>
         <Link
-          href="#"
+          href="tel:+442071646399"
           className="border-2 border-[#F6C140] text-[#10446C] dark:bg-white dark:border-none px-5 py-3 rounded-md font-semibold text-center hover:bg-[#F6C140] transition"
         >
-          Check Network Status
+          Request a callback
         </Link>
       </div>
     </>
