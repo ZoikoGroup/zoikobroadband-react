@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import toast from "react-hot-toast";
-import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaYoutube, FaPinterest  } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -424,11 +424,12 @@ export default function ContactForm() {
 
               <div className="flex gap-3">
                 {[
-                  { icon: <FaFacebookF />, href: "https://facebook.com/zoikobroadband" },
-                  { icon: <FaTwitter />, href: "https://twitter.com/zoikobroadband" },
-                  { icon: <FaInstagram />, href: "https://instagram.com/zoikobroadband" },
-                  { icon: <FaYoutube />, href: "https://youtube.com/zoikobroadband" },
-                  { icon: <FaLinkedinIn />, href: "https://linkedin.com/zoikobroadband" }
+                  { icon: <FaFacebookF />, href: "https://www.facebook.com/ZoikoBroadband/" },
+                  { icon: <FaTwitter />, href: "https://x.com/zoikobroadband" },
+                  { icon: <FaInstagram />, href: "https://www.instagram.com/zoikobroadband/" },
+                  { icon: <FaPinterest />, href: "https://www.pinterest.com/zoikobroadband/" },
+                  { icon: <FaYoutube />, href: "https://www.youtube.com/@ZoikoBroadband" },
+                  { icon: <FaLinkedinIn />, href: "https://www.linkedin.com/company/zoiko-broadband/" }
                 ].map((social, i) => (
                   <a
                     key={i}
