@@ -224,7 +224,7 @@ export default function page() {
               </p>
             </div>
 
-            <hr className="border-gray-200" /> 
+            <hr className="border-gray-200" />
             {/* Section 12 */}
             <div id="section-12">
               <h2 className="text-2xl font-semibold text-[#10446C] dark:bg-gray-950 dark:text-white">
@@ -245,8 +245,14 @@ export default function page() {
               </h2>
               <p className="mt-4 text-base md:text-lg text-gray-700 leading-relaxed dark:bg-gray-950 dark:text-white">
                 For any privacy-related questions or to exercise your rights,
-                contact our Data Protection Officer at
-                privacy@https://zoikobroadband.com
+                contact our Data Protection Officer at 
+                {" "}<a
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=info@zoikobroadband.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  info@zoikobroadband.com
+                </a>
               </p>
             </div>
           </div>
@@ -324,73 +330,73 @@ export default function page() {
           </h2>
 
           {/* Grid */}
-         <div className="grid grid-cols-1 gap-6">
-  
-  {/* Highlight Item */}
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Access:
-      </span>{" "}
-      Request copies of your personal data
-    </p>
-  </div>
+          <div className="grid grid-cols-1 gap-6">
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Rectification:
-      </span>{" "}
-      Correct inaccurate personal data
-    </p>
-  </div>
+            {/* Highlight Item */}
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Access:
+                </span>{" "}
+                Request copies of your personal data
+              </p>
+            </div>
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Erasure:
-      </span>{" "}
-      Request deletion of your personal data
-    </p>
-  </div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Rectification:
+                </span>{" "}
+                Correct inaccurate personal data
+              </p>
+            </div>
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Restrict Processing:
-      </span>{" "}
-      Limit how we use your data
-    </p>
-  </div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Erasure:
+                </span>{" "}
+                Request deletion of your personal data
+              </p>
+            </div>
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Data Portability:
-      </span>{" "}
-      Transfer your data to another provider
-    </p>
-  </div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Restrict Processing:
+                </span>{" "}
+                Limit how we use your data
+              </p>
+            </div>
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right to Object:
-      </span>{" "}
-      Object to certain types of processing
-    </p>
-  </div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Data Portability:
+                </span>{" "}
+                Transfer your data to another provider
+              </p>
+            </div>
 
-  <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
-    <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
-      <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
-        Right not to be subject to automated decision-making:
-      </span>{" "}
-      Avoid purely automated decisions
-    </p>
-  </div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right to Object:
+                </span>{" "}
+                Object to certain types of processing
+              </p>
+            </div>
 
-</div>
+            <div className="bg-white dark:bg-black p-6 rounded-lg shadow-sm border-l-4 border-amber-400">
+              <p className="text-gray-800 dark:text-white text-lg sm:text-base leading-relaxed">
+                <span className="font-semibold text-[#10446C] dark:text-[#63a7db]">
+                  Right not to be subject to automated decision-making:
+                </span>{" "}
+                Avoid purely automated decisions
+              </p>
+            </div>
+
+          </div>
         </div>
       </section>
 
@@ -411,8 +417,14 @@ export default function page() {
               </h3>
 
               <p className="text-sm sm:text-base mb-3 dark:bg-gray-950 dark:text-white">
-                <span className="font-medium">Email:</span>{" "}
-                privacy@zoikobroadband.com
+                <a
+                  href="https://mail.google.com/mail/?view=cm&fs=1&to=info@zoikobroadband.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span className="font-medium">Email:</span>{" "}
+                  info@zoikobroadband.com
+                </a>
               </p>
 
               <p className="text-sm sm:text-base dark:bg-gray-950 dark:text-white">
