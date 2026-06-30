@@ -40,7 +40,9 @@ export default function ContactUsHero() {
         </h3>
 
         <p className="mt-4 text-[#F6C140] font-semibold text-base md:text-lg">
-          +44 (0)207 164 6399
+          <a href="tel:+442071646399" className="">
+            +44 (0)207 164 6399
+          </a>
         </p>
 
         <p className="mt-3 text-sm md:text-base text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -58,7 +60,13 @@ export default function ContactUsHero() {
         </h3>
 
         <p className="mt-4 text-[#F6C140] font-semibold text-base md:text-lg wrap-break-word">
-          support@zoikobroadband.com
+            <a
+              href="https://mail.google.com/mail/?view=cm&fs=1&to=support@zoikobroadband.com"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              support@zoikobroadband.com
+            </a>
         </p>
 
         <p className="mt-3 text-sm md:text-base text-gray-600 dark:text-gray-400">

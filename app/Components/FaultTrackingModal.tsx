@@ -76,7 +76,7 @@ export default function FaultTrackingModal({
             setFaults(data.data);
         } catch (err) {
             console.error(err);
-            setError("Unable to load your fault reports.");
+            setError("Unable to load your fault reports. Please login first.");
         } finally {
             setLoading(false);
         }

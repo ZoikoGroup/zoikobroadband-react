@@ -1,14 +1,85 @@
 
 'use client';
 import Link from "next/link";
-import React, { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 
 export default function Cookiepage() {
   const [necessary, setNecessary] = useState(true);
   const [analytics, setAnalytics] = useState(false);
   const [functionality, setFunctionality] = useState(false);
   const [targeting, setTargeting] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<
+    "accept" | "reject" | "customise" | null
+  >(null);
+  const preferenceRef = useRef<HTMLDivElement>(null);
 
+  const handleAcceptAll = () => {
+    setSelectedAction("accept");
+    setNecessary(true);
+    setAnalytics(true);
+    setFunctionality(true);
+    setTargeting(true);
+
+    toast.success("All cookie options selected. Click 'Update Cookie Preferences' to save.",
+      {
+          duration: 5000,
+      }
+    );
+  };
+
+  const handleRejectAll = () => {
+    setSelectedAction("reject");
+    setNecessary(true);
+    setAnalytics(false);
+    setFunctionality(false);
+    setTargeting(false);
+
+    toast.success("Only necessary cookies are enabled. Click 'Update Cookie Preferences' to save.",
+      {
+          duration: 5000,
+      }
+    );
+  };
+
+  const handleCustomise = () => {
+    setSelectedAction("customise");
+    preferenceRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
+  const handleSavePreferences = () => {
+    const preferences = {
+      necessary: true,
+      analytics,
+      functionality,
+      targeting,
+    };
+
+    localStorage.setItem(
+      "cookiePreferences",
+      JSON.stringify(preferences)
+    );
+
+    toast.success("Cookie preferences updated successfully.",
+      {
+          duration: 4000,
+      }
+    );
+  };
+  useEffect(() => {
+    const saved = localStorage.getItem("cookiePreferences");
+
+    if (!saved) return;
+
+    const preferences = JSON.parse(saved);
+
+    setAnalytics(preferences.analytics);
+    setFunctionality(preferences.functionality);
+    setTargeting(preferences.targeting);
+  }, []);
   return (
     <div className="dark:bg-gray-900 dark:text-white">
 
@@ -29,24 +100,41 @@ export default function Cookiepage() {
             We use cookies to personalise content, improve user experience, and
             analyse website traffic.
 
-            <div className="mt-5 flex justify-center space-x-2 font-semibold">
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
+            <div className="mt-5 flex flex-wrap md:gap-2 justify-center space-x-2 font-semibold">
+              <button onClick={handleAcceptAll} className={`m-1 md:m-0 px-4 py-2 rounded-md text-sm transition-all duration-300
+                ${selectedAction === "accept"
+                  ? "bg-[#10446C] text-white ring-2 ring-white"
+                  : "bg-[#f5c241] text-white hover:opacity-90"
+                }`}>
                 Accept All
               </button>
 
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
+              <button onClick={handleRejectAll} className={`m-1 md:m-0 px-4 py-2 rounded-md text-sm transition-all duration-300
+                ${selectedAction === "reject"
+                  ? "bg-[#10446C] text-white ring-2 ring-white"
+                  : "bg-[#f5c241] text-white hover:opacity-90"
+                }`}>
                 Reject All
               </button>
 
-              <button className="bg-[#f5c241] text-white px-4 py-2 rounded-md text-sm transition-colors">
+              <button onClick={handleCustomise} className={`m-1 md:m-0 px-4 py-2 rounded-md text-sm transition-all duration-300
+                ${selectedAction === "customise"
+                  ? "bg-[#10446C] text-white ring-2 ring-white"
+                  : "bg-[#f5c241] text-white hover:opacity-90"
+                }`}>
                 Customise
               </button>
             </div>
           </div>
-
-          <div className="mt-8 bg-white text-[#0C3A5A] font-semibold px-6 py-4 rounded-xl shadow-sm max-w-fit mx-auto dark:bg-gray-950 dark:text-white">
+          {/* <div className="mt-8 bg-white text-[#0C3A5A] font-semibold px-6 py-4 rounded-xl shadow-sm max-w-fit mx-auto dark:bg-gray-950 dark:text-white">
             Update Cookie Preferences
-          </div>
+          </div> */}
+          <button
+            onClick={handleSavePreferences}
+            className="mt-8 bg-white text-[#0C3A5A] font-semibold px-6 py-4 rounded-xl shadow-sm max-w-fit mx-auto dark:bg-gray-950 dark:text-white"
+          >
+            Update Cookie Preferences
+          </button>
 
         </div>
       </section>
@@ -153,6 +241,95 @@ export default function Cookiepage() {
 
 
       <hr className="border-gray-200 dark:border-gray-800" />
+
+      {/* Manage Cookies Preferences */}
+      <section ref={preferenceRef} className="w-full bg-[#f9f9f9] py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          {/* Heading */}
+          <h2 className="text-xl sm:text-2xl font-semibold text-[#10446C] mb-8">
+            Types of Cookies We Use
+          </h2>
+          <div className="max-w-6xl mx-auto bg-white rounded-xl border-2 border-blue-950 shadow-sm">
+            {/* Row 1 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-b-gray-300">
+              <span className="text-sm sm:text-base text-[#10446C]">
+                Strictly Necessary Cookies
+              </span>
+
+              <button
+
+                className={`aria-disabled:true cursor-not-allowed relative w-12 h-6 rounded-full transition-colors duration-300
+              ${necessary ? "bg-amber-400" : "bg-gray-300"}
+            `}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300
+                ${necessary ? "translate-x-6" : ""}
+              `}
+                />
+              </button>
+            </div>
+
+            {/* Row 2 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-b-gray-300">
+              <span className="text-sm sm:text-base text-[#10446C]">
+                Performance & Analytics Cookies
+              </span>
+
+              <button
+                onClick={() => setAnalytics(!analytics)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300
+              ${analytics ? "bg-amber-400" : "bg-gray-300"}
+            `}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300
+                ${analytics ? "translate-x-6" : ""}
+              `}
+                />
+              </button>
+            </div>
+            {/* Row 3 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-b-gray-300">
+              <span className="text-sm sm:text-base text-[#10446C]">
+                Functionality Cookies
+              </span>
+
+              <button
+                onClick={() => setFunctionality(!functionality)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300
+              ${functionality ? "bg-amber-400" : "bg-gray-300"}
+            `}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300
+                ${functionality ? "translate-x-6" : ""}
+              `}
+                />
+              </button>
+            </div>
+            {/* Row 4 */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-b-gray-300">
+              <span className="text-sm sm:text-base text-[#10446C]">
+                Targeting / Advertising Cookies
+              </span>
+
+              <button
+                onClick={() => setTargeting(!targeting)}
+                className={`relative w-12 h-6 rounded-full transition-colors duration-300
+              ${targeting ? "bg-amber-400" : "bg-gray-300"}
+            `}
+              >
+                <span
+                  className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform duration-300
+                ${targeting ? "translate-x-6" : ""}
+              `}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
 
 
       {/* Third Party */}

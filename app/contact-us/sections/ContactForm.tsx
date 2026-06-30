@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import toast from "react-hot-toast";
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -408,7 +409,7 @@ export default function ContactForm() {
                 Emergency Support
               </p>
               <p className="text-[#10446C] dark:text-white font-semibold text-lg md:text-2xl mt-1">
-                +44 (0)207 164 6399
+                <a href="tel:+442071646399">+44 (0)207 164 6399</a>
               </p>
               <p className="text-base md:lg text-gray-500 dark:text-gray-400 mt-1">
                 Available 24/7 Instant Support
@@ -422,13 +423,22 @@ export default function ContactForm() {
               </p>
 
               <div className="flex gap-3">
-                {["f", "X", "I", "Y", "L"].map((icon, i) => (
-                  <div
+                {[
+                  { icon: <FaFacebookF />, href: "https://facebook.com/zoikobroadband" },
+                  { icon: <FaTwitter />, href: "https://twitter.com/zoikobroadband" },
+                  { icon: <FaInstagram />, href: "https://instagram.com/zoikobroadband" },
+                  { icon: <FaYoutube />, href: "https://youtube.com/zoikobroadband" },
+                  { icon: <FaLinkedinIn />, href: "https://linkedin.com/zoikobroadband" }
+                ].map((social, i) => (
+                  <a
                     key={i}
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#10446C] text-white text-sm"
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-[#10446C] text-white text-sm md:text-base hover:bg-[#F6C140] hover:text-[#10446C] transition"
                   >
-                    {icon}
-                  </div>
+                    {social.icon}
+                  </a>
                 ))}
               </div>
             </div>
