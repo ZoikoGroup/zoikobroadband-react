@@ -694,7 +694,7 @@ export default function CheckoutPage() {
                       {/* 💰 Price Display */}
                       <div className="text-right shrink-0">
                         <p className="font-bold dark:text-white text-lg">
-                          ${item.price.toFixed(2)}
+                          £{item.price.toFixed(2)}
                         </p>
                         <button
                           onClick={() => handleRemove(idx)}
@@ -807,7 +807,7 @@ export default function CheckoutPage() {
                       )}
                     </div>
                     <span className="font-semibold text-gray-900 dark:text-white shrink-0">
-                       ${item.price.toFixed(2)}
+                       £{item.price.toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -821,18 +821,18 @@ export default function CheckoutPage() {
                     Discount (
                     {discountData.type === "percentage"
                       ? formatDiscount(discountData.discount) + "%"
-                      : "$" + formatDiscount(discountData.discount)}
+                      : "£" + formatDiscount(discountData.discount)}
                     )
                   </span>
                   <span className="font-medium text-green-600">
-                    −${discountAmount.toFixed(2)}
+                    −£{discountAmount.toFixed(2)}
                   </span>
                 </div>
               )}
 
               <div className="flex justify-between font-bold text-base mt-4 pt-4 border-t border-gray-100">
                 <span>Total</span>
-                <span className="text-red-500">${total.toFixed(2)}</span>
+                <span className="text-red-500">£{total.toFixed(2)}</span>
               </div>
             </div>
 
