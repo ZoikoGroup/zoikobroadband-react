@@ -25,7 +25,7 @@ const Items = [
     description: "Send us a message",
     feature:"Response within 24 hours",
     btn: "Send Email",
-    btnlink: "mailto:Support@https://zoikobroadband.com",
+    btnlink: "https://mail.google.com/mail/?view=cm&fs=1&to=support@zoikobroadband.com",
   },
 ];
 
@@ -84,7 +84,8 @@ export default function NeedMoreSupport() {
                   {item.feature}
                 </p>
                 <Link
-                  href={item.btnlink}
+                  href={item.btnlink} 
+                  target="_blank"
                   className="mt-5 bg-[#10446C] text-white px-6 py-3 rounded-md font-semibold text-center hover:bg-[#0d3a5a] transition"
                 >
                   {item.btn}

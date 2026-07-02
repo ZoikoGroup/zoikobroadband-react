@@ -45,7 +45,7 @@ const Items2 = [
     label: "Email Support",
     description: "Send a detailed report to our support team",
     btn: "Send Report",
-    btnlink: "mailto:Support@zoikobroadband.com",
+    btnlink: "https://mail.google.com/mail/?view=cm&fs=1&to=support@zoikobroadband.com",
   },
   {
     label: "Escalate Issue",
