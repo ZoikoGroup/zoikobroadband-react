@@ -25,4 +25,4 @@ jobs:
             git reset --hard origin/main
             npm install
             npm run build
-            pm2 restart zoikobroadband
+            pm2 restart zoikobroadband-react
