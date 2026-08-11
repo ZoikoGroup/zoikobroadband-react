@@ -49,13 +49,15 @@ export default function EditProfile() {
     setPasswords((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
   // ── Submit profile ─────────────────────────────────────────────
   const submitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setProfileLoading(true);
     setProfileMsg(null);
     try {
-      const res = await fetch("/api/accounts/update-profile/", {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/update-profile/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +89,7 @@ export default function EditProfile() {
     setPasswordLoading(true);
     setPasswordMsg(null);
     try {
-      const res = await fetch("/api/accounts/change-password/", {
+      const res = await fetch(`${API_BASE_URL}/api/accounts/change-password/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
