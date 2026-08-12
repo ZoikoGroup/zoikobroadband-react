@@ -8,6 +8,13 @@ import StripePaymentForm, { StripePaymentFormRef } from "../Components/StripePay
 import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import type { StripeElementsOptions } from "@stripe/stripe-js";
+import {
+  describeOrder,
+  fmt as dlFmt,
+  CHECKOUT_STORAGE_KEY as DL_STORAGE_KEY,
+  type OrderPayload,
+  type DescribedOrder,
+} from "../digital-lines/lib/order";
 // ── Stub data for standalone compilation ──────────────────────────────────────
 
 // const processOrderStripe = async (data: unknown) => ({ status: true, data });
@@ -220,6 +227,8 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState("");
   const [showThankYou, setShowThankYou] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [dlOrder, setDlOrder] = useState<OrderPayload | null>(null);
+  const [dlView, setDlView] = useState<DescribedOrder | null>(null);
   const [showShipping, setShowShipping] = useState(false);
   const [coupon, setCoupon] = useState("");
   const [loading, setLoading] = useState(false);
@@ -331,6 +340,16 @@ export default function CheckoutPage() {
         normalizeCartItem
       );
       setCart(normalized);
+      try {
+        const rawDl = localStorage.getItem(DL_STORAGE_KEY);
+        if (rawDl) {
+          const parsedDl = JSON.parse(rawDl) as OrderPayload;
+          setDlOrder(parsedDl);
+          setDlView(describeOrder(parsedDl));
+        }
+      } catch (e) {
+        console.error("Failed to read digital-lines order:", e);
+      }
       if (typeof window !== "undefined" && localStorage.getItem("token")) {
         setIsLoggedIn(true);
       }
@@ -366,6 +385,12 @@ export default function CheckoutPage() {
   const handleClearCart = () => {
     setCart([]);
     localStorage.removeItem("cart");
+  };
+
+  const handleRemoveDigitalLine = () => {
+    localStorage.removeItem(DL_STORAGE_KEY);
+    setDlOrder(null);
+    setDlView(null);
   };
 
   // ── Coupon ────────────────────────────────────────────────────────────────
@@ -420,9 +445,12 @@ export default function CheckoutPage() {
 
   // ── Totals ────────────────────────────────────────────────────────────────
 
-  const subtotal = cart.reduce((acc, item) => {
-    return acc + (item.price || 0);
-  }, 0);
+  const dlOneOff = dlOrder?.total_due_today ?? 0;
+
+  const subtotal =
+    cart.reduce((acc, item) => {
+      return acc + (item.price || 0);
+    }, 0) + dlOneOff;
 
   const discountAmount = discountData
     ? discountData.type === "percentage"
@@ -437,7 +465,7 @@ export default function CheckoutPage() {
   // ── Create Stripe payment intent ──────────────────────────────────────────
 
   useEffect(() => {
-    if (total > 0 && cart.length > 0) {
+    if (total > 0 && (cart.length > 0 || dlOrder)) {
       fetch("/api/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -446,6 +474,7 @@ export default function CheckoutPage() {
           subtotal,
           discountAmount,
           cart,
+          dlOrder,
           billingAddress,
           shippingAddress,
         }),
@@ -459,7 +488,8 @@ export default function CheckoutPage() {
   }, [total,
   subtotal,
   discountAmount,
-  cart,]);
+  cart,
+  dlOrder,]);
 
   // ── Validation ────────────────────────────────────────────────────────────
 
@@ -527,54 +557,74 @@ export default function CheckoutPage() {
       }
     }
 
-    // 2️⃣ BT Wholesale order
-    //    processOrderStripe() reads the raw cart from localStorage and forwards
-    //    it (with product.characteristics / product.offering / zoikoPlan) to
-    //    /api/BritishTelecom/process-order, which runs the full BT flow:
-    //    RoBT lookup → appointment slot search → book → place product order.
-    const products = buildProducts();
-    const orderData = {
-      billingAddress,
-      shippingAddress: showShipping ? shippingAddress : billingAddress,
-      coupon: discountData ? { ...discountData } : null,
-      cart: products, // billing-summary view; the BT route uses the raw cart from localStorage
-      totals: { subtotal, discount: discountAmount, total },
-      agreedToTerms: agreeTerms,
-      paymentMethod: "stripe",
-      createdAt: new Date().toISOString(),
-    };
+    // 1. Broadband (BT Wholesale) order - only when there are broadband items.
+    if (cart.length > 0) {
+      const products = buildProducts();
+      const orderData = {
+        billingAddress,
+        shippingAddress: showShipping ? shippingAddress : billingAddress,
+        coupon: discountData ? { ...discountData } : null,
+        cart: products,
+        totals: { subtotal, discount: discountAmount, total },
+        agreedToTerms: agreeTerms,
+        paymentMethod: "stripe",
+        createdAt: new Date().toISOString(),
+      };
 
-    const response = await processOrderStripe(orderData);
-    console.log("✅ processOrderStripe response:", response);  // ← ADD
+      const response = await processOrderStripe(orderData);
 
-    if (!response?.status) {
-      setOrderError(response?.message || "Order processing failed.");
-      setShowOrderErrorPopup(true);
-      return;
+      if (!response?.status) {
+        setOrderError(response?.message || "Order processing failed.");
+        setShowOrderErrorPopup(true);
+        return;
+      }
+
+      const btPayload = (response as Record<string, unknown>).data ?? response;
+
+      const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/bqorders/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(btPayload),
+      });
+
+      const orderResData = await orderRes.json().catch(() => ({}));
+
+      if (!orderRes.ok || !orderResData?.success) {
+        setOrderError(orderResData?.message || "Order could not be saved.");
+        setShowOrderErrorPopup(true);
+        return;
+      }
     }
 
-    const payload = (response as Record<string, unknown>).data ?? response;
-    console.log("✅ payload to Django:", payload);  // ← ADD
+    // 2. Digital Lines order - submit the combined payload exactly as before.
+    if (dlOrder) {
+      const dlRes = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/digital-lines/digital-line-order/`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dlOrder),
+        }
+      );
 
-    // 3️⃣ Save to Django
-    const orderRes = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/bqorders/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+      const dlData = await dlRes.json().catch(() => ({}));
 
-    const orderResData = await orderRes.json().catch(() => ({}));
-    console.log("✅ Django response ok:", orderRes.ok, "status:", orderRes.status, "data:", orderResData);  // ← ADD
+      if (!dlRes.ok) {
+        console.error("Digital Lines order error:", dlData);
+        setOrderError(
+          (dlData && (dlData.message as string)) || "Digital Line order could not be saved."
+        );
+        setShowOrderErrorPopup(true);
+        return;
+      }
 
-    if (!orderRes.ok || !orderResData?.success) {
-      setOrderError(orderResData?.message || "Order could not be saved.");
-      setShowOrderErrorPopup(true);
-      return;
+      localStorage.removeItem(DL_STORAGE_KEY);
+      setDlOrder(null);
+      setDlView(null);
     }
+
     // localStorage.removeItem("cart");
     setShowThankYou(true);
-    
-    console.log("✅ showThankYou set to true");  // ← ADD
 
   } catch (err: any) {
     console.error("❌ caught error:", err);  // ← ADD
@@ -591,7 +641,7 @@ export default function CheckoutPage() {
   };
 
   // ── Empty Cart ────────────────────────────────────────────────────────────
-  if (cart.length === 0) {
+  if (cart.length === 0 && !dlOrder) {
     return (
       <div className="min-h-screen dark:bg-gray-900 bg-gray-50 flex flex-col items-center justify-center px-4 py-16 text-center">
         <div className="w-40 h-40 bg-red-50 dark:bg-red-900 rounded-full flex items-center justify-center mb-6">
@@ -709,6 +759,53 @@ export default function CheckoutPage() {
               </div>
             </div>
 
+            {dlView && !dlView.isEmpty && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                  <h2 className="font-bold text-gray-900 dark:text-white">Your Digital Line</h2>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400 font-medium">Custom build</span>
+                    <button
+                      onClick={handleRemoveDigitalLine}
+                      disabled={loading}
+                      className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+                <div className="px-6 py-4 space-y-4">
+                  {dlView.groups
+                    .filter((g) => g.lines.length > 0)
+                    .map((g) => (
+                      <div key={g.title}>
+                        <p className="text-xs font-bold uppercase tracking-wide text-gray-400 dark:text-gray-500 mb-1">
+                          {g.title}
+                        </p>
+                        {g.lines.map((line, i) => (
+                          <div key={i} className="flex justify-between items-center py-1 text-sm">
+                            <span className="text-gray-700 dark:text-gray-300">
+                              {line.label}
+                              {line.tag ? (
+                                <span className="ml-2 text-xs text-gray-400">({line.tag})</span>
+                              ) : null}
+                            </span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{line.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  <div className="border-t border-gray-100 pt-3 flex justify-between text-sm">
+                    <span className="text-gray-500 dark:text-gray-400">Due today (one-off)</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{dlFmt(dlView.oneOffTotal)}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 text-right">
+                    Then {dlFmt(dlView.monthlyTotal)}/month for {dlView.duration}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Coupon */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 p-6">
               <h2 className="font-bold text-gray-900 dark:text-white mb-4">Have a Coupon?</h2>
@@ -814,6 +911,20 @@ export default function CheckoutPage() {
               </div>
 
             
+
+              {dlView && !dlView.isEmpty && (
+                <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400">Digital Line</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600 dark:text-gray-300">Due today</span>
+                    <span className="font-semibold text-gray-900 dark:text-white">{dlFmt(dlView.oneOffTotal)}</span>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-400">
+                    <span>Monthly (recurring)</span>
+                    <span>{dlFmt(dlView.monthlyTotal)}/mo</span>
+                  </div>
+                </div>
+              )}
 
               {discountData && (
                 <div className="flex justify-between text-sm mt-2">
