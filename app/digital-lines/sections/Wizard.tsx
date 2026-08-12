@@ -1,13 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import ChoosePlan from "../steps/ChoosePlan";
 import NumbersAndPorting from "../steps/NumbersAndPorting";
 import Equipment from "../steps/Equipment";
 import AddOns from "../steps/AddOns";
 import ChargeChanges from "../steps/ChargeChanges";
-import Checkout from "../steps/Checkout";
+import {
+  buildOrderPayload,
+  CHECKOUT_ROUTE,
+  CHECKOUT_STORAGE_KEY,
+  type Selections,
+} from "../lib/order";
 import toast from "react-hot-toast";
+
+// Re-export so existing steps can keep `import { Selections } from "../sections/Wizard"`.
+export type { Selections } from "../lib/order";
 
 // ── Step Labels ──────────────────────────────────────────────────────────────
 const STEPS = [
@@ -16,31 +25,11 @@ const STEPS = [
   { id: 3, label: "Equipment" },
   { id: 4, label: "Add-ons" },
   { id: 5, label: "Charge Changes" },
-  { id: 6, label: "Checkout" },
 ];
 
-// -- Shared Selections Type --
-export interface Selections {
-  plan: string | null;
-  duration: string;
-  numberOption: string | null;
-  numberSubAllocation: string | null;
-  numberImport: string | null;
-  equipment: string[];
-  addons: string[];
-  chargeChanges: string[];
-  plan_summary?: object;
-  equipment_summary?: object[];
-  addons_summary?: object[];
-  charge_changes_summary?: object[];
-  monthly_total?: number;
-  one_off_total?: number;
-  total_due_today?: number;
-}
-
 export default function Wizard() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
 
   const [selections, setSelections] = useState<Selections>({
     plan: null,
@@ -60,90 +49,24 @@ export default function Wizard() {
     total_due_today: 0,
   });
 
-
-  const handleSubmit = async () => {
-    const payload = {
-      plan: selections.plan,
-      duration: selections.duration,
-
-      number_option: selections.numberOption,
-      number_sub_allocation: selections.numberSubAllocation,
-      number_import: selections.numberImport,
-
-      equipment: selections.equipment,
-      addons: selections.addons,
-      charge_changes: selections.chargeChanges,
-      plan_summary: selections.plan_summary,
-      equipment_summary: selections.equipment_summary,
-      addons_summary: selections.addons_summary,
-      charge_changes_summary: selections.charge_changes_summary,
-      monthly_total: Number(selections.monthly_total?.toFixed(2) ?? 0),
-      one_off_total: Number(selections.one_off_total?.toFixed(2) ?? 0),
-      total_due_today: Number(selections.total_due_today?.toFixed(2) ?? 0),
-    };
+  // Combine every selected product into one payload, persist it, then navigate.
+  const proceedToCheckout = () => {
+    if (!selections.plan) {
+      toast.error("Please choose a plan before continuing.");
+      setStep(1);
+      return;
+    }
 
     try {
-      setLoading(true);
-
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/digital-lines/digital-line-order/`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
-
-      // const data = await response.json();
-
-      // if (!response.ok) {
-      //   throw new Error(data.message || "Failed to submit order");
-      // }
-      const data = await response.json();
-
-      console.log("Response:", data);
-
-      if (!response.ok) {
-        console.error("Backend Error:", data);
-        throw new Error(JSON.stringify(data));
-      }
-
-      toast.success("Order submitted successfully!");
-      setSelections({
-        plan: null,
-        duration: "60 Months",
-        numberOption: null,
-        numberSubAllocation: null,
-        numberImport: null,
-        equipment: [],
-        addons: [],
-        chargeChanges: [],
-        plan_summary: [],
-        equipment_summary: [],
-        addons_summary: [],
-        charge_changes_summary: [],
-        monthly_total: 0,
-        one_off_total: 0,
-        total_due_today: 0,
-      });
-
-      setStep(1);
-
-      console.log(data);
-
+      const payload = buildOrderPayload(selections);
+      localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(payload));
+      router.push(CHECKOUT_ROUTE);
     } catch (error) {
       console.error(error);
-      toast.error("Something went wrong");
-    } finally {
-      setLoading(false);
+      toast.error("Could not open checkout. Please try again.");
     }
   };
 
-  // const update = (key: keyof Selections, value: string | string[] | null) => {
-  //   setSelections((prev) => ({ ...prev, [key]: value }));
-  // };
   const update = (
     key: keyof Selections,
     value: string | string[] | number | object | object[] | null
@@ -239,7 +162,6 @@ export default function Wizard() {
         {step === 3 && <Equipment selections={selections} update={update} />}
         {step === 4 && <AddOns selections={selections} update={update} />}
         {step === 5 && <ChargeChanges selections={selections} update={update} />}
-        {step === 6 && <Checkout selections={selections} update={update} />}
 
       </div>
 
@@ -256,16 +178,10 @@ export default function Wizard() {
         )}
 
         <button
-          onClick={step === STEPS.length ? handleSubmit : goNext}
+          onClick={step === STEPS.length ? proceedToCheckout : goNext}
           className="bg-[#F6C140] text-gray-900 dark:text-black px-8 py-2 rounded-md text-sm font-semibold hover:bg-[#e0ad30] transition"
         >
-          {step === STEPS.length
-            ? loading
-              ? "Submitting..."
-              : "Confirm Order"
-            : step === 5
-              ? "Proceed to Checkout"
-              : "Continue"}
+          {step === STEPS.length ? "Proceed to Checkout" : "Continue"}
         </button>
 
       </div>
