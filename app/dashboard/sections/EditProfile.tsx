@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 type Tab = "profile" | "password";
 
@@ -51,6 +51,53 @@ export default function EditProfile() {
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+  // ── Load the live profile so first/last name always show ───────
+  useEffect(() => {
+    if (!token) return;
+    let active = true;
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/accounts/dashboard/`, {
+          headers: { Authorization: `Token ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!active) return;
+
+        setProfile({
+          first_name: data.first_name || "",
+          last_name: data.last_name || "",
+          username: data.username || "",
+          email: data.email || "",
+        });
+
+        // Keep the cached user in sync for other screens.
+        try {
+          const raw = localStorage.getItem("user");
+          const prev = raw ? JSON.parse(raw) : {};
+          localStorage.setItem(
+            "user",
+            JSON.stringify({
+              ...prev,
+              first_name: data.first_name,
+              last_name: data.last_name,
+              username: data.username,
+              email: data.email,
+            })
+          );
+        } catch {
+          /* ignore cache write errors */
+        }
+      } catch {
+        /* keep localStorage-derived values on failure */
+      }
+    })();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Submit profile ─────────────────────────────────────────────
   const submitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,7 +110,11 @@ export default function EditProfile() {
           "Content-Type": "application/json",
           Authorization: `Token ${token}`,
         },
-        body: JSON.stringify(profile),
+        body: JSON.stringify({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          username: profile.username,
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -219,10 +270,16 @@ export default function EditProfile() {
                 type="email"
                 name="email"
                 value={profile.email}
-                onChange={handleProfileChange}
+                readOnly
+                disabled
+                aria-disabled="true"
+                title="Email address cannot be changed"
                 placeholder="john@example.com"
-                className={inputClass}
+                className={`${inputClass} bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-500 cursor-not-allowed focus:ring-0`}
               />
+              <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                Email address cannot be changed.
+              </p>
             </div>
 
             {profileMsg && (
