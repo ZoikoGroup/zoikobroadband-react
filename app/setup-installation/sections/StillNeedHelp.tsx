@@ -25,7 +25,7 @@ const Items = [
     description: "Run automated setup and connection checks",
     feature:"Response within 24 hours",
     btn: "Run Diagnostic",
-    btnlink: "#",
+    btnlink: "/report-a-fault",
   },
 ];
 

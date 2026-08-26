@@ -23,7 +23,7 @@ type ErrorType = {
   file?: string;
   consent?: string;
 };
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 
 export default function CareerForm() {
   const [formData, setFormData] = useState<FormDataType>({
@@ -37,7 +37,7 @@ export default function CareerForm() {
     consent: false,
     file: null,
   });
-
+  const formRef = useRef<HTMLFormElement>(null);
   const [errors, setErrors] = useState<ErrorType>({});
 
   // Reusable styles
@@ -49,53 +49,115 @@ export default function CareerForm() {
 
   // Handle change
   const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-) => {
-  const { name, value, type, checked, files } = e.target as HTMLInputElement;
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type, checked, files } = e.target as HTMLInputElement;
 
-  setFormData((prev) => ({
-    ...prev,
-    [name]:
-      type === "checkbox"
-        ? checked
-        : type === "file"
-        ? files?.[0] || null
-        : type === "number"
-        ? Number(value)
-        : value,
-  }));
-};
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? checked
+          : type === "file"
+            ? files?.[0] || null
+            : type === "number"
+              ? Number(value)
+              : value,
+    }));
+  };
 
   // Basic validation
- const validate = () => {
-  let newErrors: ErrorType = {};
+  const validate = () => {
+    let newErrors: ErrorType = {};
 
-  if (!formData.firstName) newErrors.firstName = "Required";
-  if (!formData.lastName) newErrors.lastName = "Required";
+    if (!formData.firstName.trim()) {
+      newErrors.firstName = "Required";
+    }
 
-  if (!formData.email) {
-    newErrors.email = "Required";
-  } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-    newErrors.email = "Invalid email";
-  }
+    if (!formData.lastName.trim()) {
+      newErrors.lastName = "Required";
+    }
 
-  if (!formData.phone) newErrors.phone = "Required";
-  if (!formData.position) newErrors.position = "Required";
-  if (!formData.location) newErrors.location = "Required";
-  if (!formData.file) newErrors.file = "CV required";
-  if (!formData.consent) newErrors.consent = "Required";
+    if (!formData.email.trim()) {
+      newErrors.email = "Required";
+    } else if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
+    ) {
+      newErrors.email = "Invalid email";
+    }
 
-  setErrors(newErrors);
-  return Object.keys(newErrors).length === 0;
-};
+    // Phone validation
+    if (!formData.phone.trim()) {
+      newErrors.phone = "Required";
+    } else if (!/^\+?[0-9]+$/.test(formData.phone.trim())) {
+      newErrors.phone = "Phone number can contain only digits.";
+    } else {
+      const phone = formData.phone.trim();
+
+      const isIndianNumber =
+        /^(?:\+91|91)?[6-9][0-9]{9}$/.test(phone);
+
+      const isUkNumber =
+        /^(?:\+44|44|0)7[0-9]{9}$/.test(phone);
+
+      if (!isIndianNumber && !isUkNumber) {
+        newErrors.phone =
+          "Enter a valid Indian or UK phone number.";
+      }
+    }
+
+    if (!formData.position.trim()) {
+      newErrors.position = "Required";
+    }
+
+    if (!formData.location.trim()) {
+      newErrors.location = "Required";
+    }
+
+    if (!formData.file) {
+      newErrors.file = "CV required";
+    }
+
+    if (!formData.consent) {
+      newErrors.consent = "Required";
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Submit
-  const handleSubmit = (e: { preventDefault: () => void; }) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (validate()) {
-      console.log("Form Submitted:", formData);
-      alert("Form submitted successfully!");
-    }
+
+    if (!validate()) return;
+
+    console.log("Form Submitted:", formData);
+
+    // alert("Form submitted successfully! ");
+    alert(
+      "Application submitted successfully! We’ll review your application and contact you if a suitable opportunity becomes available."
+    );
+
+    // Reset all native form fields
+    formRef.current?.reset();
+
+    // Clear form
+    setFormData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      position: "",
+      location: "",
+      statement: "",
+      consent: false,
+      file: null,
+    });
+
+    // Clear validation errors
+    setErrors({});
   };
 
   return (
@@ -110,7 +172,7 @@ export default function CareerForm() {
           Complete your application below to build the future with us.
         </p>
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form ref={formRef} onSubmit={handleSubmit} className="mt-6 space-y-6">
 
           {/* 1. Personal Details */}
           <div>
