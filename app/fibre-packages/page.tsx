@@ -3,6 +3,8 @@ import FibrePackagesHero from './components/FibrePackagesHero'
 import FibreBroadband from './components/FibreBroadband'
 import WhyChooseZoiko from '../why-zoiko/Components/WhyChooseZoiko'
 import FAQ from '../Components/FAQs/FAQ'
+import AeoGeoBlocks from '../Components/AeoGeo/AeoGeoBlocks'
+import { fibreBlocks, fibreSchema } from '../Components/AeoGeo/content'
 import  BroadbandPlans  from '../Components/Broadbandplans';
 export const metadata = {
   title: "Affordable Fibre Broadband Packages | Zoiko Broadband",
@@ -79,6 +81,7 @@ export default function page() {
     <FibreBroadband/>
     <WhyChooseZoiko/>
     <FAQ faqs={fibrefaqs} />
+    <AeoGeoBlocks blocks={fibreBlocks} schema={fibreSchema} />
     </>
   )
 }

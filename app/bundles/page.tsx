@@ -4,6 +4,8 @@ import BundleBuilders from './components/BundleBuilders'
 import WhyBundle from './components/WhyBundle'
 import LiveCustomer from './components/LiveCustomer'
 import BundleAndSave from './components/BundleAndSave'
+import AeoGeoBlocks from '../Components/AeoGeo/AeoGeoBlocks'
+import { bundlesBlocks, bundlesSchema } from '../Components/AeoGeo/content'
 export const metadata = {
   title: "Zoiko Broadband Smart Bundles Deals | Save Up to 30%",
   description:
@@ -18,6 +20,7 @@ export default function page() {
     <WhyBundle/>
     <LiveCustomer/>
     <BundleAndSave/>
+    <AeoGeoBlocks blocks={bundlesBlocks} schema={bundlesSchema} />
     </>
   )
 }

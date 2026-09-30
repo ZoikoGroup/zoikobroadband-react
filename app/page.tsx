@@ -6,6 +6,8 @@ import ExploreBundles from "./home/Components/ExploreBundles";
 import CheckYourPostcode from "./home/Components/CheckYourPostcode";
 import PlansWrapper from "./Components/PlansWrapper";
 import  BroadbandPlans  from './Components/Broadbandplans';
+import AeoGeoBlocks from "./Components/AeoGeo/AeoGeoBlocks";
+import { homeBlocks, homeSchema } from "./Components/AeoGeo/content";
 export const metadata = {
   title: "Zoiko Broadband | Affordable Broadband Plans UK",
   description:
@@ -37,6 +39,9 @@ export default function Home() {
       </div>
       {/* TESTIMONIAL SLIDER SECTION */}
       <TestimonialLoader />
+
+      {/* AEO / GEO answer blocks */}
+      <AeoGeoBlocks blocks={homeBlocks} schema={homeSchema} />
     </div>
   );
 }

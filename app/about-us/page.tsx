@@ -7,6 +7,8 @@ import DigitalInclusionSec1 from "./Components/DigitalInclusionSec1";
 import DigitalInclusionSec2 from "./Components/DigitalInclusionSec2";
 import AboutusHero from "./Components/AboutusHero";
 import { Metadata } from "next";
+import AeoGeoBlocks from "../Components/AeoGeo/AeoGeoBlocks";
+import { aboutBlocks, aboutSchema } from "../Components/AeoGeo/content";
 export const metadata: Metadata = {
   title: "About Us | Zoiko Broadband Mission & Vision",
   description:
@@ -37,6 +39,8 @@ export default function page() {
 
       <TestimonialLoader />
 
+      {/* AEO / GEO answer blocks */}
+      <AeoGeoBlocks blocks={aboutBlocks} schema={aboutSchema} />
     </>
   );
 }

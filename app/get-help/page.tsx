@@ -5,6 +5,8 @@ import SelectCustomerType from "./sections/SelectCustomerType";
 import FAQ from "../Components/FAQs/FAQ";
 import NeedMoreSupport from "./sections/NeedMoreSupport";
 import { Metadata } from "next";
+import AeoGeoBlocks from "../Components/AeoGeo/AeoGeoBlocks";
+import { supportBlocks, supportSchema } from "../Components/AeoGeo/content";
 export const metadata: Metadata = {
   title: "Zoiko Broadband Get Help | Account, Setup & Support Hub",
   description:"Need help with Zoiko Broadband? Get support for setup, billing, outages, slow speeds, and account issues quickly through our easy-to-use Help Center."
@@ -108,6 +110,7 @@ export default function page() {
       <HowWeHelp />
       <SelectCustomerType />
       <FAQ faqs={gethelpfaqs} />
+      <AeoGeoBlocks blocks={supportBlocks} schema={supportSchema} />
       <NeedMoreSupport/>
     </>
   );
