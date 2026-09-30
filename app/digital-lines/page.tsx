@@ -1,6 +1,8 @@
 import React from "react";
 import DigitalLinesHero from "./sections/DigitalLinesHero";
 import FAQ from "../Components/FAQs/FAQ";
+import AeoGeoBlocks from "../Components/AeoGeo/AeoGeoBlocks";
+import { digitalLinesBlocks, digitalLinesSchema } from "../Components/AeoGeo/content";
 import Wizard from "./sections/Wizard";
 export const metadata = {
   title: "Zoiko Broadband Digital Lines | Reliable VoIP Services",
@@ -46,6 +48,7 @@ export default function page() {
       <DigitalLinesHero />
       <Wizard/>
       <FAQ faqs={DlFaq} />
+      <AeoGeoBlocks blocks={digitalLinesBlocks} schema={digitalLinesSchema} />
     </>
   );
 }

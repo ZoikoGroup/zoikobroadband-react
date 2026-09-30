@@ -6,6 +6,8 @@ import BenefitsOfZB from './components/BenefitsOfZB'
 import SpecialOffer from './components/SpecialOffer'
 import BroadbandPlans from '../Components/Broadbandplans'
 import TestimonialLoader from '../Components/TestimonialLoader'
+import AeoGeoBlocks from '../Components/AeoGeo/AeoGeoBlocks'
+import { postcodeBlocks, postcodeSchema } from '../Components/AeoGeo/content'
 export const metadata = {
   title: "Coverage Checker by Postcode | Zoiko Broadband",
   description:
@@ -21,6 +23,7 @@ export default function page() {
     <BenefitsOfZB/>
     <SpecialOffer/>
     <TestimonialLoader/>
+    <AeoGeoBlocks blocks={postcodeBlocks} schema={postcodeSchema} />
     </div>
   )
 }

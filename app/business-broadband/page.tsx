@@ -4,6 +4,8 @@ import BusinessBroadbandPlans from './components/BusinessBroadbandPlans'
 import WhyBusinessChooseUs from './components/WhyBusinessChooseUs'
 import PerfectForEveryBusiness from './components/PerfectForEveryBusiness'
 import GetCustomQuote from './components/GetCustomQuote'
+import AeoGeoBlocks from '../Components/AeoGeo/AeoGeoBlocks'
+import { businessBlocks, businessSchema } from '../Components/AeoGeo/content'
 export const metadata = {
   title: "Affordable Business Broadband Plans | Zoiko Broadband",
   description:
@@ -17,6 +19,7 @@ export default function page() {
     <WhyBusinessChooseUs/>
     <PerfectForEveryBusiness/>
     <GetCustomQuote/>
+    <AeoGeoBlocks blocks={businessBlocks} schema={businessSchema} />
     </>
   )
 }
