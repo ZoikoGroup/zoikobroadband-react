@@ -26,6 +26,11 @@ const staticRoutes = [
   "/ofcom-speed-commitment",
   "/accessibility-statement",
   "/blogs",
+  "/all-plans",
+  "/change-wi-fi-channel",
+  "/join-the-zoiko-team",
+  "/led-light-meanings",
+  "/wired-a-wireless-speed",
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
