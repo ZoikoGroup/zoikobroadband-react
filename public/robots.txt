@@ -1,0 +1,10 @@
+# ZoikoBroadband.com - Search Engine & AI Crawler Access
+# Public website content may be discovered by search engines and AI systems
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /checkout
+
+Sitemap: https://zoikobroadband.com/sitemap.xml
