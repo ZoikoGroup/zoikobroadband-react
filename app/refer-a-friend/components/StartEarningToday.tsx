@@ -44,7 +44,7 @@ export default function StartEarningToday() {
           <div className="flex flex-col items-center lg:items-start lg:w-1/3">
             <button
               aria-label="Refer a friend and start earning rewards"
-              onClick={() => openModal("referral")}
+              onClick={() => openModal("coming-soon")}
               className="
                 bg-white dark:bg-gray-200
                 text-[#10446C] dark:text-black

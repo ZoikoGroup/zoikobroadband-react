@@ -34,7 +34,7 @@ export default function ReferHero() {
                 <Link
                   href="?showReferral=true"
                   scroll={false}
-                  onClick={() => openModal("referral")}
+                  onClick={() => openModal("coming-soon")}
                   className="bg-white text-[#10446C] dark:bg-gray-200 dark:text-black px-6 py-3 rounded-lg font-semibold text-center hover:bg-gray-100 dark:hover:bg-gray-300 transition"
                 >
                   Get My Referral Link

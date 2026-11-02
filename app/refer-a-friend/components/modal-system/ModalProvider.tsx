@@ -5,6 +5,7 @@ import { ModalContext } from "./ModalContext";
 
 import ReferralModal from "../modals/ReferralModal";
 import LeaderboardModal from "../modals/LeaderboardModal";
+import ComingSoonModal from "../modals/ComingSoonModal";
 
 export default function ModalProvider({
   children,
@@ -27,6 +28,10 @@ export default function ModalProvider({
 
       {modalType === "referral" && (
         <ReferralModal onClose={closeModal} />
+      )}
+
+      {modalType === "coming-soon" && (
+        <ComingSoonModal onClose={closeModal} />
       )}
 
       {modalType === "other" && (
