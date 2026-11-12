@@ -8,6 +8,7 @@ import PlansWrapper from "./Components/PlansWrapper";
 import  BroadbandPlans  from './Components/Broadbandplans';
 import AeoGeoBlocks from "./Components/AeoGeo/AeoGeoBlocks";
 import { homeBlocks, homeSchema } from "./Components/AeoGeo/content";
+import BlackFridayPopup from "./Components/BlackFridayPopup";
 export const metadata = {
   title: "Zoiko Broadband | Affordable Broadband Plans UK",
   description:
@@ -21,6 +22,9 @@ export default function Home() {
 
   return (
     <div className="-mt-20 md:-mt-24 lg:-mt-28">
+      {/* Black Friday promo popup (auto-opens on load) */}
+      <BlackFridayPopup />
+
       {/* Hero - section ..*/}
       <HeroSection/>
 
