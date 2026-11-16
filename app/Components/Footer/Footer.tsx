@@ -37,7 +37,7 @@ export default function Footer() {
             </div>
           </div>
           <Link
-            href="/check-my-postcode"
+            href="/availability"
             className="inline-flex w-fit shrink-0 items-center gap-2 rounded-xl bg-[#F7BE2E] px-6 py-4 font-bold text-[#0B2F5B] transition-colors hover:bg-[#F2B015]"
           >
             <MapPin aria-hidden className="h-5 w-5" />

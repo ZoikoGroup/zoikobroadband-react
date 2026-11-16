@@ -67,7 +67,7 @@ export const NAV: NavItem[] = [
           { label: "Switch to Zoiko", href: "/why-zoiko" },
           { label: "Moving home", href: "/contact-us" },
           { label: "Installation & routers", href: "/setup-installation" },
-          { label: "Check availability", href: "/check-my-postcode" },
+          { label: "Check availability", href: "/availability" },
           { label: "Getting started guides", href: "/installation-guide" },
         ],
       },
