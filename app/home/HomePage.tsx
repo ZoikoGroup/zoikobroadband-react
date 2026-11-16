@@ -32,9 +32,11 @@ export default function HomePage() {
       <HomeHero />
       <PackagesSection />
 
-      {/* Existing address checker (BT search → plans → cart) — unchanged */}
-      <div id="check-postcode" className="scroll-mt-24 xl:scroll-mt-32">
-        <BroadbandPlans />
+      {/* Address checker (BT search → address → plans → cart).
+          Its own postcode step is hidden; the hero "Check Availability" form
+          drives the search and this section appears with the results. */}
+      <div id="postcode-results" className="scroll-mt-24 xl:scroll-mt-32">
+        <BroadbandPlans searchInputId="hero-postcode" />
       </div>
 
       <ServicesSection />

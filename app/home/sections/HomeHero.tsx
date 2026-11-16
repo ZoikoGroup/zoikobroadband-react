@@ -59,7 +59,8 @@ export default function HomeHero() {
             available where you live and compare your options.
           </p>
 
-          <div className="mt-7">
+          {/* #check-postcode anchor: in-page "check availability" links land here */}
+          <div id="check-postcode" className="mt-7 scroll-mt-28 xl:scroll-mt-36">
             <PostcodeForm id="hero-postcode" label="Your UK postcode" />
           </div>
 
