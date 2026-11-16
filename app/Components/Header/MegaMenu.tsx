@@ -413,7 +413,7 @@ export function SearchPanel({ onNavigate }: { onNavigate: () => void }) {
           <Lightbulb aria-hidden className="h-5 w-5 shrink-0 text-[#F7BE2E]" />
           Checking if we cover your address? Availability uses your full address, not search.
         </p>
-        <Link href="/check-my-postcode" onClick={onNavigate} className="inline-flex shrink-0 items-center gap-1 font-semibold text-[#0B2F5B] underline underline-offset-4 dark:text-white">
+        <Link href="/availability" onClick={onNavigate} className="inline-flex shrink-0 items-center gap-1 font-semibold text-[#0B2F5B] underline underline-offset-4 dark:text-white">
           Check availability
           <ChevronRight aria-hidden className="h-4 w-4" />
         </Link>

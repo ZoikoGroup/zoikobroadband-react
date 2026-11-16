@@ -71,7 +71,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Check Availability",
     icon: MapPin,
     links: [
-      { name: "Check Broadband Availability", href: "/check-my-postcode" },
+      { name: "Check Broadband Availability", href: "/availability" },
       { name: "Address Checker", href: "/check-my-postcode" },
       { name: "Find Your Plan", href: "/fibre-packages" },
       { name: "Broadband Coverage FAQs", href: "/check-my-postcode" },
