@@ -23,7 +23,7 @@ export default function HeaderMenu() {
         aria-label="Toggle menu"
         aria-expanded={isOpen}
         aria-controls="mobile-menu"
-        className="relative flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-xl min-[1150px]:hidden"
+        className="relative flex h-10 w-10 flex-col items-center justify-center gap-1.5 rounded-xl min-[1200px]:hidden"
       >
         <span className={`block h-0.5 w-6 bg-[#0B2F5B] transition-all duration-300 dark:bg-gray-300 ${isOpen ? "translate-y-2 rotate-45" : ""}`} />
         <span className={`block h-0.5 w-6 bg-[#0B2F5B] transition-all duration-300 dark:bg-gray-300 ${isOpen ? "opacity-0" : "opacity-100"}`} />
@@ -33,7 +33,7 @@ export default function HeaderMenu() {
       {/* Mobile Menu */}
       <div
         id="mobile-menu"
-        className={`absolute left-0 top-full z-50 w-full min-[1150px]:hidden ${isOpen ? "block" : "hidden"}`}
+        className={`absolute left-0 top-full z-50 w-full min-[1200px]:hidden ${isOpen ? "block" : "hidden"}`}
       >
         <div className="max-h-[calc(100vh-80px)] overflow-y-auto border-t border-slate-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900">
           <ul className="divide-y divide-slate-200 dark:divide-gray-800">
