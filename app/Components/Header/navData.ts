@@ -57,7 +57,7 @@ export const NAV: NavItem[] = [
           { label: "Full Fibre Broadband (FTTP)", href: "/fibre-packages" },
           { label: "Part Fibre Broadband (SOGEA)", href: "/broadband" },
           { label: "Compare plans & speeds", href: "/fibre-packages" },
-          { label: "Which speed do I need?", href: "/wired-a-wireless-speed" },
+          { label: "Which speed do I need?", href: "/which-speed-do-i-need" },
         ],
       },
       {
@@ -65,8 +65,8 @@ export const NAV: NavItem[] = [
         icon: Zap,
         links: [
           { label: "Switch to Zoiko", href: "/why-zoiko" },
-          { label: "Moving home", href: "/contact-us" },
-          { label: "Installation & routers", href: "/setup-installation" },
+          { label: "Moving home", href: "/moving-home" },
+          { label: "Installation & routers", href: "/installation-routers" },
           { label: "Check availability", href: "/availability" },
           { label: "Getting started guides", href: "/installation-guide" },
         ],
