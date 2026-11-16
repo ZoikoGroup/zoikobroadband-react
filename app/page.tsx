@@ -1,55 +1,14 @@
-import TestimonialLoader from "./Components/TestimonialLoader";
-import HeroSection from "./home/Components/HeroSection";
-import FindYourPlan from "./home/Components/FindYourPlan";
-import WhyZoiko from "./home/Components/WhyZoiko";
-import ExploreBundles from "./home/Components/ExploreBundles";
-import CheckYourPostcode from "./home/Components/CheckYourPostcode";
-import PlansWrapper from "./Components/PlansWrapper";
-import  BroadbandPlans  from './Components/Broadbandplans';
-import AeoGeoBlocks from "./Components/AeoGeo/AeoGeoBlocks";
-import { homeBlocks, homeSchema } from "./Components/AeoGeo/content";
-import BlackFridayPopup from "./Components/BlackFridayPopup";
+import HomePage from "./home/HomePage";
+
 export const metadata = {
   title: "Zoiko Broadband | Affordable Broadband Plans UK",
   description:
     "Get the best broadband plans from Zoiko Broadband— leveraging BT’s Tier 1 network, with a free router, no setup fees, and UK-based customer support.",
-   verification:{ 
-    google:"2iqBujWIrSrqy6h4Sh7AG6WZUMaAsbQqfNYT3VGYkvI",
-   },
+  verification: {
+    google: "2iqBujWIrSrqy6h4Sh7AG6WZUMaAsbQqfNYT3VGYkvI",
+  },
+};
 
-  };
 export default function Home() {
-
-  return (
-    <div className="-mt-20 md:-mt-24 lg:-mt-28">
-      {/* Black Friday promo popup (auto-opens on load) */}
-      <BlackFridayPopup />
-
-      {/* Hero - section ..*/}
-      <HeroSection/>
-
-      {/* Find your plan .. */}
-      <FindYourPlan/>
-
-      {/* Choose your plan .. */}
-      {/* <PlansTabs plans={allPlans} /> */}
-      <PlansWrapper/>
-
-      {/* Why choose zoiko .. */}
-      <WhyZoiko/>
-
-      {/* Explore bundles .. */}
-      <ExploreBundles/>
-
-      {/* Check your postcode */}
-      <div id="check-postcode">
-        <BroadbandPlans/>
-      </div>
-      {/* TESTIMONIAL SLIDER SECTION */}
-      <TestimonialLoader />
-
-      {/* AEO / GEO answer blocks */}
-      <AeoGeoBlocks blocks={homeBlocks} schema={homeSchema} />
-    </div>
-  );
+  return <HomePage />;
 }
