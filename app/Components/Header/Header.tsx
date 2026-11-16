@@ -97,22 +97,22 @@ export default function Header() {
       <div className="fixed inset-x-0 top-0 z-50">
         {/* Main bar */}
         <nav ref={navRef} aria-label="Main" className="relative h-20 bg-white shadow-sm dark:bg-gray-950">
-          <div className="flex h-full items-center justify-between gap-4 px-4 md:px-6">
-            <div className="flex h-full items-center gap-4 xl:gap-8 min-[1440px]:gap-12">
+          <div className="flex h-full items-center justify-between gap-4 px-4 md:px-6 min-[1680px]:grid min-[1680px]:grid-cols-[1fr_auto_1fr]">
+
             {/* Logo */}
-            <Link href="/" className="shrink-0">
+            <Link href="/" className="shrink-0 justify-self-start">
               <Image
                 src="/ZBLogo.svg"
                 alt="Zoiko Broadband Logo"
                 width={150}
                 height={60}
                 priority
-                className="h-11 w-auto object-contain min-[1150px]:h-[52px]"
+                className="h-11 w-auto object-contain min-[1200px]:h-[52px]"
               />
             </Link>
 
-            {/* Desktop nav with mega menus */}
-            <ul className="hidden h-full items-center gap-1 min-[1150px]:flex min-[1440px]:gap-5" onMouseLeave={closeSoon}>
+            {/* Centre: desktop nav with mega menus */}
+            <ul className="hidden h-full flex-1 items-center justify-center gap-1 min-[1200px]:flex min-[1440px]:gap-4 min-[1680px]:flex-none" onMouseLeave={closeSoon}>
               {NAV.map((item, i) => {
                 const isOpen = openMenu === i;
                 return (
@@ -134,10 +134,9 @@ export default function Header() {
                 );
               })}
             </ul>
-            </div>
 
             {/* Right side */}
-            <div className="flex shrink-0 items-center gap-3 min-[1440px]:gap-4">
+            <div className="flex shrink-0 items-center justify-end gap-3 justify-self-end min-[1440px]:gap-4">
               {/* Search: panel on desktop, Help Centre link on smaller screens */}
               <button
                 type="button"
@@ -209,7 +208,7 @@ export default function Header() {
                     aria-expanded={openMenu === "account"}
                     aria-controls="mega-account"
                     onClick={() => setOpenMenu(openMenu === "account" ? null : "account")}
-                    className={`hidden h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-[#0B2F5B] px-3 text-[15px] font-medium text-[#0B2F5B] transition dark:border-slate-300 dark:text-white min-[1150px]:flex min-[1440px]:px-4 min-[1440px]:text-base ${
+                    className={`hidden h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-[#0B2F5B] px-3 text-[15px] font-medium text-[#0B2F5B] transition dark:border-slate-300 dark:text-white min-[1200px]:flex min-[1440px]:px-4 min-[1440px]:text-base ${
                       openMenu === "account" ? "bg-[#E6F0FB] dark:bg-gray-800" : "hover:bg-slate-50 dark:hover:bg-gray-900"
                     }`}
                   >
@@ -219,7 +218,7 @@ export default function Header() {
                   {/* Smaller screens: straight to login, as before */}
                   <Link
                     href="/login"
-                    className="flex h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-[#0B2F5B] px-3 text-sm font-semibold text-[#0B2F5B] transition hover:bg-[#0B2F5B] hover:text-white dark:border-slate-300 dark:text-white md:px-4 md:text-base min-[1150px]:hidden"
+                    className="flex h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-[#0B2F5B] px-3 text-sm font-semibold text-[#0B2F5B] transition hover:bg-[#0B2F5B] hover:text-white dark:border-slate-300 dark:text-white md:px-4 md:text-base min-[1200px]:hidden"
                   >
                     <UserRound aria-hidden className="h-5 w-5" />
                     <span className="hidden sm:inline">My Account</span>
@@ -244,7 +243,7 @@ export default function Header() {
           {/* Mega menu panel */}
           {openMenu !== null && (
             <div
-              className="absolute inset-x-0 top-full hidden px-6 pt-2 min-[1150px]:block"
+              className="absolute inset-x-0 top-full hidden px-6 pt-2 min-[1200px]:block"
               onMouseEnter={() => typeof openMenu === "number" && openNow(openMenu)}
               onMouseLeave={() => typeof openMenu === "number" && closeSoon()}
             >
@@ -268,7 +267,7 @@ export default function Header() {
 
       {/* Page dim behind the mega menu */}
       {openMenu !== null && (
-        <div aria-hidden className="fixed inset-0 top-20 z-40 hidden bg-[#0B2F5B]/70 min-[1150px]:block" onClick={closeMenu} />
+        <div aria-hidden className="fixed inset-0 top-20 z-40 hidden bg-[#0B2F5B]/70 min-[1200px]:block" onClick={closeMenu} />
       )}
     </header>
   );
