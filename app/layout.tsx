@@ -43,7 +43,7 @@ export default function RootLayout({
         <CartProvider>
           <Header />
           <ThemeProvider attribute="class">
-          <main className="flex-1 pt-20 md:pt-24 lg:pt-28">
+          <main className="flex-1 pt-20">
             {children}
             <Toaster position="top-center" reverseOrder={false} />
           </main>
