@@ -300,7 +300,31 @@ function PlanCard({ item, contractType, selectedAddress }: PlanCardProps) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export default function BroadbandPlans() {
+// ─── External search (home page hero form) ───────────────────────────────────
+//
+// When `searchInputId` is set, the built-in "Postcode" step is hidden (not
+// removed) and the component instead listens for POSTCODE_SEARCH_EVENT, which
+// external forms (e.g. the home hero PostcodeForm) dispatch. Loading/error
+// state is reported back via POSTCODE_STATUS_EVENT. The section stays hidden
+// until addresses are found.
+
+export const POSTCODE_SEARCH_EVENT = "zoiko:postcode-search";
+export const POSTCODE_STATUS_EVENT = "zoiko:postcode-status";
+
+export type PostcodeSearchDetail = { postcode: string };
+export type PostcodeStatusDetail = { loading: boolean; error: string | null };
+
+interface BroadbandPlansProps {
+  /**
+   * id of an external postcode input. When provided, the built-in postcode
+   * step is hidden and searches come from POSTCODE_SEARCH_EVENT instead.
+   */
+  searchInputId?: string;
+}
+
+export default function BroadbandPlans({ searchInputId }: BroadbandPlansProps = {}) {
+  const externalSearch = Boolean(searchInputId);
+  const rootRef = useRef<HTMLDivElement>(null);
   const [step, setStep] = useState<"search" | "select" | "plans">("search");
 
   const [postcode, setPostcode] = useState("");
@@ -324,16 +348,27 @@ export default function BroadbandPlans() {
 
   // ── Postcode search ──────────────────────────────────────────────────────
 
-  const handlePostcodeSearch = useCallback(
-    async (e: React.FormEvent) => {
-      e.preventDefault();
-      const trimmed = postcode.trim();
+  const reportStatus = useCallback(
+    (detail: PostcodeStatusDetail) => {
+      if (!externalSearch) return;
+      window.dispatchEvent(
+        new CustomEvent<PostcodeStatusDetail>(POSTCODE_STATUS_EVENT, { detail }),
+      );
+    },
+    [externalSearch],
+  );
+
+  const runPostcodeSearch = useCallback(
+    async (value: string) => {
+      const trimmed = value.trim();
       if (!trimmed) return;
 
       setError(null);
       setLoadingAddresses(true);
       setAddresses([]);
+      reportStatus({ loading: true, error: null });
 
+      let failure: string | null = null;
       try {
         const res = await fetch("/api/BritishTelecom/search-address", {
           method: "POST",
@@ -344,20 +379,62 @@ export default function BroadbandPlans() {
         const data = await res.json();
 
         if (!data.success) {
-          setError(data.message ?? "Failed to find addresses.");
+          failure = data.message ?? "Failed to find addresses.";
+          setError(failure);
           return;
         }
 
         setAddresses(data.addresses ?? []);
         setStep("select");
       } catch {
-        setError("Network error. Please try again.");
+        failure = "Network error. Please try again.";
+        setError(failure);
       } finally {
         setLoadingAddresses(false);
+        reportStatus({ loading: false, error: failure });
       }
     },
-    [postcode],
+    [reportStatus],
   );
+
+  const handlePostcodeSearch = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      runPostcodeSearch(postcode);
+    },
+    [postcode, runPostcodeSearch],
+  );
+
+  // Listen for searches from an external form (home hero)
+  useEffect(() => {
+    if (!externalSearch) return;
+    const onSearch = (e: Event) => {
+      const value = (e as CustomEvent<PostcodeSearchDetail>).detail?.postcode ?? "";
+      const normalised = value.trim().toUpperCase();
+      setPostcode(normalised);
+      runPostcodeSearch(normalised);
+    };
+    window.addEventListener(POSTCODE_SEARCH_EVENT, onSearch);
+    return () => window.removeEventListener(POSTCODE_SEARCH_EVENT, onSearch);
+  }, [externalSearch, runPostcodeSearch]);
+
+  // Reveal + scroll to the results once addresses are found
+  useEffect(() => {
+    if (externalSearch && step === "select") {
+      rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [externalSearch, step]);
+
+  /** "Back" from the address step: built-in step 1, or the external input */
+  const backToSearch = useCallback(() => {
+    setStep("search");
+    setError(null);
+    if (searchInputId) {
+      const input = document.getElementById(searchInputId);
+      input?.scrollIntoView({ behavior: "smooth", block: "center" });
+      input?.focus({ preventScroll: true });
+    }
+  }, [searchInputId]);
 
   // ── Address selection + fetch plans ─────────────────────────────────────
 
@@ -430,8 +507,13 @@ export default function BroadbandPlans() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
+  // External-search mode: keep the section hidden until a search succeeds
+  if (externalSearch && step === "search") {
+    return <div ref={rootRef} hidden aria-hidden="true" />;
+  }
+
   return (
-    <div className="min-h-screen bg-[#faf8ff] dark:bg-gray-900 font-sans py-4">
+    <div ref={rootRef} className="min-h-screen bg-[#faf8ff] dark:bg-gray-900 font-sans py-4">
 
       {/* ── Top bar ── */}
       <header className="max-w-2xl mx-auto rounded-2xl bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-600 sticky top-0 z-30 shadow-sm">
@@ -542,10 +624,7 @@ export default function BroadbandPlans() {
           <div className="flex flex-col gap-6">
             <div className="flex items-center justify-center gap-4 text-center">              
               <button
-                onClick={() => {
-                  setStep("search");
-                  setError(null);
-                }}
+                onClick={backToSearch}
                 className="p-2 rounded-lg hover:bg-gray-100 dark:bg-gray-600 transition-colors dark:text-gray-300 text-gray-500 shrink-0"
                 aria-label="Back"
               >
