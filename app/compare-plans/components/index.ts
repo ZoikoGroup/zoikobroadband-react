@@ -1,0 +1,9 @@
+export { default as ComparePlansHero } from "./ComparePlansHero";
+export { default as CompareYourAddressSection } from "./CompareYourAddressSection";
+export { default as ComparePlansGrid } from "./ComparePlansGrid";
+export { default as CompareReadingThePriceSection } from "./CompareReadingThePriceSection";
+export { default as CompareSpeedTech } from "./CompareSpeedTech";
+export { default as CompareSetupSwitch } from "./CompareSetupSwitch";
+export { default as CompareFAQs } from "./CompareFAQs";
+export { default as CompareRelatedPages } from "./CompareRelatedPages";
+export { default as CompareCheckAvailabilityBanner } from "./CompareCheckAvailabilityBanner";

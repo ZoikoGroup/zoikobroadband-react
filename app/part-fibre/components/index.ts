@@ -1,0 +1,11 @@
+export { default as PartFibreHero } from "./PartFibreHero";
+export { default as PartFibreAddress } from "./PartFibreAddress";
+export { default as PartFibrePlans } from "./PartFibrePlans";
+export { default as PartFibrePlanDetails } from "./PartFibrePlanDetails";
+export { default as PartFibreComparisonTable } from "./PartFibreComparisonTable";
+export { default as PartFibreSpeeds } from "./PartFibreSpeeds";
+export { default as PartFibreInstallation } from "./PartFibreInstallation";
+export { default as PartFibrePhoneVoice } from "./PartFibrePhoneVoice";
+export { default as PartFibreFAQs } from "./PartFibreFAQs";
+export { default as PartFibreRelatedPages } from "./PartFibreRelatedPages";
+export { default as PartFibreCheckAvailabilityBanner } from "./PartFibreCheckAvailabilityBanner";

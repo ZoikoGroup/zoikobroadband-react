@@ -54,9 +54,9 @@ export const NAV: NavItem[] = [
         icon: House,
         links: [
           { label: "All home broadband deals", href: "/all-plans" },
-          { label: "Full Fibre Broadband (FTTP)", href: "/fibre-packages" },
-          { label: "Part Fibre Broadband (SOGEA)", href: "/broadband" },
-          { label: "Compare plans & speeds", href: "/fibre-packages" },
+          { label: "Full Fibre Broadband (FTTP)", href: "/full-fibre" },
+          { label: "Part Fibre Broadband (SOGEA)", href: "/part-fibre" },
+          { label: "Compare plans & speeds", href: "/compare-plans" },
           { label: "Which speed do I need?", href: "/which-speed-do-i-need" },
         ],
       },
@@ -67,7 +67,7 @@ export const NAV: NavItem[] = [
           { label: "Switch to Zoiko", href: "/why-zoiko" },
           { label: "Moving home", href: "/moving-home" },
           { label: "Installation & routers", href: "/installation-routers" },
-          { label: "Check availability", href: "/availability" },
+          { label: "Check availability", href: "/check-availability" },
           { label: "Getting started guides", href: "/installation-guide" },
         ],
       },
@@ -105,7 +105,7 @@ export const NAV: NavItem[] = [
         links: [
           { label: "Business broadband plans", href: "/business-broadband" },
           { label: "Business Full Fibre (FTTP)", href: "/business-broadband" },
-          { label: "Part Fibre (SOGEA)", href: "/business-broadband" },
+          { label: "Part Fibre (SOGEA)", href: "/part-fibre" },
           { label: "Static IP options", href: "/business-broadband" },
           { label: "Multi-site connectivity", href: "/business-broadband" },
         ],
@@ -310,7 +310,7 @@ export const NAV: NavItem[] = [
         icon: ArrowLeftRight,
         links: [
           { label: "Switch to Zoiko", href: "/why-zoiko" },
-          { label: "Moving home", href: "/contact-us" },
+          { label: "Moving home", href: "/moving-home" },
           { label: "Change or cancel a plan", href: "/contact-us" },
           { label: "Complaints & escalation", href: "/contact-us" },
           { label: "Accessibility support", href: "/accessibility-statement" },
@@ -352,9 +352,9 @@ export const QUICK_LINKS: { label: string; href: string; icon: LucideIcon }[] = 
 /** Flat, de-duplicated index of every page the menus point to, plus a few extra keywords. */
 export const SEARCH_INDEX: { label: string; href: string; keywords: string }[] = (() => {
   const extra = [
-    { label: "Check broadband availability", href: "/check-my-postcode", keywords: "availability postcode address coverage" },
+    { label: "Check broadband availability", href: "/check-availability", keywords: "availability postcode address coverage" },
     { label: "Plans and speeds", href: "/fibre-packages", keywords: "plans speeds packages prices deals" },
-    { label: "Moving home", href: "/contact-us", keywords: "moving home house move" },
+    { label: "Moving home", href: "/moving-home", keywords: "moving home house move" },
     { label: "Router and Wi-Fi help", href: "/change-wi-fi-channel", keywords: "router wifi wi-fi channel" },
     { label: "Router light meanings", href: "/led-light-meanings", keywords: "router led lights" },
     { label: "Why Zoiko", href: "/why-zoiko", keywords: "switch switching why zoiko" },

@@ -1,0 +1,10 @@
+export { default as CompareBroadbandHero } from "./CompareBroadbandHero";
+export { default as CompareBroadbandAddress } from "./CompareBroadbandAddress";
+export { default as CompareBroadbandPlans } from "./CompareBroadbandPlans";
+export { default as CompareBroadbandReadingThePrice } from "./CompareBroadbandReadingThePrice";
+export { default as CompareBroadbandSpeedTechnology } from "./CompareBroadbandSpeedTechnology";
+export { default as CompareBroadbandSetupSwitching } from "./CompareBroadbandSetupSwitching";
+export { default as CompareBroadbandClearHonest } from "./CompareBroadbandClearHonest";
+export { default as CompareBroadbandFAQs } from "./CompareBroadbandFAQs";
+export { default as CompareBroadbandRelatedPages } from "./CompareBroadbandRelatedPages";
+export { default as CompareBroadbandCheckAvailabilityBanner } from "./CompareBroadbandCheckAvailabilityBanner";
