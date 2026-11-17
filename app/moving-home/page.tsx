@@ -1,9 +1,31 @@
-import MovingHomeStep from "./MovingHomeStep";
+import {
+  MovingHomeHero,
+  MovingHomeWhereYouAre,
+  NewAddressPostcodeCheck,
+  MovingExistingZoikoPlan,
+  MovingTimelineSection,
+  PhoneAndEssentialDevices,
+  InstallationAndEquipmentNewHome,
+  YourMovingChecklist,
+  MovingHomeFAQs,
+  MovingRelatedPages,
+  CheckNewAddressBanner,
+} from "./components";
 
 export default function MovingHomeStepPage() {
   return (
     <main>
-      <MovingHomeStep />
+      <MovingHomeHero />
+      <MovingHomeWhereYouAre />
+      <NewAddressPostcodeCheck />
+      <MovingExistingZoikoPlan />
+      <MovingTimelineSection />
+      <PhoneAndEssentialDevices />
+      <InstallationAndEquipmentNewHome />
+      <YourMovingChecklist />
+      <MovingHomeFAQs />
+      <MovingRelatedPages />
+      <CheckNewAddressBanner />
     </main>
   );
 }

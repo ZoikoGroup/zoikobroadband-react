@@ -1,0 +1,10 @@
+export { default as InstallationHero } from "./InstallationHero";
+export { default as ChooseConnectionPath } from "./ChooseConnectionPath";
+export { default as FourStepsOverview } from "./FourStepsOverview";
+export { default as HowInstallationWorks } from "./HowInstallationWorks";
+export { default as SettingUpRouter } from "./SettingUpRouter";
+export { default as PreparingForEngineer } from "./PreparingForEngineer";
+export { default as TroubleshootingSymptoms } from "./TroubleshootingSymptoms";
+export { default as InstallationFAQs } from "./InstallationFAQs";
+export { default as RelatedPages } from "./RelatedPages";
+export { default as CheckAddressBanner } from "./CheckAddressBanner";

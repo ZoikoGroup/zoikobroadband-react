@@ -1,0 +1,11 @@
+export { default as MovingHomeHero } from "./MovingHomeHero";
+export { default as MovingHomeWhereYouAre } from "./MovingHomeWhereYouAre";
+export { default as NewAddressPostcodeCheck } from "./NewAddressPostcodeCheck";
+export { default as MovingExistingZoikoPlan } from "./MovingExistingZoikoPlan";
+export { default as MovingTimelineSection } from "./MovingTimelineSection";
+export { default as PhoneAndEssentialDevices } from "./PhoneAndEssentialDevices";
+export { default as InstallationAndEquipmentNewHome } from "./InstallationAndEquipmentNewHome";
+export { default as YourMovingChecklist } from "./YourMovingChecklist";
+export { default as MovingHomeFAQs } from "./MovingHomeFAQs";
+export { default as MovingRelatedPages } from "./MovingRelatedPages";
+export { default as CheckNewAddressBanner } from "./CheckNewAddressBanner";

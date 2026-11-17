@@ -27,7 +27,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Full Fibre (FTTP)", href: "/fibre-packages" },
       { name: "Part Fibre (SOGEA)", href: "/broadband" },
       { name: "Compare Plans & Speeds", href: "/fibre-packages" },
-      { name: "Which Speed Do I Need?", href: "/wired-a-wireless-speed" },
+      { name: "Which Speed Do I Need?", href: "/which-speed-do-i-need" },
     ],
   },
   {
@@ -84,7 +84,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     icon: ArrowLeftRight,
     links: [
       { name: "Switch to Zoiko", href: "/why-zoiko" },
-      { name: "Moving Home", href: "/contact-us" },
+      { name: "Moving Home", href: "/moving-home" },
       { name: "How Switching Works", href: "/setup-installation" },
       { name: "Keep Your Number", href: "/digital-lines" },
       { name: "Installation & Set-up", href: "/setup-installation" },
@@ -119,7 +119,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Wi-Fi & Equipment",
     icon: Wifi,
     links: [
-      { name: "Routers & Wi-Fi", href: "/setup-installation" },
+      { name: "Routers & Wi-Fi", href: "/installation-routers" },
       { name: "Installation Guides", href: "/installation-guide" },
       { name: "Improve Your Wi-Fi", href: "/change-wi-fi-channel" },
       { name: "Equipment & Returns", href: "/get-help" },
