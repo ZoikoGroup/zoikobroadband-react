@@ -228,7 +228,7 @@ export default function Header() {
               )}
 
               <Link
-                href="/availability"
+                href="/check-availability"
                 className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-[#F7BE2E] px-4 text-[15px] font-semibold text-[#0B2F5B] min-[1440px]:px-5 min-[1440px]:text-base transition-colors hover:bg-[#F2B015] lg:flex"
               >
                 <MapPin aria-hidden className="h-5 w-5" />

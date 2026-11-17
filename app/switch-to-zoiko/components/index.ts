@@ -1,0 +1,11 @@
+export { default as SwitchBroadbandHero } from "./SwitchBroadbandHero";
+export { default as SwitchCheckAddressSection } from "./SwitchCheckAddressSection";
+export { default as SwitchHowItWorksSection } from "./SwitchHowItWorksSection";
+export { default as SwitchBeforeYouSwitchChecklist } from "./SwitchBeforeYouSwitchChecklist";
+export { default as SwitchPlansAvailableSection } from "./SwitchPlansAvailableSection";
+export { default as SwitchPhoneAndDevicesSection } from "./SwitchPhoneAndDevicesSection";
+export { default as SwitchSetupAndDatesSection } from "./SwitchSetupAndDatesSection";
+export { default as SwitchOtherSituationsSection } from "./SwitchOtherSituationsSection";
+export { default as SwitchBroadbandFAQs } from "./SwitchBroadbandFAQs";
+export { default as SwitchRelatedPages } from "./SwitchRelatedPages";
+export { default as SwitchCheckAvailabilityBanner } from "./SwitchCheckAvailabilityBanner";

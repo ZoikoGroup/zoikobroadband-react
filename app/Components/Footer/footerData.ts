@@ -24,9 +24,9 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     icon: House,
     links: [
       { name: "All Home Broadband Plans", href: "/all-plans" },
-      { name: "Full Fibre (FTTP)", href: "/fibre-packages" },
-      { name: "Part Fibre (SOGEA)", href: "/broadband" },
-      { name: "Compare Plans & Speeds", href: "/fibre-packages" },
+      { name: "Full Fibre (FTTP)", href: "/full-fibre" },
+      { name: "Part Fibre (SOGEA)", href: "/part-fibre" },
+      { name: "Compare Plans & Speeds", href: "/compare-plans" },
       { name: "Which Speed Do I Need?", href: "/which-speed-do-i-need" },
     ],
   },
@@ -71,7 +71,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Check Availability",
     icon: MapPin,
     links: [
-      { name: "Check Broadband Availability", href: "/availability" },
+      { name: "Check Broadband Availability", href: "/check-availability" },
       { name: "Address Checker", href: "/check-my-postcode" },
       { name: "Find Your Plan", href: "/fibre-packages" },
       { name: "Broadband Coverage FAQs", href: "/check-my-postcode" },
@@ -83,7 +83,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Switching & Moving",
     icon: ArrowLeftRight,
     links: [
-      { name: "Switch to Zoiko", href: "/why-zoiko" },
+      { name: "Switch to Zoiko", href: "/switch-to-zoiko" },
       { name: "Moving Home", href: "/moving-home" },
       { name: "How Switching Works", href: "/setup-installation" },
       { name: "Keep Your Number", href: "/digital-lines" },
