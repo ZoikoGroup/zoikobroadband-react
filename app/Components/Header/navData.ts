@@ -107,7 +107,7 @@ export const NAV: NavItem[] = [
           { label: "Business Full Fibre (FTTP)", href: "/business-broadband" },
           { label: "Part Fibre (SOGEA)", href: "/part-fibre" },
           { label: "Static IP options", href: "/business-broadband" },
-          { label: "Multi-site connectivity", href: "/business-broadband" },
+          { label: "Multi-site connectivity", href: "/multi-site-connectivity" },
         ],
       },
       {
@@ -240,7 +240,7 @@ export const NAV: NavItem[] = [
         links: [
           { label: "Broadband & business VoIP", href: "/bundles" },
           { label: "Business connectivity & mobile", href: "/bundles" },
-          { label: "Multi-site options", href: "/business-broadband" },
+          { label: "Multi-site options", href: "/multi-site-connectivity" },
           { label: "Request a bundle quote", href: "/bundles" },
         ],
       },
