@@ -1,0 +1,11 @@
+export { default as SogeaHero } from "./SogeaHero";
+export { default as WhatIsSogea } from "./WhatIsSogea";
+export { default as WherePartFibreFits } from "./WherePartFibreFits";
+export { default as CopperLineDistance } from "./CopperLineDistance";
+export { default as CheckPhoneLine } from "./CheckPhoneLine";
+export { default as SogeaAddressOptions } from "./SogeaAddressOptions";
+export { default as SwitchDaySteps } from "./SwitchDaySteps";
+export { default as SupportCoverage } from "./SupportCoverage";
+export { default as SogeaRelatedSolutions } from "./SogeaRelatedSolutions";
+export { default as SogeaSpecialistForm } from "./SogeaSpecialistForm";
+export { default as SogeaCommonQuestions } from "./SogeaCommonQuestions";
