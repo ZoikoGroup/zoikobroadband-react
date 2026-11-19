@@ -38,7 +38,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Business Broadband Plans", href: "/business-broadband" },
       { name: "Business Full Fibre", href: "/business-broadband" },
       { name: "Static IP Options", href: "/business-broadband" },
-      { name: "Multi-site Connectivity", href: "/business-broadband" },
+      { name: "Multi-site Connectivity", href: "/multi-site-connectivity" },
       { name: "Request a Tailored Quote", href: "/business-broadband" },
     ],
   },
