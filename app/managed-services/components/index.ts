@@ -1,0 +1,11 @@
+export { default as ManagedServicesScope } from "./ManagedServicesScope";
+export { default as OnboardingManagedServiceComparison } from "./OnboardingManagedServiceComparison";
+export { default as OnboardingPossibleServiceAreas } from "./OnboardingPossibleServiceAreas";
+export { default as OnboardingScopeBoundaries } from "./OnboardingScopeBoundaries";
+export { default as ManagedSharedResponsibility } from "./ManagedSharedResponsibility";
+export { default as ManagedHowItWouldRun } from "./ManagedHowItWouldRun";
+export { default as ManagedDueDiligenceChecklist } from "./ManagedDueDiligenceChecklist";
+export { default as ManagedLifecycle } from "./ManagedLifecycle";
+export { default as ManagedScopeReviewWizard } from "./ManagedScopeReviewWizard";
+export { default as ManagedServicesQuestions } from "./ManagedServicesQuestions";
+export { default as ManagedMoreBusinessServices } from "./ManagedMoreBusinessServices";

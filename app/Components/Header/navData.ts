@@ -125,8 +125,8 @@ export const NAV: NavItem[] = [
         title: "Business services",
         icon: Briefcase,
         links: [
-          { label: "Installation & onboarding", href: "/setup-installation" },
-          { label: "Support & SLA options", href: "/business-broadband" },
+          { label: "Installation & onboarding", href: "/installation-onboarding" },
+          { label: "Support & SLA options", href: "/business-support" },
           { label: "Connectivity consultation", href: "/contact-us" },
           { label: "Request tailored quote", href: "/request-a-tailored-quote" },
           { label: "Business FAQs", href: "/get-help" },
