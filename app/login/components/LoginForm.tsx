@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import SocialButtons from "./SocialButtons";
+import { authEyeBtn, authHeading, authInput, authLabel, authLink, authPrimaryBtn, authSubheading } from "./authStyles";
 
 
 type Tab = "login" | "register" | "reset-password";
@@ -64,124 +65,88 @@ export default function LoginForm({ setActiveTab }: Props) {
   };
 
   return (
-    <section className="w-full dark:bg-gray-950 dark:text-white">
+    <section className="w-full">
       {/* HEADER */}
-      <header className="mb-6">
-        <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-          Welcome back!
-        </h3>
-
-        <p className="text-gray-600 mt-2 dark:text-gray-300">
-          Enter your credentials to access your account.
-        </p>
+      <header className="mb-4 [@media(max-height:760px)]:mb-3">
+        <h2 className={authHeading}>Welcome back!</h2>
+        <p className={authSubheading}>Sign in to your Zoiko Broadband account.</p>
       </header>
 
       {/* FORM */}
-      <form onSubmit={handleLogin} autoComplete="off" className="flex flex-col gap-5">
+      <form onSubmit={handleLogin} autoComplete="off" className="flex flex-col gap-3.5 [@media(max-height:760px)]:gap-2.5">
         {/* EMAIL */}
         <div>
-          <label
-            htmlFor="email"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Username or Email Address
+          <label htmlFor="email" className={authLabel}>
+            Email address
           </label>
-
           <input
             id="email"
             type="email"
             autoComplete="new-email"
-            placeholder="Enter your email"
+            placeholder="name@company.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            className={authInput}
           />
         </div>
 
         {/* PASSWORD */}
         <div>
-          <label
-            htmlFor="password"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
+          <label htmlFor="password" className={authLabel}>
             Password
           </label>
-        <div className="relative mt-1">
-          <input
-            id="password"
-            type={showPassword ? "text" : "password"}
-            autoComplete="new-password"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-          >
-            {showPassword ? <FiEyeOff /> : <FiEye />}
-          </button>
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className={`${authInput} pr-11`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              className={authEyeBtn}
+            >
+              {showPassword ? <FiEyeOff /> : <FiEye />}
+            </button>
           </div>
         </div>
 
-        {/* GOOGLE + REMEMBER */}
-        <div className="flex flex-col gap-3">
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <input
-              type="checkbox"
-              className="accent-[#10446C] dark:accent-blue-500"
-            />
-            Remember for 30 days
+        {/* REMEMBER + FORGOT */}
+        <div className="flex items-center justify-between gap-3 text-[13px]">
+          <label className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+            <input type="checkbox" className="h-4 w-4 accent-[#1257B8]" />
+            Remember me for 30 days
           </label>
+          <button type="button" onClick={() => setActiveTab("reset-password")} className={authLink}>
+            Forgot password?
+          </button>
         </div>
 
         {/* LOGIN BUTTON */}
-        <button
-          type="submit"
-          className="w-full bg-[#10446C] text-white py-3 rounded-lg font-semibold
-                     hover:bg-[#0d3555] transition
-                     dark:bg-blue-600 dark:hover:bg-blue-700"
-        >
-            {loading ? "Logging in..." : "Log In"}
+        <button type="submit" disabled={loading} className={authPrimaryBtn}>
+          {loading ? "Logging in..." : "Log In Securely"}
         </button>
       </form>
 
+      {/* Social login */}
+      <div className="mt-4 [@media(max-height:760px)]:mt-3">
+        <SocialButtons redirectTo="/dashboard" />
+      </div>
+
       {/* FOOTER */}
-      <footer className="text-sm text-center text-gray-600 dark:text-gray-400 mt-6">
-        {/* Forgot password | create account */}
-        <p className="mt-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("reset-password")}
-            className="text-[#10446C] dark:text-blue-400 hover:underline"
-          >
-            Forgot Password?
-          </button>
-
-          <span className="mx-1">|</span>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("register")}
-            className="text-[#10446C] dark:text-blue-400 hover:underline"
-          >
-            Create Account
-          </button>
-        </p>
-
-        {/* Social login (Google + Facebook) */}
-        <div className="mt-4">
-          <SocialButtons redirectTo="/dashboard" />
-        </div>
-      </footer>
+      <p className="mt-4 [@media(max-height:760px)]:mt-2.5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+        New to Zoiko?{" "}
+        <button type="button" onClick={() => setActiveTab("register")} className={authLink}>
+          Register
+        </button>
+      </p>
     </section>
   );
 }
