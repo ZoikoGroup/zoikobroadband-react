@@ -4,6 +4,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import SocialButtons from "./SocialButtons";
+import { authEyeBtn, authHeading, authInput, authLabel, authLink, authPrimaryBtn, authSubheading } from "./authStyles";
 
 const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -79,26 +80,19 @@ export default function RegisterForm() {
   };
 
   return (
-    <section className="w-full dark:bg-gray-950 dark:text-white">
+    <section className="w-full">
       {/* Header */}
-      <header className="mb-6">
-        <h3 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-white">
-          Create Account
-        </h3>
-
-        <p className="text-gray-600 mt-2 dark:text-gray-300">
-          Fill in your details to get started.
-        </p>
+      <header className="mb-4 [@media(max-height:760px)]:mb-3">
+        <h2 className={authHeading}>Create account</h2>
+        <p className={authSubheading}>Fill in your details to get started.</p>
       </header>
-      {showVerificationMessage && (
-        <div className="mb-6 rounded-lg border border-green-200 bg-green-50 p-4">
-          <h4 className="font-semibold text-green-700">
-            Verify Your Email
-          </h4>
 
-          <p className="mt-2 text-sm text-green-600">
+      {showVerificationMessage && (
+        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3">
+          <h4 className="text-sm font-semibold text-green-700">Verify Your Email</h4>
+          <p className="mt-1 text-xs text-green-600">
             A verification link has been sent to your email address.
-            If you don't see the email, check your Spam or Junk folder.
+            If you don&apos;t see the email, check your Spam or Junk folder.
           </p>
         </div>
       )}
@@ -109,17 +103,13 @@ export default function RegisterForm() {
           e.preventDefault();
           handleRegister();
         }}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-3 [@media(max-height:760px)]:gap-2.5"
       >
         {/* Username */}
         <div>
-          <label
-            htmlFor="username"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Username *
+          <label htmlFor="username" className={authLabel}>
+            Username <span className="text-red-500">*</span>
           </label>
-
           <input
             id="username"
             type="text"
@@ -130,128 +120,101 @@ export default function RegisterForm() {
             onChange={(e) => {
               setUsername(e.target.value);
             }}
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            className={authInput}
           />
         </div>
 
         {/* Email */}
         <div>
-          <label
-            htmlFor="email"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Email *
+          <label htmlFor="email" className={authLabel}>
+            Email address <span className="text-red-500">*</span>
           </label>
-
           <input
             id="email"
             type="email"
             autoComplete="email"
-            placeholder="your@email.com"
+            placeholder="name@company.com"
             required
-            className="w-full mt-1 px-4 py-2.5 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
+            className={authInput}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
         </div>
 
-        {/* Password */}
-        <div>
-          <label
-            htmlFor="password"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Password *
-          </label>
-
-          <div className="relative mt-1">
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Create a strong password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-lg
-               focus:ring-2 focus:ring-[#10446C] focus:outline-none
-               dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400"
-            >
-              {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-            </button>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Password */}
+          <div>
+            <label htmlFor="password" className={authLabel}>
+              Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Create password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`${authInput} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className={authEyeBtn}
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
 
-        </div>
-
-        {/* Confirm Password */}
-        <div>
-          <label
-            htmlFor="confirmPassword"
-            className="text-sm font-medium text-gray-700 dark:text-gray-300"
-          >
-            Confirm Password *
-          </label>
-
-          <div className="relative mt-1">
-            <input
-              id="confirmPassword"
-              type={showConfirmPassword ? "text" : "password"}
-              autoComplete="new-password"
-              placeholder="Re-enter your password"
-              required
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2.5 pr-12 border border-gray-300 rounded-lg
-                       focus:ring-2 focus:ring-[#10446C] focus:outline-none
-                       dark:bg-gray-900 dark:border-gray-700 dark:text-white"
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700 dark:text-gray-400"
-            >
-              {showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-            </button>
+          {/* Confirm Password */}
+          <div>
+            <label htmlFor="confirmPassword" className={authLabel}>
+              Confirm password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Re-enter password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className={`${authInput} pr-10`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                className={authEyeBtn}
+              >
+                {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Submit */}
-        <button
-          type="submit"
-          className="w-full bg-[#10446C] text-white py-3 rounded-lg font-semibold
-                     hover:bg-[#0d3555] transition
-                     dark:bg-blue-600 dark:hover:bg-blue-700"
-        >
+        <button type="submit" disabled={loading} className={`${authPrimaryBtn} mt-1`}>
           {loading ? "Creating Account..." : "Create Account"}
         </button>
       </form>
 
-      {/* Footer */}
-      <footer className="text-sm text-center text-gray-600 dark:text-gray-400 mt-6">
-        {/* Social signup (Google + Facebook) */}
+      {/* Social signup */}
+      <div className="mt-4 [@media(max-height:760px)]:mt-3">
         <SocialButtons redirectTo="/dashboard" />
+      </div>
 
-        <p className="mt-4">
-          Already have an account?
-          <a
-            href="/login"
-            className="text-[#10446C] dark:text-blue-400 ml-1 hover:underline"
-          >
-            Sign In
-          </a>
-        </p>
-      </footer>
+      {/* Footer */}
+      <p className="mt-4 [@media(max-height:760px)]:mt-2.5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+        Already have an account?{" "}
+        <a href="/login" className={authLink}>
+          Sign In
+        </a>
+      </p>
     </section>
   );
 }
