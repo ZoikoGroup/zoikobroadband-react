@@ -110,7 +110,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Log In to My Account", href: "/login" },
       { name: "Track Your Order", href: "/dashboard" },
       { name: "Billing & Payments", href: "/payments-billing" },
-      { name: "Manage Your Services", href: "/dashboard" },
+      { name: "Manage Your Services", href: "/managed-services" },
       { name: "Account Security", href: "/dashboard" },
     ],
   },
