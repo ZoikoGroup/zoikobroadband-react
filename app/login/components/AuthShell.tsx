@@ -19,78 +19,93 @@ const legalLinks = [
 ];
 
 /**
- * Full-screen auth layout: background photo, brand headline on the left and a
- * card on the right. Sized to exactly fill the screen below the fixed header.
- * `children` is the card's content (tabs + form).
+ * Full-screen auth layout (matches the Figma "Sign in" frame): background
+ * photo with no overlay, brand headline on the left and a white card on the
+ * right. Sized to exactly fill the screen below the fixed 80px header.
+ * Left-side sizes scale with the viewport (vw, capped by vh) so the
+ * proportions stay the same on every desktop size.
+ *
+ * `tabs` renders above the bordered form panel; `children` goes inside it.
  */
-export default function AuthShell({ children }: { children: ReactNode }) {
+export default function AuthShell({ tabs, children }: { tabs?: ReactNode; children: ReactNode }) {
   return (
     <section
       aria-labelledby="login-hero-heading"
-      // Fills the screen below the fixed 80px header (layout adds pt-20)
-      className={`${figtree.className} relative isolate w-full overflow-hidden bg-[#0B1F45] min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] lg:min-h-[560px]`}
+      className={`${figtree.className} relative isolate w-full overflow-hidden bg-[#f4f4f4] text-[#0B1F45] min-h-[calc(100dvh-5rem)] lg:h-[calc(100dvh-5rem)] lg:min-h-[560px]`}
     >
-      {/* Background photo */}
+      {/* Background photo — no overlay */}
       <Image
         src="/Images/login/Broadband_Bg.webp"
         alt=""
         fill
         priority
         sizes="100vw"
-        className="-z-20 object-cover object-[35%_center]"
-      />
-      {/* Soft light wash on the left so the headline reads */}
-      <div
-        aria-hidden
-        className="absolute inset-0 -z-10 bg-white/55 lg:bg-transparent lg:bg-[radial-gradient(ellipse_45%_60%_at_18%_30%,rgba(255,255,255,0.92)_0%,rgba(255,255,255,0.7)_45%,rgba(255,255,255,0)_100%)] dark:bg-black/50 lg:dark:bg-[radial-gradient(ellipse_45%_60%_at_18%_30%,rgba(2,6,23,0.85)_0%,rgba(2,6,23,0.5)_50%,rgba(2,6,23,0)_100%)]"
+        className="-z-10 object-cover object-top"
       />
 
-      <div className="mx-auto flex h-full w-full max-w-[1280px] flex-col gap-6 px-4 py-6 sm:px-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:px-12 lg:py-6 [@media(max-height:760px)]:lg:py-3">
+      <div className="mx-auto flex h-full w-full max-w-[1320px] flex-col gap-6 px-4 py-6 sm:px-8 lg:flex-row lg:items-stretch lg:justify-between lg:gap-12 lg:px-12 lg:py-[3vh]">
         {/* LEFT: brand + headline */}
-        <div className="flex flex-col lg:max-w-[460px] lg:self-start lg:pt-[2vh]">
-          <div className="w-fit rounded-xl bg-white/90 px-3 py-2 shadow-sm backdrop-blur-sm">
-            <Image src="/ZBLogo.svg" alt="Zoiko Broadband" width={120} height={48} className="h-9 w-auto lg:h-11" priority />
-          </div>
+        <div className="flex flex-col lg:pt-[2vh] [text-shadow:0_0_14px_rgba(255,255,255,0.95),0_0_4px_rgba(255,255,255,0.9)]">
+          <Image
+            src="/ZBLogo.svg"
+            alt="Zoiko Broadband"
+            width={200}
+            height={80}
+            priority
+            className="h-auto w-[140px] lg:w-[min(13vw,22vh,190px)]"
+          />
 
           <h1
             id="login-hero-heading"
-            className="mt-4 text-[32px] font-extrabold leading-[1.05] tracking-tight text-[#0B1F45] sm:text-4xl lg:mt-6 lg:text-[clamp(2.25rem,4.6vh,3.25rem)] dark:text-white"
+            className="mt-4 text-[40px] font-extrabold leading-[1.02] tracking-[-0.02em] text-[#0B1F45] sm:text-5xl lg:mt-[1.5vh] lg:text-[min(4.7vw,8.2vh,72px)]"
           >
             Fast. Reliable.
             <br />
-            <span className="text-[#1257B8] dark:text-[#63a7db]">Connected.</span>
+            <span className="text-[#1257B8]">Connected.</span>
           </h1>
-          <p className="mt-3 max-w-[380px] text-base font-medium text-[#0B1F45]/85 lg:text-lg dark:text-white/85">
-            Full fibre broadband and digital lines, built around you.
+
+          <p className="mt-3 text-lg font-medium leading-snug text-[#0B1F45] sm:text-xl lg:mt-[1.2vh] lg:text-[min(1.95vw,3.4vh,28px)]">
+            Full fibre broadband and digital lines,
+            <br />
+            built around you.
           </p>
 
-          <ul className="mt-5 hidden gap-6 sm:flex">
+          <ul className="mt-5 flex gap-4 lg:mt-[2.2vh] lg:gap-[min(1.6vw,24px)]">
             {features.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex w-[96px] flex-col items-center text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-md ring-1 ring-[#1257B8]/10">
-                  <Icon aria-hidden className="h-5 w-5 text-[#0B1F45]" strokeWidth={2.2} />
+              <li key={label} className="flex w-[96px] flex-col items-center text-center lg:w-[min(9vw,16vh,130px)]">
+                <span className="flex aspect-square w-12 items-center justify-center rounded-full bg-[#E9EFFA] shadow-sm lg:w-[min(4.6vw,8vh,66px)]">
+                  <Icon aria-hidden className="h-1/2 w-1/2 text-[#1D4E9E]" strokeWidth={1.8} />
                 </span>
-                <span className="mt-2 text-xs font-semibold leading-snug text-[#0B1F45] dark:text-white">{label}</span>
+                <span className="mt-2 text-xs font-semibold leading-tight text-[#0B1F45] lg:mt-[0.8vh] lg:text-[max(11px,min(1.15vw,2vh,16px))]">
+                  {label}
+                </span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* RIGHT: auth card */}
-        <div className="flex w-full justify-center lg:h-full lg:w-auto lg:items-center">
-          <div className="flex max-h-full w-full max-w-[440px] flex-col rounded-3xl bg-white/95 shadow-[0_20px_60px_rgba(11,31,69,0.25)] ring-1 ring-black/5 backdrop-blur dark:bg-slate-950/95 dark:ring-white/10">
-            {children}
+        <div className="flex w-full justify-center lg:w-auto lg:items-center">
+          <div className="flex max-h-full w-full max-w-[460px] flex-col rounded-[22px] bg-white p-2.5 [@media(max-height:760px)]:p-2 shadow-[0_18px_50px_rgba(0,0,0,0.18)] lg:w-[clamp(400px,34vw,470px)] lg:max-w-none">
+            {tabs}
+
+            {/* Bordered form panel (scrolls inside only on very short screens) */}
+            <div className="min-h-0 flex-1 overflow-y-auto rounded-2xl border border-slate-200 px-5 py-5 [@media(max-height:760px)]:py-2.5 sm:px-6">
+              {children}
+            </div>
 
             {/* Legal footer */}
-            <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-t border-slate-100 px-4 py-2.5 [@media(max-height:760px)]:py-1.5 text-[11px] text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              {legalLinks.map(({ label, href }) => (
-                <span key={href} className="flex items-center gap-2">
-                  <Link href={href} className="hover:text-[#0B1F45] hover:underline dark:hover:text-white">
-                    {label}
-                  </Link>
-                  <span aria-hidden>·</span>
-                </span>
-              ))}
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-x-2 gap-y-1 px-2 pb-1 pt-2.5 text-[11px] text-slate-500 [@media(max-height:760px)]:pt-1.5">
+              <span className="flex flex-wrap items-center gap-x-2">
+                {legalLinks.map(({ label, href }, i) => (
+                  <span key={href} className="flex items-center gap-2">
+                    {i > 0 && <span aria-hidden>•</span>}
+                    <Link href={href} className="hover:text-[#0B1F45] hover:underline">
+                      {label}
+                    </Link>
+                  </span>
+                ))}
+              </span>
               <span>© {new Date().getFullYear()} Zoiko Broadband</span>
             </div>
           </div>

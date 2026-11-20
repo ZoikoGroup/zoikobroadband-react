@@ -11,7 +11,7 @@ type Props = {
   setActiveTab: (tab: Tab) => void;
 };
 
-const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function LoginForm({ setActiveTab }: Props) {
   const [email, setEmail] = useState("");
@@ -28,7 +28,7 @@ export default function LoginForm({ setActiveTab }: Props) {
       const res = await fetch(`${API_URL}/api/accounts/login/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+ "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
@@ -49,7 +49,7 @@ export default function LoginForm({ setActiveTab }: Props) {
       // Save user (optional)
       localStorage.setItem("user", JSON.stringify(data.user));
 
-       //  THIS IS THE FIX
+       // THIS IS THE FIX
   window.dispatchEvent(new Event("authChanged"));
 
       toast.success("Logged in successfully!");
@@ -67,13 +67,13 @@ export default function LoginForm({ setActiveTab }: Props) {
   return (
     <section className="w-full">
       {/* HEADER */}
-      <header className="mb-4 [@media(max-height:760px)]:mb-3">
+      <header className="mb-4 [@media(max-height:760px)]:mb-2">
         <h2 className={authHeading}>Welcome back!</h2>
         <p className={authSubheading}>Sign in to your Zoiko Broadband account.</p>
       </header>
 
       {/* FORM */}
-      <form onSubmit={handleLogin} autoComplete="off" className="flex flex-col gap-3.5 [@media(max-height:760px)]:gap-2.5">
+      <form onSubmit={handleLogin} autoComplete="off" className="flex flex-col gap-3.5 [@media(max-height:760px)]:gap-2">
         {/* EMAIL */}
         <div>
           <label htmlFor="email" className={authLabel}>
@@ -119,12 +119,12 @@ export default function LoginForm({ setActiveTab }: Props) {
         </div>
 
         {/* REMEMBER + FORGOT */}
-        <div className="flex items-center justify-between gap-3 text-[13px]">
-          <label className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-            <input type="checkbox" className="h-4 w-4 accent-[#1257B8]" />
+        <div className="flex items-center justify-between gap-3 text-[12px]">
+          <label className="flex items-center gap-2 text-[#0B1F45]">
+            <input type="checkbox" defaultChecked className="h-4 w-4 accent-[#1257B8]" />
             Remember me for 30 days
           </label>
-          <button type="button" onClick={() => setActiveTab("reset-password")} className={authLink}>
+          <button type="button" onClick={() => setActiveTab("reset-password")} className="font-medium text-[#2A7F8F] hover:underline">
             Forgot password?
           </button>
         </div>
@@ -136,12 +136,12 @@ export default function LoginForm({ setActiveTab }: Props) {
       </form>
 
       {/* Social login */}
-      <div className="mt-4 [@media(max-height:760px)]:mt-3">
+      <div className="mt-4 [@media(max-height:760px)]:mt-2.5">
         <SocialButtons redirectTo="/dashboard" />
       </div>
 
       {/* FOOTER */}
-      <p className="mt-4 [@media(max-height:760px)]:mt-2.5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+      <p className="mt-4 [@media(max-height:760px)]:mt-2 text-center text-[13px] text-slate-600 ">
         New to Zoiko?{" "}
         <button type="button" onClick={() => setActiveTab("register")} className={authLink}>
           Register

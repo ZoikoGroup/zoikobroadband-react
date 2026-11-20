@@ -25,8 +25,8 @@ export default function RegisterForm() {
       const res = await fetch(`${API_URL}/api/accounts/register/`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-Frontend-Origin": window.location.origin, // Send the frontend origin for CORS validation
+ "Content-Type": "application/json",
+ "X-Frontend-Origin": window.location.origin, // Send the frontend origin for CORS validation
         },
         body: JSON.stringify({
           username,
@@ -39,9 +39,9 @@ export default function RegisterForm() {
       const data = await res.json();
 
       // if (!res.ok) {
-      //   console.error("Backend Error:", data);
-      //   toast.error(JSON.stringify(data));
-      //   return;
+      // console.error("Backend Error:", data);
+      // toast.error(JSON.stringify(data));
+      // return;
       // }
       if (!res.ok) {
         console.error("Backend Error:", data);
@@ -82,7 +82,7 @@ export default function RegisterForm() {
   return (
     <section className="w-full">
       {/* Header */}
-      <header className="mb-4 [@media(max-height:760px)]:mb-3">
+      <header className="mb-4 [@media(max-height:760px)]:mb-2">
         <h2 className={authHeading}>Create account</h2>
         <p className={authSubheading}>Fill in your details to get started.</p>
       </header>
@@ -103,7 +103,7 @@ export default function RegisterForm() {
           e.preventDefault();
           handleRegister();
         }}
-        className="flex flex-col gap-3 [@media(max-height:760px)]:gap-2.5"
+        className="flex flex-col gap-3 [@media(max-height:760px)]:gap-2"
       >
         {/* Username */}
         <div>
@@ -204,12 +204,12 @@ export default function RegisterForm() {
       </form>
 
       {/* Social signup */}
-      <div className="mt-4 [@media(max-height:760px)]:mt-3">
+      <div className="mt-4 [@media(max-height:760px)]:mt-2.5">
         <SocialButtons redirectTo="/dashboard" />
       </div>
 
       {/* Footer */}
-      <p className="mt-4 [@media(max-height:760px)]:mt-2.5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+      <p className="mt-4 [@media(max-height:760px)]:mt-2 text-center text-[13px] text-slate-600 ">
         Already have an account?{" "}
         <a href="/login" className={authLink}>
           Sign In

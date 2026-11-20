@@ -7,7 +7,7 @@ import Link from "next/link";
 import AuthShell from "@/app/login/components/AuthShell";
 import { authEyeBtn, authHeading, authInput, authLabel, authLink, authPrimaryBtn, authSubheading } from "@/app/login/components/authStyles";
 
-const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export default function ResetPassword() {
     const router = useRouter();
     const params = useParams();
@@ -40,7 +40,7 @@ export default function ResetPassword() {
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
+ "Content-Type": "application/json",
           },
           body: JSON.stringify({ password , password2: confirmPassword }),
         }
@@ -66,12 +66,17 @@ export default function ResetPassword() {
   };
 
   return (
-    <AuthShell>
-      <div className="shrink-0 border-b border-slate-200 px-6 py-3.5 text-center text-[13px] font-semibold text-[#0B1F45] dark:border-slate-800 dark:text-white">
-        Reset Password
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 [@media(max-height:760px)]:py-3.5 sm:px-7">
+    <AuthShell
+      tabs={
+        <div className="shrink-0 px-3 pb-2.5 pt-1.5 text-center">
+          <span className="relative inline-block px-3 py-2.5 text-[13px] font-semibold text-[#0B1F45]">
+            Reset Password
+            <span aria-hidden className="absolute inset-x-3 bottom-0 h-[2px] rounded-full bg-[#F7BE2E]" />
+          </span>
+        </div>
+      }
+    >
+      <div>
         <header className="mb-4">
           <h2 className={authHeading}>Choose a new password</h2>
           <p className={authSubheading}>Enter your new password below.</p>
@@ -134,7 +139,7 @@ export default function ResetPassword() {
           </button>
         </div>
 
-        <p className="mt-5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+        <p className="mt-5 text-center text-[13px] text-slate-600 ">
           <Link href="/login" className={authLink}>
             Back to Login
           </Link>
