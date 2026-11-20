@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Tag, X, ArrowRight, Zap, Router, MapPin } from "lucide-react";
 
 // Content taken from the /black-friday page
-const SALE_START = new Date("2026-11-27T00:00:00");
+const SALE_START = new Date("2026-11-20T00:00:00");
 const SALE_END = new Date("2026-12-01T00:00:00"); // end of 30 Nov
 
 const offer = {
@@ -16,7 +16,7 @@ const offer = {
   line2Highlight: "every room.",
   subtitle: "Selected fibre broadband deals for Black Friday.",
   percent: "25%",
-  dates: "27–30 NOV",
+  dates: "20–30 NOV",
   description:
     "the monthly subscription charge on eligible fibre packages for your ",
   descriptionBold: "first 6 months",
@@ -35,7 +35,7 @@ const perks = [
 
 const tickerItems = [
   "Black Friday",
-  "27 Nov – 30 Nov 2026",
+  "20 Nov – 30 Nov 2026",
   "Selected fibre broadband deals",
   "Cyber Monday · 30 Nov",
 ] as const;

@@ -17,9 +17,9 @@ const faqData = {
     },
     {
       question: "When does the sale run?",
-      highlight: "27–30 NOV",
+      highlight: "20–30 NOV",
       answer:
-        " – From Black Friday, 27 November, to Cyber Monday, 30 November 2026. End time: [to be confirmed].",
+        " – From 20 November to Cyber Monday, 30 November 2026. End time: [to be confirmed].",
     },
     {
       question: "Is a router and installation included?",

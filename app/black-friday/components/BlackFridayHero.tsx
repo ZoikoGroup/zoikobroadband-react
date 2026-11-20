@@ -19,7 +19,7 @@ const offer = {
   percent: "25%",
   off: "OFF",
   title: "BLACK FRIDAY OFFER",
-  dates: "27–30 NOV",
+  dates: "20–30 NOV",
   description:
     "the monthly subscription charge on eligible fibre packages for your ",
   descriptionBold: "first 6 months",
@@ -44,10 +44,10 @@ const topTickerItems = [
 
 const bottomTickerItems = [
   "BLACK FRIDAY",
-  "27 NOV – 30 NOV 2026",
+  "20 NOV – 30 NOV 2026",
   "SELECTED FIBRE BROADBAND DEALS",
   "BLACK FRIDAY",
-  "27 NOV – 30 NOV 2026",
+  "20 NOV – 30 NOV 2026",
   "SELECTED FIBRE BROADBAND DEALS",
   "BLACK FRIDAY",
 ] as const;
