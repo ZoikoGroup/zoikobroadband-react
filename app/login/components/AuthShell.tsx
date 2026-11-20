@@ -40,44 +40,45 @@ export default function AuthShell({ tabs, children }: { tabs?: ReactNode; childr
         fill
         priority
         sizes="100vw"
-        className="-z-10 object-cover object-[center_60%]"
+        className="-z-10 object-cover object-[center_40%]"
       />
 
       <div className="mx-auto flex h-full w-full max-w-[1320px] flex-col gap-6 px-4 py-6 sm:px-8 lg:flex-row lg:items-stretch lg:justify-between lg:gap-12 lg:px-12 lg:py-[3vh]">
         {/* LEFT: brand + headline */}
-        <div className="flex flex-col lg:pt-[2vh] [text-shadow:0_0_14px_rgba(255,255,255,0.95),0_0_4px_rgba(255,255,255,0.9)]">
+        <div className="flex flex-col lg:pt-[1vh] [text-shadow:0_0_14px_rgba(255,255,255,0.95),0_0_4px_rgba(255,255,255,0.9)]">
           <Image
             src="/ZBLogo.svg"
             alt="Zoiko Broadband"
             width={200}
             height={80}
             priority
-            className="h-auto w-[140px] lg:w-[min(13vw,22vh,190px)]"
+            className="h-auto w-[140px] lg:w-[min(11vw,17vh,180px)]"
           />
 
           <h1
             id="login-hero-heading"
-            className="mt-4 text-[40px] font-extrabold leading-[1.02] tracking-[-0.02em] text-[#0B1F45] sm:text-5xl lg:mt-[1.5vh] lg:text-[min(4.7vw,8.2vh,72px)]"
+            className="mt-4 text-[40px] font-extrabold leading-[1.02] tracking-[-0.02em] text-[#0B1F45] sm:text-5xl lg:mt-[1.5vh] lg:text-[min(4.7vw,7vh,72px)]"
           >
             Fast. Reliable.
             <br />
             <span className="text-[#1257B8]">Connected.</span>
           </h1>
 
-          <p className="mt-3 text-lg font-medium leading-snug text-[#0B1F45] sm:text-xl lg:mt-[1.2vh] lg:text-[min(1.95vw,3.4vh,28px)]">
+          <p className="mt-3 text-lg font-medium leading-snug text-[#0B1F45] sm:text-xl lg:mt-[1vh] lg:text-[min(1.95vw,2.9vh,28px)]">
             Full fibre broadband and digital lines,
             <br />
             built around you.
           </p>
 
-          {/* Frosted card keeps the labels readable over the photo */}
-          <ul className="mt-5 flex w-fit gap-4 rounded-2xl bg-white/80 px-4 py-3 shadow-[0_8px_24px_rgba(11,31,69,0.12)] ring-1 ring-white/60 backdrop-blur-md [text-shadow:none] lg:mt-[2.2vh] lg:gap-[min(1.6vw,24px)] lg:px-[min(1.2vw,20px)] lg:py-[min(1.6vh,16px)]">
+          {/* Left block is sized by viewport height so it ends around mid-screen,
+              leaving the family in the photo visible below it (as in Figma) */}
+          <ul className="mt-5 flex gap-4 lg:mt-[2vh] lg:gap-[min(1.6vw,24px)]">
             {features.map(({ icon: Icon, label }) => (
-              <li key={label} className="flex w-[96px] flex-col items-center text-center lg:w-[min(9vw,16vh,130px)]">
-                <span className="flex aspect-square w-12 items-center justify-center rounded-full bg-[#E9EFFA] shadow-sm lg:w-[min(4.6vw,8vh,66px)]">
+              <li key={label} className="flex w-[96px] flex-col items-center text-center lg:w-[min(9vw,14vh,130px)]">
+                <span className="flex aspect-square w-12 items-center justify-center rounded-full bg-[#E9EFFA] shadow-sm lg:w-[min(4.6vw,6.5vh,66px)]">
                   <Icon aria-hidden className="h-1/2 w-1/2 text-[#1D4E9E]" strokeWidth={1.8} />
                 </span>
-                <span className="mt-2 text-xs font-semibold leading-tight text-[#0B1F45] lg:mt-[0.8vh] lg:text-[max(11px,min(1.15vw,2vh,16px))]">
+                <span className="mt-2 text-xs font-semibold leading-tight text-[#0B1F45] lg:mt-[0.8vh] lg:text-[max(11px,min(1.15vw,1.7vh,16px))]">
                   {label}
                 </span>
               </li>
