@@ -1,10 +1,10 @@
 "use client";
-import React, { useState }  from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 import { authHeading, authInput, authLabel, authLink, authPrimaryBtn, authSubheading } from "./authStyles";
 
-const API_URL =  process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   const [email, setEmail] = useState("");
@@ -13,8 +13,8 @@ export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab
     const res = await fetch(`${API_URL}/api/accounts/forgot-password/`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
-        "X-Frontend-Origin": window.location.origin,
+ "Content-Type": "application/json",
+ "X-Frontend-Origin": window.location.origin,
       },
       body: JSON.stringify({ email }),
     });
@@ -35,7 +35,7 @@ export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab
   return (
     <section className="w-full" id="reset-password">
       {/* Header */}
-      <header className="mb-4 [@media(max-height:760px)]:mb-3">
+      <header className="mb-4 [@media(max-height:760px)]:mb-2">
         <h2 className={authHeading}>Reset password</h2>
         <p className={authSubheading}>
           Enter your email address and we&apos;ll send you a link to reset your password.
@@ -48,7 +48,7 @@ export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab
           e.preventDefault();
           handleForgotPassword();
         }}
-        className="flex flex-col gap-3.5 [@media(max-height:760px)]:gap-2.5"
+        className="flex flex-col gap-3.5 [@media(max-height:760px)]:gap-2"
       >
         <div>
           <label htmlFor="email" className={authLabel}>
@@ -73,7 +73,7 @@ export default function ResetPasswordForm({ setActiveTab }: { setActiveTab: (tab
       </form>
 
       {/* Footer */}
-      <p className="mt-5 text-center text-[13px] text-slate-600 dark:text-slate-400">
+      <p className="mt-5 text-center text-[13px] text-slate-600 ">
         Remembered it?{" "}
         <button type="button" onClick={() => setActiveTab("login")} className={authLink}>
           Back to Login

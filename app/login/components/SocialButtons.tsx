@@ -46,19 +46,19 @@ export default function SocialButtons({ redirectTo = "/dashboard" }: Props) {
   };
 
   const baseBtn =
-    "group flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 [@media(max-height:760px)]:py-2 text-[13px] font-semibold text-[#0B1F45] " +
-    "transition hover:border-[#10446C]/40 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 " +
-    "dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800";
+ "group flex w-full items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 [@media(max-height:760px)]:py-1.5 text-[13px] font-semibold text-[#0B1F45] " +
+ "transition hover:border-[#10446C]/40 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 " +
+ " ";
 
   return (
-    <div className="flex flex-col gap-2.5 [@media(max-height:760px)]:gap-2">
+    <div className="flex flex-col gap-2.5 [@media(max-height:760px)]:gap-1.5">
       {/* or continue with */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
-        <span className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+        <div className="flex-1 border-t border-slate-200 " />
+        <span className="whitespace-nowrap text-xs text-slate-500 ">
           or continue with
         </span>
-        <div className="flex-1 border-t border-slate-200 dark:border-slate-700" />
+        <div className="flex-1 border-t border-slate-200 " />
       </div>
 
       {/* Google */}
