@@ -66,7 +66,7 @@ export default function BlackFriday() {
       {/* Content */}
       <div className="relative mx-auto flex max-w-[760px] flex-col items-center text-center">
         <span className="rounded-full bg-[#1B6B3A] px-4 py-[5px] text-[10px] font-extrabold uppercase tracking-wider text-white sm:text-xs">
-          Black Friday 27 Nov · Cyber Monday 30 Nov
+          Black Friday Sale 20 Nov – Cyber Monday 30 Nov
         </span>
 
         <h1 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
