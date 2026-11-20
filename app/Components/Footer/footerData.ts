@@ -23,7 +23,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Home Broadband",
     icon: House,
     links: [
-      { name: "All Home Broadband Plans", href: "/all-plans" },
+      { name: "All Home Broadband Plans", href: "/all-broadband-deals" },
       { name: "Full Fibre (FTTP)", href: "/full-fibre" },
       { name: "Part Fibre (SOGEA)", href: "/part-fibre" },
       { name: "Compare Plans & Speeds", href: "/compare-plans" },
@@ -35,11 +35,11 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Business Broadband",
     icon: Briefcase,
     links: [
-      { name: "Business Broadband Plans", href: "/business-broadband" },
-      { name: "Business Full Fibre", href: "/business-broadband" },
+      { name: "Business Broadband Plans", href: "/business-broadband-plans" },
+      { name: "Business Full Fibre", href: "/business-full-fibre" },
       { name: "Static IP Options", href: "/business-broadband" },
       { name: "Multi-site Connectivity", href: "/multi-site-connectivity" },
-      { name: "Request a Tailored Quote", href: "/business-broadband" },
+      { name: "Request a Tailored Quote", href: "/request-a-tailored-quote" },
     ],
   },
   {
@@ -49,8 +49,8 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     links: [
       { name: "Home Digital Phone", href: "/digital-lines" },
       { name: "Business VoIP", href: "/digital-lines" },
-      { name: "Cloud Phone Solutions", href: "/digital-lines" },
-      { name: "Keep Your Number", href: "/digital-lines" },
+      { name: "Cloud Phone Solutions", href: "/cloud-phone-solutions" },
+      { name: "Keep Your Number", href: "/keep-your-phone-number" },
       { name: "Emergency Calling Guide", href: "/digital-lines" },
     ],
   },
@@ -86,7 +86,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Switch to Zoiko", href: "/switch-to-zoiko" },
       { name: "Moving Home", href: "/moving-home" },
       { name: "How Switching Works", href: "/setup-installation" },
-      { name: "Keep Your Number", href: "/digital-lines" },
+      { name: "Keep Your Number", href: "/keep-your-phone-number" },
       { name: "Installation & Set-up", href: "/setup-installation" },
     ],
   },

@@ -116,7 +116,7 @@ export const NAV: NavItem[] = [
         links: [
           { label: "Business VoIP / Digital Lines", href: "/digital-lines" },
           { label: "Cloud phone solutions", href: "/cloud-phone-solutions" },
-          { label: "Keep your business number", href: "/digital-lines" },
+          { label: "Keep your business number", href: "/keep-your-phone-number" },
           { label: "Call features & add-ons", href: "/call-features" },
           { label: "VoIP support", href: "/get-help" },
         ],
@@ -148,7 +148,7 @@ export const NAV: NavItem[] = [
       icon: Briefcase,
       title: "Need a tailored solution?",
       text: "Speak with the business team.",
-      cta: { label: "Request a quote", href: "/business-broadband" },
+      cta: { label: "Request a quote", href: "/request-a-tailored-quote" },
     },
   },
   {
