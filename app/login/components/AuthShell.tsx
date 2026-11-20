@@ -40,7 +40,7 @@ export default function AuthShell({ tabs, children }: { tabs?: ReactNode; childr
         fill
         priority
         sizes="100vw"
-        className="-z-10 object-cover object-top"
+        className="-z-10 object-cover object-[center_60%]"
       />
 
       <div className="mx-auto flex h-full w-full max-w-[1320px] flex-col gap-6 px-4 py-6 sm:px-8 lg:flex-row lg:items-stretch lg:justify-between lg:gap-12 lg:px-12 lg:py-[3vh]">
@@ -70,7 +70,8 @@ export default function AuthShell({ tabs, children }: { tabs?: ReactNode; childr
             built around you.
           </p>
 
-          <ul className="mt-5 flex gap-4 lg:mt-[2.2vh] lg:gap-[min(1.6vw,24px)]">
+          {/* Frosted card keeps the labels readable over the photo */}
+          <ul className="mt-5 flex w-fit gap-4 rounded-2xl bg-white/80 px-4 py-3 shadow-[0_8px_24px_rgba(11,31,69,0.12)] ring-1 ring-white/60 backdrop-blur-md [text-shadow:none] lg:mt-[2.2vh] lg:gap-[min(1.6vw,24px)] lg:px-[min(1.2vw,20px)] lg:py-[min(1.6vh,16px)]">
             {features.map(({ icon: Icon, label }) => (
               <li key={label} className="flex w-[96px] flex-col items-center text-center lg:w-[min(9vw,16vh,130px)]">
                 <span className="flex aspect-square w-12 items-center justify-center rounded-full bg-[#E9EFFA] shadow-sm lg:w-[min(4.6vw,8vh,66px)]">
