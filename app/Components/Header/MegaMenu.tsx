@@ -21,6 +21,7 @@ import {
   TrendingUp,
   UserPlus,
   UserRound,
+  X,
 } from "lucide-react";
 import { POPULAR_SEARCHES, QUICK_LINKS, SEARCH_INDEX, type NavItem } from "./navData";
 
@@ -321,9 +322,19 @@ export function SearchPanel({ onNavigate }: { onNavigate: () => void }) {
 
   return (
     <div id="mega-search" className={`${panelShell} p-7`}>
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex items-center justify-between gap-4">
         <p className="text-2xl font-extrabold text-[#0B2F5B] dark:text-white">Search Zoiko Broadband</p>
-        <p className="text-sm text-slate-600 dark:text-slate-400">Plans, help, switching and guides</p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-slate-600 dark:text-slate-400">Plans, help, switching and guides</p>
+          <button
+            type="button"
+            onClick={onNavigate}
+            aria-label="Close search"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[#0B2F5B] transition hover:bg-slate-100 dark:text-white dark:hover:bg-gray-800"
+          >
+            <X aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
       </div>
 
       <form onSubmit={submit} role="search" className="mt-5 flex items-center gap-3 rounded-xl border-2 border-[#0B2F5B] p-1.5 pl-4 dark:border-slate-400">
