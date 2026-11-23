@@ -20,7 +20,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FormEvent, ReactNode, useCallback, useEffect, useId, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2, ChevronLeft, ExternalLink, Info, Loader2, Lock, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronLeft,
+  ExternalLink,
+  Flag,
+  Headset,
+  Info,
+  Loader2,
+  Lock,
+  MoreVertical,
+  RotateCcw,
+  ShieldCheck,
+  ThumbsDown,
+  ThumbsUp,
+  X,
+} from "lucide-react";
 import { ChatMessage, useChat } from "./useChat";
 import {
   ASSISTANT,
@@ -588,6 +604,124 @@ function Welcome({
   );
 }
 
+/* ─────────────────────────── Header menu (⋮) ───────────────────────────
+ * WAI-ARIA menu button: Enter/Space/↓ opens, ↑/↓/Home/End move, Esc closes
+ * the menu (not the chat) and returns focus to the button.               */
+
+type MenuItem = { id: string; label: string; icon: ReactNode; onSelect: () => void; hidden?: boolean };
+
+function HeaderMenu({ items }: { items: MenuItem[] }) {
+  const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const visible = items.filter((i) => !i.hidden);
+
+  const focusItem = (index: number) => {
+    const els = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+    if (!els?.length) return;
+    els[(index + els.length) % els.length].focus();
+  };
+
+  const close = (returnFocus = true) => {
+    setOpen(false);
+    if (returnFocus) setTimeout(() => btnRef.current?.focus(), 0);
+  };
+
+  // Focus the first item when the menu opens.
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => focusItem(0), 0);
+    return () => clearTimeout(t);
+  }, [open]);
+
+  // Click outside closes.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: PointerEvent) => {
+      const t = e.target as Node;
+      if (!menuRef.current?.contains(t) && !btnRef.current?.contains(t)) close(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [open]);
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        ref={btnRef}
+        type="button"
+        aria-label="Linko menu"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-controls="linko-menu"
+        onClick={() => setOpen((o) => !o)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+        className={`flex h-11 w-11 items-center justify-center rounded-md hover:bg-white/10 ${open ? "bg-white/10" : ""} ${T.focus}`}
+      >
+        <MoreVertical size={20} aria-hidden />
+      </button>
+      {open && (
+        <div
+          ref={menuRef}
+          id="linko-menu"
+          role="menu"
+          aria-label="Linko menu"
+          onKeyDown={(e) => {
+            const els = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+            const i = els.indexOf(document.activeElement as HTMLButtonElement);
+            if (e.key === "Escape") {
+              e.preventDefault();
+              e.stopPropagation(); // close the menu, not the whole chat
+              close();
+            } else if (e.key === "ArrowDown") {
+              e.preventDefault();
+              focusItem(i + 1);
+            } else if (e.key === "ArrowUp") {
+              e.preventDefault();
+              focusItem(i - 1);
+            } else if (e.key === "Home") {
+              e.preventDefault();
+              focusItem(0);
+            } else if (e.key === "End") {
+              e.preventDefault();
+              focusItem(els.length - 1);
+            } else if (e.key === "Tab") {
+              close(false);
+            }
+          }}
+          className="absolute right-0 top-full z-10 mt-1 w-60 overflow-hidden rounded-xl border border-[#B8C4D6] bg-white py-1.5 text-[#1E2A44] shadow-[0_12px_32px_rgba(21,33,61,0.22)] motion-safe:animate-[linkoIn_120ms_ease-out] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+        >
+          {visible.map((item, idx) => (
+            <button
+              key={item.id}
+              type="button"
+              role="menuitem"
+              tabIndex={-1}
+              onClick={() => {
+                close();
+                item.onSelect();
+              }}
+              className={`flex min-h-11 w-full items-center gap-3 px-4 text-left text-[14px] hover:bg-[#EEF2F8] focus:bg-[#EEF2F8] focus:outline-none dark:hover:bg-slate-700 dark:focus:bg-slate-700 ${
+                idx === 0 ? "font-semibold" : ""
+              }`}
+            >
+              <span aria-hidden className="text-[#1B3A63] dark:text-[#F6C140]">
+                {item.icon}
+              </span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ───────────────────────────── Main widget ────────────────────────────── */
 
 export default function ChatWidget() {
@@ -627,7 +761,10 @@ export default function ChatWidget() {
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && panelRef.current?.contains(document.activeElement)) closePanel();
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      // Escape inside the ⋮ menu closes only the menu.
+      if ((e.target as Element | null)?.closest?.('[role="menu"]')) return;
+      if (panelRef.current?.contains(document.activeElement)) closePanel();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -798,6 +935,29 @@ export default function ChatWidget() {
               </h2>
               <p className="text-[12px] text-white/75 md:text-[13px]">{ASSISTANT.label} · Public</p>
             </div>
+            <HeaderMenu
+              items={[
+                {
+                  id: "new",
+                  label: "New conversation",
+                  icon: <RotateCcw size={18} />,
+                  onSelect: () => {
+                    chat.restart();
+                    setNotice({ text: "New conversation started.", afterId: "welcome" });
+                    setTimeout(() => inputRef.current?.focus(), 0); // after the menu returns focus
+                  },
+                },
+                { id: "human", label: "Talk to a person", icon: <Headset size={18} />, onSelect: () => chat.startFlow("handoff") },
+                { id: "privacy", label: "Privacy and AI", icon: <ShieldCheck size={18} />, onSelect: () => chat.startFlow("privacy") },
+                {
+                  id: "end",
+                  label: "End chat and summary",
+                  icon: <Flag size={18} />,
+                  onSelect: () => chat.startFlow("end"),
+                  hidden: atStart,
+                },
+              ]}
+            />
             <button
               type="button"
               onClick={closePanel}
