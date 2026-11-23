@@ -38,6 +38,46 @@ function newId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+/* ───────────────────────── Saved chat history ─────────────────────────
+ * Kept in this browser only (localStorage), never on Zoiko's servers.
+ * Messages are already redacted (no card numbers, passwords or codes) and
+ * address-picker results are never part of the transcript.              */
+
+const HISTORY_KEY = "linko-history-v1";
+const MAX_SAVED = 20;
+
+export interface SavedChat {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
+
+export function readHistory(): SavedChat[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+    return Array.isArray(v) ? (v as SavedChat[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeHistory(list: SavedChat[]) {
+  try {
+    if (list.length) localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, MAX_SAVED)));
+    else localStorage.removeItem(HISTORY_KEY);
+  } catch {
+    // storage unavailable – history simply isn't kept
+  }
+}
+
+function chatTitle(messages: ChatMessage[]): string {
+  const firstUser = messages.find((m) => m.role === "user")?.content.trim() ?? "";
+  const topic = messages.find((m) => m.topic)?.topic;
+  const t = firstUser || topic || "Conversation";
+  return t.length > 60 ? `${t.slice(0, 57)}…` : t;
+}
+
 function flowMessage(flow: FlowId, pathname: string, initial = false): ChatMessage {
   const step = FLOWS[flow];
   return {
@@ -59,14 +99,17 @@ export function useChat(pathname: string) {
   const [restored, setRestored] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef<string | null>(null);
+  const convId = useRef<string>(newId());
 
-  // Restore this tab's conversation (sessionStorage only – cleared when the tab closes).
+  // Restore the open conversation for this tab.
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as ChatMessage[];
-        if (Array.isArray(parsed) && parsed.length) setMessages(parsed);
+        const parsed = JSON.parse(saved) as { id?: string; messages?: ChatMessage[] } | ChatMessage[];
+        const msgs = Array.isArray(parsed) ? parsed : parsed.messages;
+        if (!Array.isArray(parsed) && parsed.id) convId.current = parsed.id;
+        if (Array.isArray(msgs) && msgs.length) setMessages(msgs);
       }
     } catch {
       // storage unavailable – start fresh
@@ -74,13 +117,17 @@ export function useChat(pathname: string) {
     setRestored(true);
   }, []);
 
+  // Persist the open conversation (tab) and, once the visitor has said something, the saved history (browser).
   useEffect(() => {
     if (!restored) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ id: convId.current, messages }));
     } catch {
       // ignore
     }
+    if (!messages.some((m) => m.role === "user")) return;
+    const entry: SavedChat = { id: convId.current, title: chatTitle(messages), updatedAt: Date.now(), messages };
+    writeHistory([entry, ...readHistory().filter((c) => c.id !== convId.current)]);
   }, [messages, restored]);
 
   const push = useCallback((...items: ChatMessage[]) => {
@@ -221,8 +268,37 @@ export function useChat(pathname: string) {
     abortRef.current?.abort();
     lastQuestion.current = null;
     setIsLoading(false);
+    convId.current = newId();
     setMessages([flowMessage("welcome", pathname, true)]);
   }, [pathname]);
+
+  /** Re-open a saved conversation from Chat history. */
+  const openChat = useCallback((chat: SavedChat) => {
+    abortRef.current?.abort();
+    lastQuestion.current = null;
+    setIsLoading(false);
+    convId.current = chat.id;
+    setMessages(chat.messages);
+    track("linko_intent_selected", { intent_id: "history_opened" });
+  }, []);
+
+  /** Delete one saved chat (or all with no id). Returns the remaining list. */
+  const deleteSaved = useCallback(
+    (id?: string): SavedChat[] => {
+      const rest = id ? readHistory().filter((c) => c.id !== id) : [];
+      writeHistory(rest);
+      // Deleting the open conversation starts a fresh one so it isn't re-saved.
+      if (!id || id === convId.current) {
+        abortRef.current?.abort();
+        lastQuestion.current = null;
+        setIsLoading(false);
+        convId.current = newId();
+        setMessages([flowMessage("welcome", pathname, true)]);
+      }
+      return rest;
+    },
+    [pathname],
+  );
 
   const setFeedback = useCallback((id: string, value: "up" | "down") => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, feedback: value } : m)));
@@ -237,5 +313,18 @@ export function useChat(pathname: string) {
 
   const topics = Array.from(new Set(messages.map((m) => m.topic).filter(Boolean))) as string[];
 
-  return { messages, isLoading, send, startFlow, retry, restart, setFeedback, addAssistant, topics };
+  return {
+    messages,
+    isLoading,
+    send,
+    startFlow,
+    retry,
+    restart,
+    setFeedback,
+    addAssistant,
+    topics,
+    openChat,
+    deleteSaved,
+    conversationId: () => convId.current,
+  };
 }

@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Linko chat widget: its own dark mode, toggled from the Linko menu (does not affect the site). */
+@custom-variant linko-dark (&:where(.linko-dark, .linko-dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

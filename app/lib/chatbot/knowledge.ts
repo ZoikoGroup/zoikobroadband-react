@@ -93,7 +93,7 @@ export const KNOWLEDGE = `
 - Multiple sites: a specialist reviews each site and prepares a tailored quote.
 
 # Privacy
-- This chat is kept in the visitor's browser tab and cleared when the tab closes or the chat ends. It isn't passed to an adviser.
+- Chats are saved only in the visitor's own browser on their device (Chat history in the Linko menu) until they delete them. They aren't stored by Zoiko Broadband or passed to an adviser.
 - Data requests and privacy questions: privacy notice and contact page. Linko can't promise immediate deletion of records held for legal reasons.
 
 # Black Friday

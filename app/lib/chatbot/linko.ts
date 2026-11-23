@@ -378,7 +378,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
   privacy: {
     screen: "Privacy, AI limits and transcript controls",
     topic: "Privacy and AI",
-    text: "I'm an AI assistant. I'll use the information needed to answer your question, and I'll only pass details to a human team if you ask. This chat is kept in your browser tab only and is cleared when you close the tab or end the chat. Please don't share passwords, one-time codes or payment-card numbers.",
+    text: "I'm an AI assistant. I'll use the information needed to answer your question, and I'll only pass details to a human team if you ask. Your chats are saved in this browser on this device so you can find them in Chat history. They aren't stored by Zoiko Broadband, and you can delete them at any time from Chat history in the menu. Please don't share passwords, one-time codes or payment-card numbers.",
     actions: [
       { kind: "link", label: "Read privacy notice", href: PAGES.privacy, primary: true },
       { kind: "link", label: "Request data help", href: PAGES.contactUs },

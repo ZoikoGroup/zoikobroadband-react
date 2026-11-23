@@ -25,19 +25,27 @@ import {
   CheckCircle2,
   ChevronLeft,
   ExternalLink,
-  Flag,
   Headset,
   Info,
   Loader2,
   Lock,
-  MoreVertical,
-  RotateCcw,
-  ShieldCheck,
+  ArrowLeft,
+  Download,
+  History,
+  LayoutGrid,
+  LifeBuoy,
+  Minus,
+  Moon,
+  MoreHorizontal,
+  MessageSquarePlus,
+  ShieldAlert,
+  Trash2,
   ThumbsDown,
   ThumbsUp,
   X,
 } from "lucide-react";
-import { ChatMessage, useChat } from "./useChat";
+import { useRouter } from "next/navigation";
+import { ChatMessage, SavedChat, readHistory, useChat } from "./useChat";
 import {
   ASSISTANT,
   COMPANY,
@@ -52,20 +60,21 @@ import {
 } from "@/app/lib/chatbot/linko";
 
 const ENABLED = process.env.NEXT_PUBLIC_LINKO_ENABLED !== "false";
+const THEME_KEY = "linko-theme";
 
 /* ─────────────────────────── Design tokens ───────────────────────────────
  * Sampled from the Doc07 wireframes. PENDING BRAND: replace with the signed
  * token package when supplied (Doc07 §02).                                 */
 const T = {
   header: "bg-[#15213D]",
-  primary: "bg-[#1B3A63] text-white hover:bg-[#15305A] dark:bg-[#F6C140] dark:text-[#15213D] dark:hover:bg-[#f3b622]",
+  primary: "bg-[#1B3A63] text-white hover:bg-[#15305A] linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] linko-dark:hover:bg-[#f3b622]",
   secondary:
-    "border border-[#B8C4D6] bg-[#F7F9FC] text-[#1E2A44] hover:border-[#1B3A63] hover:bg-white dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700",
-  card: "bg-[#EEF2F8] text-[#1E2A44] dark:bg-slate-800 dark:text-slate-100",
-  row: "border border-[#C5CFDD] bg-white text-[#33445E] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200",
-  text: "text-[#1E2A44] dark:text-slate-100",
-  muted: "text-[#5B6B82] dark:text-slate-400",
-  link: "text-[#2B4C7E] dark:text-[#F6C140]",
+    "border border-[#B8C4D6] bg-[#F7F9FC] text-[#1E2A44] hover:border-[#1B3A63] hover:bg-white linko-dark:border-slate-600 linko-dark:bg-slate-800 linko-dark:text-slate-100 linko-dark:hover:bg-slate-700",
+  card: "bg-[#EEF2F8] text-[#1E2A44] linko-dark:bg-slate-800 linko-dark:text-slate-100",
+  row: "border border-[#C5CFDD] bg-white text-[#33445E] linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-slate-200",
+  text: "text-[#1E2A44] linko-dark:text-slate-100",
+  muted: "text-[#5B6B82] linko-dark:text-slate-400",
+  link: "text-[#2B4C7E] linko-dark:text-[#F6C140]",
   focus: "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C49A45]",
 };
 
@@ -320,7 +329,7 @@ function AddressPicker({
                 key={a.id}
                 className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-4 py-2 text-sm ${
                   state.selected === a.id
-                    ? "border-2 border-[#1B3A63] bg-white font-semibold text-[#1E2A44] dark:border-[#F6C140] dark:bg-slate-900 dark:text-white"
+                    ? "border-2 border-[#1B3A63] bg-white font-semibold text-[#1E2A44] linko-dark:border-[#F6C140] linko-dark:bg-slate-900 linko-dark:text-white"
                     : T.row
                 }`}
               >
@@ -339,7 +348,7 @@ function AddressPicker({
           </div>
         </fieldset>
         {state.error && (
-          <p id={`${uid}-err`} className="text-sm text-red-700 dark:text-red-300">
+          <p id={`${uid}-err`} className="text-sm text-red-700 linko-dark:text-red-300">
             {state.error}
           </p>
         )}
@@ -379,12 +388,12 @@ function AddressPicker({
         maxLength={8}
         aria-invalid={!!error}
         aria-describedby={`${uid}-hint${error ? ` ${uid}-err` : ""}`}
-        className={`min-h-12 w-full rounded-lg border bg-[#F7F9FC] px-4 text-[16px] uppercase text-[#1E2A44] placeholder:normal-case placeholder:text-[#8A97AB] dark:bg-slate-900 dark:text-white ${
-          error ? "border-red-600" : "border-[#B8C4D6] dark:border-slate-600"
+        className={`min-h-12 w-full rounded-lg border bg-[#F7F9FC] px-4 text-[16px] uppercase text-[#1E2A44] placeholder:normal-case placeholder:text-[#8A97AB] linko-dark:bg-slate-900 linko-dark:text-white ${
+          error ? "border-red-600" : "border-[#B8C4D6] linko-dark:border-slate-600"
         } ${T.focus}`}
       />
       {error && (
-        <p id={`${uid}-err`} role="alert" className="text-sm text-red-700 dark:text-red-300">
+        <p id={`${uid}-err`} role="alert" className="text-sm text-red-700 linko-dark:text-red-300">
           {error}
         </p>
       )}
@@ -409,7 +418,7 @@ function AddressPicker({
 
 function DetailRows({ rows }: { rows: readonly (readonly [string, string])[] }) {
   return (
-    <dl className="divide-y divide-[#E1E7F0] dark:divide-slate-700">
+    <dl className="divide-y divide-[#E1E7F0] linko-dark:divide-slate-700">
       {rows.map(([k, v]) => (
         <div key={k} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-3 py-3 text-sm">
           <dt className={T.muted}>{k}</dt>
@@ -425,7 +434,7 @@ function PlanCard() {
     <article className={`mt-4 rounded-xl p-4 ${T.row}`} aria-label={PLAN_CARD.title}>
       <h3 className={`text-[15px] font-bold ${T.text}`}>{PLAN_CARD.title}</h3>
       <p className={`mt-0.5 text-xs ${T.muted}`}>{PLAN_CARD.note}</p>
-      <div className="mt-3 rounded-lg bg-[#EEF2F8] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#2B4C7E] dark:bg-slate-800 dark:text-slate-200">
+      <div className="mt-3 rounded-lg bg-[#EEF2F8] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#2B4C7E] linko-dark:bg-slate-800 linko-dark:text-slate-200">
         Plan name from live catalogue
       </div>
       <DetailRows rows={PLAN_CARD.rows} />
@@ -437,7 +446,7 @@ function SecureCard() {
   return (
     <article className={`mt-4 rounded-xl p-4 ${T.row}`} aria-label={SECURE_CARD.title}>
       <h3 className={`text-[15px] font-bold ${T.text}`}>{SECURE_CARD.title}</h3>
-      <p className="mt-3 flex items-start gap-2 rounded-lg border border-[#D9B56A] bg-[#F8EEDD] px-4 py-3 text-sm text-[#6B4E16] dark:border-amber-500 dark:bg-amber-950 dark:text-amber-100">
+      <p className="mt-3 flex items-start gap-2 rounded-lg border border-[#D9B56A] bg-[#F8EEDD] px-4 py-3 text-sm text-[#6B4E16] linko-dark:border-amber-500 linko-dark:bg-amber-950 linko-dark:text-amber-100">
         <Lock size={16} aria-hidden className="mt-0.5 shrink-0" /> {SECURE_CARD.banner}
       </p>
       <DetailRows rows={SECURE_CARD.rows} />
@@ -456,7 +465,7 @@ function SummaryCard({ topics }: { topics: string[] }) {
         <ul className="mt-2 space-y-2">
           {topics.map((t) => (
             <li key={t} className="flex items-start gap-2">
-              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#1B3A63] dark:text-[#F6C140]" aria-hidden />
+              <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-[#1B3A63] linko-dark:text-[#F6C140]" aria-hidden />
               <span>
                 {t} <span className={`text-xs ${T.muted}`}>· information only</span>
               </span>
@@ -466,7 +475,7 @@ function SummaryCard({ topics }: { topics: string[] }) {
       ) : (
         <p className="mt-2">General questions only.</p>
       )}
-      <p className={`mt-3 border-t border-[#E1E7F0] pt-3 text-xs dark:border-slate-700 ${T.muted}`}>
+      <p className={`mt-3 border-t border-[#E1E7F0] pt-3 text-xs linko-dark:border-slate-700 ${T.muted}`}>
         <strong>Completed:</strong> nothing has been ordered, booked or changed in this chat. <strong>Pending:</strong> any next step
         happens on our secure pages or with our team.
       </p>
@@ -507,9 +516,9 @@ function Message({
   const tone = msg.tone ?? "default";
   const toneStyles = {
     default: T.card,
-    notice: "border border-sky-200 bg-sky-50 text-[#1E2A44] dark:border-sky-800 dark:bg-sky-950 dark:text-slate-100",
+    notice: "border border-sky-200 bg-sky-50 text-[#1E2A44] linko-dark:border-sky-800 linko-dark:bg-sky-950 linko-dark:text-slate-100",
     error: `${T.row}`,
-    safety: "border-2 border-[#C9861A] bg-[#FFF6E5] text-[#4A3208] dark:border-amber-400 dark:bg-amber-950 dark:text-amber-50",
+    safety: "border-2 border-[#C9861A] bg-[#FFF6E5] text-[#4A3208] linko-dark:border-amber-400 linko-dark:bg-amber-950 linko-dark:text-amber-50",
   } as const;
   // Safety guidance stays actionable; otherwise only the latest step shows buttons.
   const showActions = !!msg.actions?.length && (isLatest || tone === "safety");
@@ -529,7 +538,7 @@ function Message({
           </p>
         )}
         {tone === "notice" && (
-          <p className="mb-2 flex items-center gap-2 font-semibold text-sky-900 dark:text-sky-200">
+          <p className="mb-2 flex items-center gap-2 font-semibold text-sky-900 linko-dark:text-sky-200">
             <Info size={16} aria-hidden /> Privacy protection
           </p>
         )}
@@ -553,14 +562,14 @@ function Message({
               <button
                 type="button"
                 onClick={() => onFeedback(msg.id, "up")}
-                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] dark:hover:bg-slate-800 ${T.focus}`}
+                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
               >
                 <ThumbsUp size={14} aria-hidden /> Useful
               </button>
               <button
                 type="button"
                 onClick={() => onFeedback(msg.id, "down")}
-                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] dark:hover:bg-slate-800 ${T.focus}`}
+                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
               >
                 <ThumbsDown size={14} aria-hidden /> Not useful
               </button>
@@ -604,11 +613,24 @@ function Welcome({
   );
 }
 
-/* ─────────────────────────── Header menu (⋮) ───────────────────────────
+/* ─────────────────────────── Header menu (•••) ──────────────────────────
  * WAI-ARIA menu button: Enter/Space/↓ opens, ↑/↓/Home/End move, Esc closes
  * the menu (not the chat) and returns focus to the button.               */
 
-type MenuItem = { id: string; label: string; icon: ReactNode; onSelect: () => void; hidden?: boolean };
+type MenuItem = {
+  id: string;
+  label: string;
+  icon: ReactNode;
+  onSelect: () => void;
+  hidden?: boolean;
+  disabled?: boolean;
+  /** Draw a divider above this item. */
+  separatorBefore?: boolean;
+  /** For on/off items such as Dark mode (menuitemcheckbox). */
+  checked?: boolean;
+};
+
+const MENU_ITEM_SELECTOR = '[role="menuitem"],[role="menuitemcheckbox"]';
 
 function HeaderMenu({ items }: { items: MenuItem[] }) {
   const [open, setOpen] = useState(false);
@@ -617,7 +639,7 @@ function HeaderMenu({ items }: { items: MenuItem[] }) {
   const visible = items.filter((i) => !i.hidden);
 
   const focusItem = (index: number) => {
-    const els = menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]');
+    const els = menuRef.current?.querySelectorAll<HTMLButtonElement>(MENU_ITEM_SELECTOR);
     if (!els?.length) return;
     els[(index + els.length) % els.length].focus();
   };
@@ -651,6 +673,7 @@ function HeaderMenu({ items }: { items: MenuItem[] }) {
         ref={btnRef}
         type="button"
         aria-label="Linko menu"
+        title="Menu"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls="linko-menu"
@@ -661,9 +684,9 @@ function HeaderMenu({ items }: { items: MenuItem[] }) {
             setOpen(true);
           }
         }}
-        className={`flex h-11 w-11 items-center justify-center rounded-md hover:bg-white/10 ${open ? "bg-white/10" : ""} ${T.focus}`}
+        className={`flex h-11 w-10 items-center justify-center rounded-md hover:bg-white/10 ${open ? "bg-white/10" : ""} ${T.focus}`}
       >
-        <MoreVertical size={20} aria-hidden />
+        <MoreHorizontal size={20} aria-hidden />
       </button>
       {open && (
         <div
@@ -672,7 +695,7 @@ function HeaderMenu({ items }: { items: MenuItem[] }) {
           role="menu"
           aria-label="Linko menu"
           onKeyDown={(e) => {
-            const els = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+            const els = Array.from(menuRef.current?.querySelectorAll<HTMLButtonElement>(MENU_ITEM_SELECTOR) ?? []);
             const i = els.indexOf(document.activeElement as HTMLButtonElement);
             if (e.key === "Escape") {
               e.preventDefault();
@@ -694,32 +717,203 @@ function HeaderMenu({ items }: { items: MenuItem[] }) {
               close(false);
             }
           }}
-          className="absolute right-0 top-full z-10 mt-1 w-60 overflow-hidden rounded-xl border border-[#B8C4D6] bg-white py-1.5 text-[#1E2A44] shadow-[0_12px_32px_rgba(21,33,61,0.22)] motion-safe:animate-[linkoIn_120ms_ease-out] dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          className="absolute right-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-xl border border-[#D5DCE6] bg-white py-1.5 text-[#1E2A44] shadow-[0_12px_32px_rgba(21,33,61,0.22)] motion-safe:animate-[linkoIn_120ms_ease-out] linko-dark:border-slate-600 linko-dark:bg-slate-800 linko-dark:text-slate-100"
         >
-          {visible.map((item, idx) => (
-            <button
-              key={item.id}
-              type="button"
-              role="menuitem"
-              tabIndex={-1}
-              onClick={() => {
-                close();
-                item.onSelect();
-              }}
-              className={`flex min-h-11 w-full items-center gap-3 px-4 text-left text-[14px] hover:bg-[#EEF2F8] focus:bg-[#EEF2F8] focus:outline-none dark:hover:bg-slate-700 dark:focus:bg-slate-700 ${
-                idx === 0 ? "font-semibold" : ""
-              }`}
-            >
-              <span aria-hidden className="text-[#1B3A63] dark:text-[#F6C140]">
-                {item.icon}
-              </span>
-              {item.label}
-            </button>
+          {visible.map((item) => (
+            <div key={item.id}>
+              {item.separatorBefore && <div role="separator" className="my-1.5 border-t border-[#E1E7F0] linko-dark:border-slate-700" />}
+              <button
+                type="button"
+                role={item.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+                aria-checked={item.checked}
+                aria-disabled={item.disabled || undefined}
+                tabIndex={-1}
+                onClick={() => {
+                  if (item.disabled) return;
+                  close();
+                  item.onSelect();
+                }}
+                className={`flex min-h-11 w-full items-center gap-3 px-4 text-left text-[14px] focus:outline-none ${
+                  item.disabled
+                    ? "cursor-not-allowed text-[#9AA6B8] linko-dark:text-slate-500"
+                    : "hover:bg-[#EEF2F8] focus:bg-[#EEF2F8] linko-dark:hover:bg-slate-700 linko-dark:focus:bg-slate-700"
+                }`}
+              >
+                <span aria-hidden className={item.disabled ? "" : "text-[#1E2A44] linko-dark:text-slate-200"}>
+                  {item.icon}
+                </span>
+                <span className="flex-1">{item.label}</span>
+                {item.checked !== undefined && (
+                  <span
+                    aria-hidden
+                    className={`relative h-5 w-9 shrink-0 rounded-full transition ${item.checked ? "bg-[#1B3A63] linko-dark:bg-[#F6C140]" : "bg-[#C5CFDD] linko-dark:bg-slate-600"}`}
+                  >
+                    <span
+                      className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${item.checked ? "left-[18px]" : "left-0.5"}`}
+                    />
+                  </span>
+                )}
+              </button>
+            </div>
           ))}
         </div>
       )}
     </div>
   );
+}
+
+/* ─────────────────────────── Chat history view ────────────────────────── */
+
+function formatSavedDate(ts: number) {
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Europe/London",
+    }).format(new Date(ts));
+  } catch {
+    return "";
+  }
+}
+
+function HistoryView({
+  currentId,
+  onBack,
+  onNew,
+  onOpen,
+  onDelete,
+}: {
+  currentId: string;
+  onBack: () => void;
+  onNew: () => void;
+  onOpen: (c: SavedChat) => void;
+  onDelete: (id?: string) => SavedChat[];
+}) {
+  const [items, setItems] = useState<SavedChat[]>(() => readHistory());
+  const [confirmClear, setConfirmClear] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
+  const count = (c: SavedChat) => c.messages.filter((m) => m.role === "user").length;
+
+  return (
+    <div className="flex min-h-full flex-col">
+      <button
+        type="button"
+        onClick={onBack}
+        className={`inline-flex w-fit items-center gap-1.5 rounded-md text-[15px] font-semibold ${T.link} ${T.focus}`}
+      >
+        <ArrowLeft size={18} aria-hidden /> Back to chat
+      </button>
+
+      <h3 ref={headingRef} tabIndex={-1} className={`mt-6 text-[12px] font-bold uppercase tracking-[0.12em] outline-none ${T.muted}`}>
+        Chat history
+      </h3>
+
+      <button
+        type="button"
+        onClick={onNew}
+        className={`mt-3 flex min-h-12 w-full items-center gap-2.5 rounded-xl border border-dashed border-[#7F9CC6] px-4 text-[15px] font-semibold hover:bg-[#EEF2F8] linko-dark:border-slate-500 linko-dark:hover:bg-slate-800 ${T.link} ${T.focus}`}
+      >
+        <MessageSquarePlus size={18} aria-hidden /> Start a new chat
+      </button>
+
+      {items.length === 0 ? (
+        <p className={`mt-8 text-center text-[15px] ${T.muted}`}>No saved chats in this browser yet.</p>
+      ) : (
+        <>
+          <ul className="mt-4 space-y-2" aria-label="Saved chats">
+            {items.map((c) => (
+              <li key={c.id} className={`flex items-stretch overflow-hidden rounded-xl ${T.row}`}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(c)}
+                  className={`min-w-0 flex-1 px-4 py-3 text-left hover:bg-[#F7F9FC] linko-dark:hover:bg-slate-800 ${T.focus}`}
+                >
+                  <span className={`block truncate text-[14px] font-semibold ${T.text}`}>{c.title}</span>
+                  <span className={`mt-0.5 block text-[12px] ${T.muted}`}>
+                    {formatSavedDate(c.updatedAt)} · {count(c)} message{count(c) === 1 ? "" : "s"}
+                    {c.id === currentId ? " · Open now" : ""}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItems(onDelete(c.id))}
+                  aria-label={`Delete chat: ${c.title}`}
+                  title="Delete chat"
+                  className={`flex w-12 shrink-0 items-center justify-center border-l border-[#E1E7F0] text-[#5B6B82] hover:bg-red-50 hover:text-red-700 linko-dark:border-slate-700 linko-dark:text-slate-400 linko-dark:hover:bg-red-950 linko-dark:hover:text-red-300 ${T.focus}`}
+                >
+                  <Trash2 size={16} aria-hidden />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4">
+            {confirmClear ? (
+              <div className={`rounded-xl p-3 text-[13px] ${T.row}`} role="group" aria-label="Clear all saved chats">
+                <p className={T.text}>Delete all saved chats from this browser? This can&apos;t be undone.</p>
+                <div className="mt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setItems(onDelete());
+                      setConfirmClear(false);
+                    }}
+                    className={`min-h-10 rounded-lg bg-red-700 px-3 font-semibold text-white hover:bg-red-800 ${T.focus}`}
+                  >
+                    Delete all
+                  </button>
+                  <button type="button" onClick={() => setConfirmClear(false)} className={`min-h-10 rounded-lg px-3 ${T.secondary} ${T.focus}`}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmClear(true)}
+                className={`min-h-9 rounded text-[13px] font-medium text-red-700 hover:underline linko-dark:text-red-300 ${T.focus}`}
+              >
+                Clear all history
+              </button>
+            )}
+          </div>
+        </>
+      )}
+
+      <p className={`mt-auto pt-8 text-center text-[12px] leading-relaxed ${T.muted}`}>
+        Chats are saved in this browser on this device until you clear them. They aren&apos;t stored by Zoiko Broadband.
+      </p>
+    </div>
+  );
+}
+
+/** Plain-text transcript (already redacted) for "Download transcript". */
+function downloadTranscript(messages: ChatMessage[]) {
+  const lines = [
+    "Zoiko Broadband – Linko AI assistant transcript",
+    `Saved: ${new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/London" }).format(new Date())}`,
+    "Linko is an AI assistant. Nothing in this chat places an order or changes your account.",
+    "",
+  ];
+  for (const m of messages) {
+    if (m.role === "assistant" && m.content === COPY.welcome) continue;
+    lines.push(`${m.role === "user" ? "You" : "Linko"}: ${m.content.replace(/\*\*/g, "")}`, "");
+  }
+  const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `linko-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /* ───────────────────────────── Main widget ────────────────────────────── */
@@ -729,6 +923,19 @@ export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [notice, setNotice] = useState<{ text: string; afterId: string } | null>(null);
+  const [view, setView] = useState<"chat" | "history">("chat");
+  // Linko-only dark mode (remembered in this browser; defaults to the device setting).
+  const [darkMode, setDarkMode] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const saved = localStorage.getItem(THEME_KEY);
+      if (saved) return saved === "dark";
+    } catch {
+      // ignore
+    }
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  });
+  const router = useRouter();
   const chat = useChat(pathname);
   const { messages, isLoading } = chat;
 
@@ -881,9 +1088,30 @@ export default function ChatWidget() {
 
   const submit = () => {
     if (!input.trim() || isLoading) return;
+    setView("chat");
     chat.send(input);
     setInput("");
     inputRef.current?.focus();
+  };
+
+  const toggleDark = () => {
+    setDarkMode((d) => {
+      const next = !d;
+      try {
+        localStorage.setItem(THEME_KEY, next ? "dark" : "light");
+      } catch {
+        // ignore
+      }
+      setNotice({ text: next ? "Dark mode on." : "Dark mode off.", afterId: lastId });
+      return next;
+    });
+  };
+
+  const startNewChat = () => {
+    chat.restart();
+    setView("chat");
+    setNotice({ text: "New chat started.", afterId: "welcome" });
+    setTimeout(() => inputRef.current?.focus(), 0); // after the menu returns focus
   };
 
   if (!ENABLED) return null;
@@ -899,12 +1127,13 @@ export default function ChatWidget() {
           role="dialog"
           aria-modal="false"
           aria-labelledby="linko-title"
-          className="fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-6 md:right-6 md:h-[min(780px,80dvh)] md:min-h-[480px] md:w-[432px] md:rounded-2xl md:border-2 md:border-[#B8C4D6] dark:bg-slate-900 dark:text-slate-100 md:dark:border-slate-700"
+          style={{ colorScheme: darkMode ? "dark" : "light" }}
+          className={`${darkMode ? "linko-dark " : ""}fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-6 md:right-6 md:h-[min(780px,80dvh)] md:min-h-[480px] md:w-[432px] md:rounded-2xl md:border-2 md:border-[#B8C4D6] linko-dark:bg-slate-900 linko-dark:text-slate-100 md:linko-dark:border-slate-700`}
         >
           <style>{`@keyframes linkoIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
 
           {/* C03 Header */}
-          <header className={`${T.header} flex min-h-[68px] items-center gap-3 px-3 pt-[env(safe-area-inset-top)] text-white md:min-h-[76px] md:rounded-t-[14px] md:px-5`}>
+          <header className={`${T.header} flex min-h-[68px] items-center gap-2 px-3 pt-[env(safe-area-inset-top)] text-white md:min-h-[76px] md:rounded-t-[14px] md:px-5`}>
             {/* Mobile: "‹ Linko" back control (Doc07 mobile reference). */}
             <button
               type="button"
@@ -921,7 +1150,12 @@ export default function ChatWidget() {
               <h2 id="linko-title" ref={headingRef} tabIndex={-1} className="text-[17px] font-bold leading-snug outline-none">
                 <span className="md:hidden">{ASSISTANT.name}</span>
                 <span className="hidden md:inline">
-                  {screen ? (
+                  {view === "history" ? (
+                    <>
+                      {ASSISTANT.name} <span className="font-normal text-white/70">/</span>{" "}
+                      <span className="text-[15px]">Chat history</span>
+                    </>
+                  ) : screen ? (
                     <>
                       {ASSISTANT.name} <span className="font-normal text-white/70">/</span>{" "}
                       <span className="line-clamp-2 inline text-[15px]">{screen}</span>
@@ -937,43 +1171,92 @@ export default function ChatWidget() {
             </div>
             <HeaderMenu
               items={[
+                { id: "new", label: "Start a new chat", icon: <MessageSquarePlus size={18} />, onSelect: startNewChat },
                 {
-                  id: "new",
-                  label: "New conversation",
-                  icon: <RotateCcw size={18} />,
+                  id: "topics",
+                  label: "Browse topics",
+                  icon: <LayoutGrid size={18} />,
                   onSelect: () => {
-                    chat.restart();
-                    setNotice({ text: "New conversation started.", afterId: "welcome" });
-                    setTimeout(() => inputRef.current?.focus(), 0); // after the menu returns focus
+                    setView("chat");
+                    chat.startFlow("clarify");
                   },
                 },
-                { id: "human", label: "Talk to a person", icon: <Headset size={18} />, onSelect: () => chat.startFlow("handoff") },
-                { id: "privacy", label: "Privacy and AI", icon: <ShieldCheck size={18} />, onSelect: () => chat.startFlow("privacy") },
+                { id: "history", label: "Chat history", icon: <History size={18} />, onSelect: () => setView("history") },
                 {
-                  id: "end",
-                  label: "End chat and summary",
-                  icon: <Flag size={18} />,
-                  onSelect: () => chat.startFlow("end"),
-                  hidden: atStart,
+                  id: "download",
+                  label: "Download transcript",
+                  icon: <Download size={18} />,
+                  disabled: atStart,
+                  onSelect: () => {
+                    downloadTranscript(messages);
+                    setNotice({ text: "Transcript downloaded.", afterId: lastId });
+                  },
+                },
+                { id: "dark", label: "Dark mode", icon: <Moon size={18} />, checked: darkMode, onSelect: toggleDark },
+                {
+                  id: "help",
+                  label: "Help Center",
+                  icon: <LifeBuoy size={18} />,
+                  separatorBefore: true,
+                  onSelect: () => router.push("/get-help"),
+                },
+                {
+                  id: "support",
+                  label: "Contact support",
+                  icon: <Headset size={18} />,
+                  onSelect: () => {
+                    setView("chat");
+                    chat.startFlow("handoff");
+                  },
                 },
               ]}
             />
             <button
               type="button"
               onClick={closePanel}
+              aria-label="Minimise Linko"
+              title="Minimise (your chat is kept)"
+              className={`hidden h-11 w-10 shrink-0 items-center justify-center rounded-md hover:bg-white/10 min-[360px]:flex ${T.focus}`}
+            >
+              <Minus size={20} aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={closePanel}
               aria-label="Close Linko"
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-white/10 ${T.focus}`}
+              title="Close"
+              className={`flex h-11 w-10 shrink-0 items-center justify-center rounded-md hover:bg-white/10 ${T.focus}`}
             >
               <X size={20} aria-hidden />
             </button>
           </header>
 
           {/* Transcript – the only primary scroll region */}
+          {view === "history" && (
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 md:px-6">
+              <HistoryView
+                currentId={chat.conversationId()}
+                onBack={() => setView("chat")}
+                onNew={startNewChat}
+                onOpen={(c) => {
+                  chat.openChat(c);
+                  setView("chat");
+                  setNotice({ text: `Opened chat: ${c.title}`, afterId: c.messages[c.messages.length - 1]?.id ?? "" });
+                }}
+                onDelete={(id) => {
+                  const rest = chat.deleteSaved(id);
+                  setNotice({ text: id ? "Chat deleted." : "All saved chats deleted.", afterId: "welcome" });
+                  return rest;
+                }}
+              />
+            </div>
+          )}
           <div
             ref={scrollRef}
             role="log"
             aria-live="off"
             aria-label="Conversation with Linko"
+            hidden={view === "history"}
             className="flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-5 md:px-6"
           >
             {/* Desktop-only visible back control inside a journey */}
@@ -1031,7 +1314,7 @@ export default function ChatWidget() {
             <label htmlFor="linko-input" className="sr-only">
               Message Linko
             </label>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-2 md:pl-3 dark:md:border-slate-600 dark:md:bg-slate-800">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-2 md:pl-3 linko-dark:md:border-slate-600 linko-dark:md:bg-slate-800">
               <textarea
                 id="linko-input"
                 ref={inputRef}
@@ -1047,12 +1330,12 @@ export default function ChatWidget() {
                 maxLength={2000}
                 placeholder={COPY.composerPlaceholder}
                 aria-describedby="linko-input-hint"
-                className={`max-h-32 min-h-12 w-full flex-1 resize-none rounded-lg border border-[#B8C4D6] bg-white px-4 py-3 text-[16px] text-[#1E2A44] placeholder:text-[#8A97AB] md:min-h-10 md:rounded-none md:border-0 md:bg-transparent md:px-1 md:py-2 md:text-[15px] md:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white md:dark:bg-transparent ${T.focus} md:focus-visible:outline-none`}
+                className={`max-h-32 min-h-12 w-full flex-1 resize-none rounded-lg border border-[#B8C4D6] bg-white px-4 py-3 text-[16px] text-[#1E2A44] placeholder:text-[#8A97AB] md:min-h-10 md:rounded-none md:border-0 md:bg-transparent md:px-1 md:py-2 md:text-[15px] md:outline-none linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white md:linko-dark:bg-transparent ${T.focus} md:focus-visible:outline-none`}
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading}
-                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-40 md:min-h-11 md:w-auto dark:bg-[#F6C140] dark:text-[#15213D] ${T.focus}`}
+                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-40 md:min-h-11 md:w-auto linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] ${T.focus}`}
               >
                 Send
               </button>
@@ -1066,15 +1349,25 @@ export default function ChatWidget() {
           {/* C18 Privacy links + persistent human route */}
           <nav
             aria-label="Linko privacy and human help"
-            className="mx-5 mt-3 flex flex-wrap items-center gap-x-2 border-t border-[#D5DCE6] pb-3 pt-2 text-[14px] md:mx-6 dark:border-slate-700"
+            className="mx-5 mt-3 flex flex-wrap items-center gap-x-1.5 border-t border-[#D5DCE6] pb-3 pt-2 text-[13px] md:mx-6 linko-dark:border-slate-700"
           >
-            <button type="button" onClick={() => chat.startFlow("privacy")} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+            <button
+              type="button"
+              onClick={() => {
+                setView("chat");
+                chat.startFlow("safety");
+              }}
+              className={`order-last ml-auto inline-flex min-h-9 items-center gap-1.5 rounded px-0.5 font-semibold text-[#B42318] hover:underline linko-dark:text-red-300 ${T.focus}`}
+            >
+              <ShieldAlert size={16} aria-hidden /> I need safety help
+            </button>
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("privacy"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
               Privacy
             </button>
             <span aria-hidden className={T.muted}>
               ·
             </span>
-            <button type="button" onClick={() => chat.startFlow("handoff")} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
               Talk to a person
             </button>
             {!atStart && (
@@ -1082,7 +1375,7 @@ export default function ChatWidget() {
                 <span aria-hidden className={T.muted}>
                   ·
                 </span>
-                <button type="button" onClick={() => chat.startFlow("end")} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+                <button type="button" onClick={() => { setView("chat"); chat.startFlow("end"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
                   End chat
                 </button>
               </>
