@@ -6,7 +6,9 @@
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 15;
 
-const hits = new Map<string, number[]>();
+const gr = globalThis as unknown as { __linkoRate?: Map<string, number[]> };
+gr.__linkoRate ??= new Map();
+const hits = gr.__linkoRate;
 
 export function checkRateLimit(key: string): boolean {
   const now = Date.now();

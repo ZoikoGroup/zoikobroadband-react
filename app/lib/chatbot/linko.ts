@@ -103,40 +103,77 @@ export function isAllowedHref(href: string): boolean {
   return EXTERNAL_PREFIXES.some((p) => href.startsWith(p));
 }
 
-/* ─────────────────────────── Actions & flows ─────────────────────────── */
+/* ─────────────────────────── Actions & flows ───────────────────────────
+ * Copy and buttons follow Document 01 (LK-WF-01…20 "On-screen copy" and
+ * "Primary / secondary CTAs") and the CF-01…CF-08 conversation sequences.
+ * A button whose backend is not yet certified is shown disabled with the
+ * reason (Doc07: "disabled options explain why"), never faked.          */
 
 export type FlowId =
   | "welcome"
   | "clarify"
+  | "somethingElse"
   | "availability"
   | "plans"
   | "business"
-  | "businessSingle"
-  | "businessMulti"
+  | "businessNext"
+  | "businessAvailability"
+  | "businessSpecialist"
   | "switching"
-  | "moving"
+  | "switchingYes"
   | "track"
+  | "appointment"
+  | "signIn"
+  | "moving"
+  | "movingAddress"
   | "fault"
+  | "faultStatus"
   | "faultType"
   | "billing"
   | "complaint"
+  | "safetyCheck"
   | "safety"
   | "handoff"
+  | "handoffShare"
+  | "handoffChannels"
   | "privacy"
   | "end";
 
+/** Calls to the /v1/linko API made by buttons (Doc04 route IDs in comments). */
+export type ApiCall =
+  | "serviceStatus" // PUB-09
+  | "orderStatus" // PRV-01
+  | "appointmentRead" // PRV-03
+  | "moveRequest" // PRV-05
+  | "billSummary"; // PRV-07
+
+type ActionBase = { label: string; primary?: boolean; /** Shown disabled with this reason. */ disabledReason?: string };
+
 export type LinkoAction =
   /** Run a deterministic guided step (no AI call). */
-  | { kind: "flow"; label: string; flow: FlowId; primary?: boolean }
+  | (ActionBase & { kind: "flow"; flow: FlowId })
   /** Send a question to the AI as if the user typed it. */
-  | { kind: "ask"; label: string; text: string; primary?: boolean }
+  | (ActionBase & { kind: "ask"; text: string })
   /** Navigate to an allow-listed destination. */
-  | { kind: "link"; label: string; href: string; primary?: boolean }
+  | (ActionBase & { kind: "link"; href: string })
+  /** Call a /v1/linko endpoint and show its typed result. */
+  | (ActionBase & { kind: "api"; call: ApiCall })
   /** Widget commands. */
-  | { kind: "command"; label: string; command: "retry" | "restart" | "close" | "copySummary"; primary?: boolean };
+  | (ActionBase & { kind: "command"; command: "retry" | "restart" | "close" | "copySummary" | "endChat" | "nextStep" });
 
 export type MessageTone = "default" | "safety" | "error" | "notice";
-export type MessageWidget = "postcode" | "summary" | "planCard" | "secureCard";
+export type MessageWidget =
+  | "postcode"
+  | "summary"
+  | "planCard"
+  | "secureCard"
+  | "specialistForm"
+  | "wifiSteps"
+  | "moveDate"
+  | "handoffSummary";
+
+/** Which journey an address check belongs to (Doc01 WF-03 / WF-05 / WF-10). */
+export type AddressContext = "residential" | "business" | "moving";
 
 export interface FlowStep {
   /** Doc07 screen title shown in the header ("Linko / …"). */
@@ -146,279 +183,389 @@ export interface FlowStep {
   text: string;
   tone?: MessageTone;
   widget?: MessageWidget;
+  /** For widget "postcode". */
+  context?: AddressContext;
   actions: LinkoAction[];
 }
 
 const speakToPerson: LinkoAction = { kind: "flow", label: "Speak to a person", flow: "handoff" };
+const speakToSupport: LinkoAction = { kind: "flow", label: "Speak to support", flow: "handoff" };
+const NEEDS_QUOTE = "Available once a current quote is returned for your exact address.";
 
-/** Emergency copy (Doc06 / Doc09 CW-07). */
+/** Emergency copy (Doc01 CF-06 / Doc06). */
 export const EMERGENCY_LINE =
-  "If there is an immediate emergency, use 999 or 112 from a working connection or another person's phone. Linko is not an emergency service.";
+  "If anyone is in immediate danger, call 999 or 112 using a working phone or mobile — don't rely on the affected line. Linko is not an emergency service.";
 
 export const COPY = {
-  // LK-WF-01 wireframe copy.
-  welcome: "Hello. I can help you check availability, plans or support.",
-  welcomeHint: "Choose a topic or type a question.",
-  welcomeHuman: "You can speak to our team at any time.",
+  // LK-WF-01 (Document 01)
+  welcome:
+    "Hello, I'm Linko, Zoiko Broadband's AI assistant. I can help you explore broadband, check availability, follow an order or find support. What would you like to do?",
+  // Document 01 §3.2 block 02 – trust strip
   trust: "I'm Linko, Zoiko Broadband's AI assistant.",
-  footerDisclaimer: "AI may make mistakes. We confirm live details.",
-  composerPlaceholder: "Your next message…",
-  composerPlaceholderMobile: "Message Linko…",
+  trustLink: "How I use information",
+  // Document 01 §3.2 block 05 / Doc01 footer
+  footerDisclaimer: "AI assistant • Information may need checking",
+  composerPlaceholder: "Type your question…",
+  // LK-WF-19
   degraded:
     "I can't check that information just now. I haven't placed an order or changed anything. You can try again or speak to our team.",
+  retryLimit:
+    "I still can't check that, so I'll stop retrying rather than guess. I haven't placed an order or changed anything. Our team can help you directly.",
   rateLimited:
     "You're sending messages faster than I can answer. Please wait a moment and try again, or speak to our team.",
+  // LK-WF-02: no more than 2 clarification turns, then generic help + human handover
+  clarifyFallback:
+    "I'm sorry I haven't been able to find the right answer. You can browse our help pages or speak to our team, who can look at this with you.",
   dlpNotice: (what: string) =>
     `For your security I removed what looked like ${what} from your message. Please don't share passwords, one-time codes, card or bank details here — Zoiko will only ask for these on secure pages.`,
-  summaryIntro:
-    "Here's what we covered. I've only completed an action when the relevant system has confirmed it.",
+  // LK-WF-20
+  summaryIntro: "Here's what we covered. I've only completed an action when the relevant system has confirmed it.",
   feedbackThanks: "Thanks for your feedback.",
+  // LK-WF-16
+  signIn: "Please sign in to MyZoiko to continue securely. I won't ask for your password or one-time code in chat.",
 } as const;
 
 export const FLOWS: Record<FlowId, FlowStep> = {
-  /* LK-WF-01 */
+  /* LK-WF-01 Launcher and welcome — 4 quick-start chips + Speak to a person link */
   welcome: {
     text: COPY.welcome,
     actions: [], // filled per page by welcomeActions()
   },
 
-  /* LK-WF-02 */
+  /* LK-WF-02 Intent disambiguation and smart routing */
   clarify: {
     screen: "Intent clarification and smart routing",
     topic: "Finding the right help",
     text: "I can help with a new connection, an existing order or support. Which is closest to what you need?",
     actions: [
       { kind: "flow", label: "New broadband", flow: "availability" },
-      { kind: "flow", label: "Business broadband", flow: "business" },
       { kind: "flow", label: "Existing order", flow: "track" },
       { kind: "flow", label: "Technical problem", flow: "fault" },
       { kind: "flow", label: "Billing question", flow: "billing" },
+      { kind: "flow", label: "Something else", flow: "somethingElse" },
+    ],
+  },
+  somethingElse: {
+    screen: "Intent clarification and smart routing",
+    text: "No problem. Tell me in a few words what you need — for example moving home, switching provider, business broadband or a complaint — and I'll point you to the right help.",
+    actions: [
+      { kind: "flow", label: "Moving home", flow: "moving" },
+      { kind: "flow", label: "Switching to Zoiko", flow: "switching" },
+      { kind: "flow", label: "Business broadband", flow: "business" },
+      { kind: "flow", label: "Cancellation or complaint", flow: "complaint" },
       speakToPerson,
     ],
   },
 
-  /* LK-WF-03 / CW-01 */
+  /* LK-WF-03 Postcode and address eligibility (CF-01 A1) */
   availability: {
     screen: "Postcode and exact-address eligibility",
     topic: "Checking availability",
-    text: "What is the postcode of the property you would like us to check? I'll then ask you to choose the full address, because different properties can have different connections.",
+    text: "What is the postcode of the property? I'll then ask you to choose the full address so we check the correct connection.",
     widget: "postcode",
-    actions: [
-      { kind: "link", label: "Open the full availability checker", href: PAGES.checkAvailability },
-      speakToPerson,
-    ],
+    context: "residential",
+    actions: [{ kind: "flow", label: "Speak to a specialist", flow: "handoff" }],
   },
 
-  /* LK-WF-04 */
+  /* LK-WF-04 Eligible plan comparison — needs an exact-address quote first */
   plans: {
     screen: "Eligible plan comparison",
     topic: "Comparing plans",
-    text: "I can show the eligible plans once your address has been checked. Prices, speeds, set-up charges and contract terms depend on the exact property, so I won't quote figures here — your approved quote will show them before checkout.",
+    text: "Plans, prices and speeds depend on the exact property. Once your full address has been checked, I'll show the plans currently shown for your selected address — prices and speeds are then confirmed in checkout. I won't quote figures before that.",
     widget: "planCard",
     actions: [
-      { kind: "flow", label: "Review full quote", flow: "availability", primary: true },
-      { kind: "link", label: "View all plans", href: PAGES.allPlans },
-      { kind: "link", label: "Compare plans", href: PAGES.comparePlans },
-      { kind: "ask", label: "FTTP vs SOGEA?", text: "What is the difference between FTTP and SOGEA?" },
+      { kind: "flow", label: "Change address", flow: "availability", primary: true },
+      { kind: "link", label: "Compare these plans", href: PAGES.comparePlans },
+      { kind: "link", label: "View full plan details", href: PAGES.allPlans },
+      { kind: "link", label: "Continue to secure checkout", href: PAGES.checkAvailability, disabledReason: NEEDS_QUOTE },
     ],
   },
 
-  /* LK-WF-05 */
+  /* LK-WF-05 Business quote and specialist hand-off (CF-02) */
   business: {
     screen: "Business quote and specialist",
     topic: "Business broadband",
-    text: "I can help with a business connection. Is this for one business site or several? A specialist can confirm options and a tailored quote.",
+    text: "I can help with a business connection. Is this for one site or several? A specialist can confirm options and a tailored quote.",
     actions: [
-      { kind: "flow", label: "One site", flow: "businessSingle" },
-      { kind: "flow", label: "Multiple sites", flow: "businessMulti" },
-      { kind: "flow", label: "Not sure", flow: "businessMulti" },
+      { kind: "flow", label: "One site", flow: "businessNext" },
+      { kind: "flow", label: "Multiple sites", flow: "businessNext" },
+      { kind: "flow", label: "Not sure", flow: "businessNext" },
     ],
   },
-  businessSingle: {
+  businessNext: {
     screen: "Business quote and specialist",
-    topic: "Business broadband (one site)",
-    text: "Availability depends on the exact business premises. You can check the business address and compare standard business options, or speak to a business specialist about your requirements. Static IP, support levels and any SLA are confirmed for the selected service — I can't promise them here.",
+    text: "Would you like to compare standard business options or speak to a specialist about your requirements? I can't confirm SLAs, static IPs or pricing here — a specialist confirms those for the qualifying plan.",
     actions: [
-      { kind: "link", label: "Check business availability", href: PAGES.checkAvailability, primary: true },
-      { kind: "link", label: "Business broadband plans", href: PAGES.businessPlans },
-      { kind: "link", label: "Speak to a business specialist", href: PAGES.businessBroadband },
-      speakToPerson,
+      { kind: "flow", label: "Speak to a business specialist", flow: "businessSpecialist", primary: true },
+      { kind: "flow", label: "Check business availability", flow: "businessAvailability" },
+      { kind: "link", label: "Request a call back", href: PAGES.contactUs },
+      { kind: "link", label: "Continue to business plans", href: PAGES.businessPlans },
     ],
   },
-  businessMulti: {
+  businessAvailability: {
     screen: "Business quote and specialist",
-    topic: "Business broadband (multiple sites)",
-    text: "For several premises, a specialist reviews each site separately and prepares a tailored quote. You can share your requirements through the business enquiry form — please don't send financial records or sensitive customer data in this chat.",
+    text: "What is the postcode of the first site? I'll then ask you to choose the full address.",
+    widget: "postcode",
+    context: "business",
+    actions: [{ kind: "flow", label: "Speak to a business specialist", flow: "businessSpecialist" }],
+  },
+  businessSpecialist: {
+    screen: "Business quote and specialist",
+    topic: "Business specialist enquiry",
+    text: "A specialist can confirm options and a tailored quote. I'll only ask for the minimum details needed to contact you about this enquiry.",
+    widget: "specialistForm",
     actions: [
-      { kind: "link", label: "Request a tailored quote", href: PAGES.businessBroadband, primary: true },
-      { kind: "link", label: "Multi-site connectivity", href: PAGES.multiSite },
+      { kind: "link", label: "Use the business enquiry form", href: PAGES.businessBroadband },
       speakToPerson,
     ],
   },
 
-  /* LK-WF-06 / CW-03 */
+  /* LK-WF-06 Switching to Zoiko (CF-03) */
   switching: {
     screen: "One Touch Switch guidance",
     topic: "Switching to Zoiko",
-    text: "For most eligible home broadband switches, your new provider manages the change through One Touch Switch, so please don't cancel your current service yourself. Your current provider can tell you about any early-exit charges. Business switches and home moves follow a different route.\n\nDo you also have a landline, alarm or telecare device using your current service?",
+    text: "Are you moving to Zoiko from another broadband provider at the same address?",
     actions: [
-      { kind: "flow", label: "Check my address", flow: "availability", primary: true },
+      { kind: "flow", label: "Yes, same address", flow: "switchingYes", primary: true },
+      { kind: "flow", label: "No, I'm moving home", flow: "moving" },
+      { kind: "flow", label: "It's for a business", flow: "business" },
+    ],
+  },
+  switchingYes: {
+    screen: "One Touch Switch guidance",
+    text: "For most home broadband switches, your new provider manages the switch through One Touch Switch. I'll explain what happens before you confirm.\n- Check your new connection at your exact address.\n- Choose your plan and review the contract information in secure checkout.\n- Zoiko arranges the switch with your current provider — please don't cancel your current service yourself.\n- Your current provider can tell you about any early-exit charges. Some cases (business lines, home moves, some bundles) need our team instead.\n\nDo you also have a landline, alarm or telecare device using your current service?",
+    actions: [
+      { kind: "flow", label: "Check my new connection", flow: "availability", primary: true },
+      { kind: "link", label: "Understand switching", href: PAGES.switching },
+      { kind: "link", label: "Continue to secure order", href: PAGES.checkAvailability, disabledReason: NEEDS_QUOTE },
       { kind: "flow", label: "Yes, I have an alarm or telecare", flow: "safety" },
-      { kind: "link", label: "How switching works", href: PAGES.switching },
       speakToPerson,
     ],
   },
 
-  /* LK-WF-10 / CW-04 */
-  moving: {
-    screen: "Moving home",
-    topic: "Moving home",
-    text: "I can check broadband options at your new address and help you understand the next steps. Moving your existing service may need a new order, and I can't promise you'll keep the same number until our team checks. To see options for your current service, please sign in securely.",
-    actions: [
-      { kind: "flow", label: "Check new address", flow: "availability", primary: true },
-      { kind: "link", label: "Sign in securely", href: PAGES.login },
-      { kind: "link", label: "Moving home guide", href: PAGES.movingHome },
-      speakToPerson,
-    ],
-  },
-
-  /* LK-WF-08 / WF-16 / CW-06 */
+  /* LK-WF-08 Order tracking (CF-04) */
   track: {
     screen: "Track your order",
     topic: "Tracking an order",
-    text: "I can help you track your order. For privacy, please sign in to your Zoiko account before any personal order or appointment details are shown. I won't ask for your password or one-time code in chat.",
+    text: "I can help you track your order. For privacy, please sign in securely before I show personal order details.",
+    widget: "secureCard",
+    actions: [
+      { kind: "link", label: "Sign in to track", href: PAGES.login, primary: true },
+      { kind: "api", label: "View order status", call: "orderStatus" },
+      { kind: "flow", label: "Engineer appointment", flow: "appointment" },
+      { kind: "flow", label: "Get order support", flow: "handoff" },
+      { kind: "flow", label: "Report a delay", flow: "handoff" },
+    ],
+  },
+
+  /* LK-WF-09 Engineer visit / installation appointment */
+  appointment: {
+    screen: "Engineer appointment",
+    topic: "Engineer appointment",
+    text: "Your appointment details are shown below as held by the order system. Would you like preparation guidance or to check whether a change is possible? I can't book, cancel or change an engineer visit from chat.",
+    actions: [
+      { kind: "api", label: "View appointment", call: "appointmentRead", primary: true },
+      { kind: "link", label: "Prepare for installation", href: PAGES.installationGuide },
+      { kind: "link", label: "Request a change", href: PAGES.login },
+      speakToSupport,
+    ],
+  },
+
+  /* LK-WF-16 Sign-in and customer verification */
+  signIn: {
+    screen: "Sign-in and customer verification",
+    text: COPY.signIn,
     widget: "secureCard",
     actions: [
       { kind: "link", label: "Sign in securely", href: PAGES.login, primary: true },
-      { kind: "flow", label: "Continue as guest", flow: "welcome" },
-      speakToPerson,
+      { kind: "flow", label: "Continue without signing in", flow: "welcome" },
+      speakToSupport,
     ],
   },
 
-  /* LK-WF-11 / CW-07 – safety question comes before any troubleshooting */
+  /* LK-WF-10 Moving home (CF-05) */
+  moving: {
+    screen: "Moving home",
+    topic: "Moving home",
+    text: "I can check the options at your new address and help you understand the next steps. Moving your existing service may require a new order.",
+    actions: [
+      { kind: "flow", label: "Check new address", flow: "movingAddress", primary: true },
+      { kind: "api", label: "Start a move request", call: "moveRequest" },
+      { kind: "link", label: "Find moving help", href: PAGES.movingHome },
+      speakToPerson,
+    ],
+  },
+  movingAddress: {
+    screen: "Moving home",
+    text: "I can check broadband options at your new address. What's the new postcode?",
+    widget: "postcode",
+    context: "moving",
+    actions: [{ kind: "link", label: "Find moving help", href: PAGES.movingHome }],
+  },
+
+  /* LK-WF-11 Service status and fault triage — safety first (CF-06) */
   fault: {
     screen: "Service status and fault triage",
     topic: "Reporting a problem",
-    text: "I'm sorry your connection is having trouble. Before troubleshooting: does anyone rely on this line for a landline, emergency calls or a telecare alarm?",
+    text: "I'm sorry your connection is having trouble. Before we start: is anyone relying on this line for emergency calls or a telecare device?",
     actions: [
-      { kind: "flow", label: "Yes or not sure — get urgent support", flow: "safety", primary: true },
-      { kind: "flow", label: "No — continue", flow: "faultType" },
+      { kind: "flow", label: "Yes", flow: "safety", primary: true },
+      { kind: "flow", label: "Not sure", flow: "safety" },
+      { kind: "flow", label: "No", flow: "faultStatus" },
     ],
   },
+  faultStatus: {
+    screen: "Service status and fault triage",
+    text: "Let's first check whether there's a reported issue in your area.",
+    actions: [
+      { kind: "api", label: "Check service status", call: "serviceStatus", primary: true },
+      { kind: "flow", label: "Troubleshoot connection", flow: "faultType" },
+      { kind: "link", label: "Report a fault", href: PAGES.reportFault },
+      speakToSupport,
+    ],
+  },
+
+  /* LK-WF-12 Wi-Fi speed and router guidance */
   faultType: {
     screen: "Wi-Fi speed and router guidance",
     topic: "Troubleshooting",
-    text: "Is the problem no connection, slow speed, Wi-Fi drop-outs or the phone line? I'll go one safe step at a time, and you can skip to support whenever you like.",
+    text: "Is the problem affecting all devices or just one? That helps us distinguish Wi-Fi coverage from a connection fault.",
+    widget: "wifiSteps",
     actions: [
-      { kind: "ask", label: "No connection", text: "I have no internet connection at all. What should I check?" },
-      { kind: "ask", label: "Slow speed", text: "My broadband is slow. What can I check?" },
-      { kind: "ask", label: "Wi-Fi drop-outs", text: "My Wi-Fi keeps dropping out. Is it affecting all devices or one?" },
-      { kind: "ask", label: "Phone line", text: "My digital phone line isn't working. What should I do?" },
-      { kind: "link", label: "Report a fault", href: PAGES.reportFault },
-      speakToPerson,
+      { kind: "link", label: "Run a speed test", href: PAGES.wiredWireless },
+      { kind: "flow", label: "Contact support", flow: "handoff" },
     ],
   },
 
-  /* LK-WF-13 */
+  /* LK-WF-13 Billing, charges and payment support */
   billing: {
     screen: "Billing and payment support",
     topic: "Billing",
-    text: "I can explain general billing questions, or help you open your bill securely. For your protection, please don't enter payment-card or bank details here — account-specific figures are only shown after you sign in.",
+    text: "I can explain charges, or help you open your bill securely. For your protection, please don't enter payment-card details here.",
     actions: [
       { kind: "link", label: "Sign in to view bill", href: PAGES.login, primary: true },
-      { kind: "ask", label: "Explain my bill", text: "How do I read and download my bill?" },
-      { kind: "link", label: "Payments & billing help", href: PAGES.paymentsBilling },
-      speakToPerson,
+      { kind: "link", label: "Update payment securely", href: PAGES.login },
+      { kind: "ask", label: "Explain a charge", text: "Can you explain the charges on my bill?" },
+      { kind: "flow", label: "Raise a billing query", flow: "complaint" },
     ],
   },
 
-  /* LK-WF-14 */
+  /* LK-WF-14 Cancellation, refunds and complaints (CF-07) */
   complaint: {
     screen: "Cancellation, refund and complaints",
     topic: "Cancellation or complaint",
-    text: "I can explain the process or help you contact the right team. Any charges, refunds or cancellation dates must be checked against your contract. You can make a complaint without signing in. If an eligible complaint isn't resolved within six weeks, or you receive a deadlock letter, you may be able to take it to an independent ADR scheme.",
+    text: "I can explain the process or help you contact the right team. Any charges, refunds or cancellation dates must be checked against your contract.\n\nYou can make a complaint without signing in. If a qualifying complaint raised from 8 April 2026 isn't resolved within six weeks, or you receive a deadlock letter, you may be able to take it to an independent ADR scheme. I can't log a complaint from this chat, so I won't tell you one has been logged.",
     actions: [
-      { kind: "link", label: "Make a complaint", href: PAGES.contactUs, primary: true },
       { kind: "ask", label: "Understand cancellation", text: "How does cancelling my contract work?" },
-      { kind: "link", label: "Ofcom complaints guidance", href: EXTERNAL_LINKS.ofcomComplaints },
+      { kind: "flow", label: "Request cancellation help", flow: "handoff" },
+      { kind: "link", label: "Make a complaint", href: PAGES.contactUs, primary: true },
       speakToPerson,
     ],
   },
 
-  /* LK-WF-15 – safety overrides every other intent */
+  /* LK-WF-15 Digital voice and telecare safety — CF-06 question, then urgent route */
+  safetyCheck: {
+    screen: "Digital voice and telecare safety",
+    topic: "Digital voice and telecare safety",
+    tone: "safety",
+    text: "Digital phone services may not work during a power cut without suitable backup. If you use telecare or depend on your landline for emergency calls, please speak with our team before changing services.\n\nIs anyone relying on this line for emergency calls or a telecare device?",
+    actions: [
+      { kind: "flow", label: "Yes", flow: "safety", primary: true },
+      { kind: "flow", label: "Not sure", flow: "safety" },
+      { kind: "link", label: "Learn about digital lines", href: PAGES.digitalLines },
+    ],
+  },
   safety: {
     screen: "Digital voice and telecare safety",
     topic: "Digital voice and telecare safety",
     tone: "safety",
-    text: `Digital phone services may not work during a power cut without suitable backup. If you use telecare or depend on your landline for emergency calls, please speak with our support team before changing services or restarting equipment.\n\n${EMERGENCY_LINE}`,
+    text: `Please speak with our support team urgently. Digital phone services may fail during a power cut without suitable backup, so please don't restart or disconnect equipment the line depends on until you've spoken to us.\n\n${EMERGENCY_LINE}`,
     actions: [
-      { kind: "link", label: `Call our team on ${COMPANY.phone}`, href: COMPANY.phoneHref, primary: true },
-      { kind: "flow", label: "Other ways to contact us", flow: "handoff" },
+      { kind: "link", label: `I need additional support — call ${COMPANY.phone}`, href: COMPANY.phoneHref, primary: true },
+      { kind: "flow", label: "Speak to a specialist", flow: "handoffChannels" },
       { kind: "link", label: "Learn about digital lines", href: PAGES.digitalLines },
-      { kind: "link", label: "Ofcom: future of landline calls", href: EXTERNAL_LINKS.ofcomLandline },
     ],
   },
 
-  /* LK-WF-17 */
+  /* LK-WF-17 Human agent hand-off (CF-08) — summary consent first */
   handoff: {
     screen: "Human escalation and callback",
     topic: "Speaking to our team",
-    text: "I can help you contact our team. Would you like to start a live chat, request a callback or see other contact options? This chat isn't passed to an adviser, so you may need to explain your question again. Current opening hours are shown on our Get help page.",
+    text: "I can connect you to the right team. Would you like me to pass on a short summary so you don't have to repeat yourself?",
+    actions: [
+      { kind: "flow", label: "Yes, prepare a summary", flow: "handoffShare", primary: true },
+      { kind: "flow", label: "No, continue without sharing", flow: "handoffChannels" },
+      { kind: "flow", label: "Back to Linko", flow: "welcome" },
+    ],
+  },
+  handoffShare: {
+    screen: "Human escalation and callback",
+    text: "Here's a short summary with no personal details. Linko can't send it to an adviser automatically yet, so copy it and paste it into the live chat or enquiry form.",
+    widget: "handoffSummary",
     actions: [
       { kind: "link", label: "Chat with an adviser", href: COMPANY.liveChatUrl, primary: true },
+      { kind: "link", label: "Request a callback", href: PAGES.getHelp },
+      { kind: "link", label: "Send an enquiry", href: PAGES.contactUs },
+      { kind: "flow", label: "Back to Linko", flow: "welcome" },
+    ],
+  },
+  handoffChannels: {
+    screen: "Human escalation and callback",
+    text: "Here are the ways to reach our team. I can't see live queue or wait times, so I won't promise one. Current opening hours are on our Get help page.",
+    actions: [
+      { kind: "link", label: "Chat with an adviser", href: COMPANY.liveChatUrl, primary: true },
+      { kind: "link", label: "Request a callback", href: PAGES.getHelp },
+      { kind: "link", label: "Send an enquiry", href: PAGES.contactUs },
       { kind: "link", label: `Call ${COMPANY.phone}`, href: COMPANY.phoneHref },
-      { kind: "link", label: "Request a callback", href: PAGES.contactUs },
-      { kind: "link", label: "Email support", href: COMPANY.supportEmailHref },
-      { kind: "link", label: "Opening hours & help", href: PAGES.getHelp },
-      { kind: "flow", label: "Continue with Linko", flow: "welcome" },
+      { kind: "flow", label: "Back to Linko", flow: "welcome" },
     ],
   },
 
-  /* LK-WF-18 */
+  /* LK-WF-18 Privacy, AI limits and transcript controls */
   privacy: {
     screen: "Privacy, AI limits and transcript controls",
     topic: "Privacy and AI",
-    text: "I'm an AI assistant. I'll use the information needed to answer your question, and I'll only pass details to a human team if you ask. Your chats are saved in this browser on this device so you can find them in Chat history. They aren't stored by Zoiko Broadband, and you can delete them at any time from Chat history in the menu. Please don't share passwords, one-time codes or payment-card numbers.",
+    text: "I'm an AI assistant. I'll use the information needed to answer your question and may transfer details to a human team if you ask. Please don't share passwords or payment-card numbers.\n\nYour chats are saved only in this browser on this device (Chat history in the menu) until you delete them — they aren't stored by Zoiko Broadband. For data-rights requests, use our privacy notice.",
     actions: [
       { kind: "link", label: "Read privacy notice", href: PAGES.privacy, primary: true },
-      { kind: "link", label: "Request data help", href: PAGES.contactUs },
       speakToPerson,
-      { kind: "flow", label: "End chat", flow: "end" },
+      { kind: "command", label: "End chat", command: "endChat" },
     ],
   },
 
-  /* LK-WF-20 */
+  /* LK-WF-20 Conversation summary and close */
   end: {
     screen: "Conversation summary and close",
     text: COPY.summaryIntro,
     widget: "summary",
     actions: [
+      { kind: "command", label: "Continue to next step", command: "nextStep", primary: true },
+      { kind: "command", label: "Start another question", command: "restart" },
       { kind: "command", label: "Copy summary", command: "copySummary" },
-      { kind: "command", label: "Start a new enquiry", command: "restart", primary: true },
-      { kind: "command", label: "Close chat", command: "close" },
+      { kind: "command", label: "End chat", command: "endChat" },
     ],
   },
 };
 
-/** First-turn actions (LK-WF-01: Check availability, Compare plans, Track an order, Get support),
- * with the first chip adapted to the page the visitor is on (Doc02). */
+/** LK-WF-01 first-turn chips: Check availability | Compare plans | Business broadband | Track my order
+ * (+ "Speak to a person" as a link). The first chip adapts to the page the visitor is on (Doc02). */
 export function welcomeActions(pathname: string): LinkoAction[] {
   const base: LinkoAction[] = [
     { kind: "flow", label: "Check availability", flow: "availability" },
     { kind: "flow", label: "Compare plans", flow: "plans" },
-    { kind: "flow", label: "Track an order", flow: "track" },
-    { kind: "flow", label: "Get support", flow: "clarify" },
+    { kind: "flow", label: "Business broadband", flow: "business" },
+    { kind: "flow", label: "Track my order", flow: "track" },
   ];
   const p = pathname || "/";
   let page: LinkoAction | null = null;
-  if (p.startsWith("/business") || p.startsWith("/multi-site")) page = { kind: "flow", label: "Business broadband", flow: "business" };
-  else if (p.startsWith("/report-a-fault") || p.includes("led-light") || p.includes("wi-fi") || p.includes("wireless"))
+  if (p.startsWith("/report-a-fault") || p.includes("led-light") || p.includes("wi-fi") || p.includes("wireless"))
     page = { kind: "flow", label: "Report a problem", flow: "fault" };
   else if (p.startsWith("/payments-billing")) page = { kind: "flow", label: "Billing question", flow: "billing" };
   else if (p.startsWith("/moving-home")) page = { kind: "flow", label: "Moving home", flow: "moving" };
   else if (p.startsWith("/switch-to-zoiko")) page = { kind: "flow", label: "Switching to Zoiko", flow: "switching" };
-  else if (p.startsWith("/digital-lines") || p.startsWith("/landline")) page = { kind: "flow", label: "Digital voice & telecare", flow: "safety" };
-  // Page intent replaces "Compare plans" so there are always four clear first-turn actions.
+  else if (p.startsWith("/digital-lines") || p.startsWith("/landline"))
+    page = { kind: "flow", label: "Digital voice & telecare", flow: "safetyCheck" };
+  // Page intent replaces "Compare plans" so there are always four first-turn chips.
   return page ? [base[0], page, base[2], base[3]] : base;
 }
 

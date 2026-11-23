@@ -1,12 +1,23 @@
 "use client";
 
+/**
+ * Linko conversation state.
+ *
+ * Talks to the Document 04 API:
+ *   PUB-01 create conversation · PUB-02 TEXT / ACTION messages · PUB-14 close.
+ * Guided steps render instantly from the shared flow definitions and are
+ * reported to the server as ACTION turns, so the server keeps the
+ * authoritative state machine, topics, clarify/retry counters and history.
+ * Free text is answered by the server (deterministic safety routing first,
+ * then the verified AI answer).
+ */
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  AddressContext,
   COPY,
   FLOWS,
   FlowId,
   LinkoAction,
-  LinkoAnswer,
   MessageTone,
   MessageWidget,
   redactSensitive,
@@ -14,6 +25,7 @@ import {
   track,
   welcomeActions,
 } from "@/app/lib/chatbot/linko";
+import { linkoApi, MessageData, newKey } from "./linkoApi";
 
 export type ChatRole = "user" | "assistant";
 
@@ -23,6 +35,8 @@ export interface ChatMessage {
   content: string;
   tone?: MessageTone;
   widget?: MessageWidget;
+  /** Address-check journey for widget "postcode". */
+  context?: AddressContext;
   actions?: LinkoAction[];
   /** "flow" = deterministic guided step, "ai" = model answer. */
   source?: "flow" | "ai";
@@ -86,10 +100,42 @@ function flowMessage(flow: FlowId, pathname: string, initial = false): ChatMessa
     content: step.text,
     tone: step.tone,
     widget: step.widget,
+    context: step.context,
     actions: flow === "welcome" ? welcomeActions(pathname) : step.actions,
     source: "flow",
     screen: step.screen,
     topic: step.topic,
+  };
+}
+
+function degradedMessage(message: string = COPY.degraded, withRetry = true): ChatMessage {
+  return {
+    id: newId(),
+    role: "assistant",
+    tone: "error",
+    content: message,
+    source: "flow",
+    actions: [
+      ...(withRetry ? [{ kind: "command", label: "Try again", command: "retry", primary: true } as LinkoAction] : []),
+      { kind: "link", label: "Open Help Centre", href: "/get-help" },
+      { kind: "flow", label: "Speak to a person", flow: "handoff", primary: !withRetry },
+    ],
+  };
+}
+
+function fromAnswer(a: MessageData["answer"]): ChatMessage {
+  const isError = a.status === "provider_unavailable" || a.status === "invalid" || a.status === "budget_limited";
+  return {
+    id: newId(),
+    role: "assistant",
+    content: a.message,
+    tone: isError ? "error" : a.tone,
+    actions: a.actions,
+    widget: a.widget as MessageWidget | undefined,
+    context: a.context as AddressContext | undefined,
+    source: isError ? "flow" : a.source,
+    screen: a.screen,
+    topic: a.topic,
   };
 }
 
@@ -99,16 +145,20 @@ export function useChat(pathname: string) {
   const [restored, setRestored] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef<string | null>(null);
-  const convId = useRef<string>(newId());
+  const convId = useRef<string>(newId()); // local history id
+  const serverId = useRef<string | null>(null); // PUB-01 conversationId
 
   // Restore the open conversation for this tab.
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
       if (saved) {
-        const parsed = JSON.parse(saved) as { id?: string; messages?: ChatMessage[] } | ChatMessage[];
+        const parsed = JSON.parse(saved) as { id?: string; serverId?: string | null; messages?: ChatMessage[] } | ChatMessage[];
         const msgs = Array.isArray(parsed) ? parsed : parsed.messages;
-        if (!Array.isArray(parsed) && parsed.id) convId.current = parsed.id;
+        if (!Array.isArray(parsed)) {
+          if (parsed.id) convId.current = parsed.id;
+          serverId.current = parsed.serverId ?? null;
+        }
         if (Array.isArray(msgs) && msgs.length) setMessages(msgs);
       }
     } catch {
@@ -121,7 +171,7 @@ export function useChat(pathname: string) {
   useEffect(() => {
     if (!restored) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ id: convId.current, messages }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ id: convId.current, serverId: serverId.current, messages }));
     } catch {
       // ignore
     }
@@ -134,7 +184,42 @@ export function useChat(pathname: string) {
     setMessages((prev) => [...prev, ...items]);
   }, []);
 
-  /** Run a deterministic guided step (no AI call). */
+  /** PUB-01: create the server conversation on first use. */
+  const ensureServer = useCallback(async (): Promise<string | null> => {
+    if (serverId.current) return serverId.current;
+    const r = await linkoApi.createConversation(pathname);
+    if (r.ok) serverId.current = r.body.data.conversationId;
+    return serverId.current;
+  }, [pathname]);
+
+  /** PUB-02 with one transparent re-create if the server session expired (404). */
+  const sendToServer = useCallback(
+    async (
+      body: { kind: "TEXT"; text: string } | { kind: "ACTION"; actionId: string; label?: string },
+      signal?: AbortSignal,
+    ) => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const id = await ensureServer();
+        if (!id) return null;
+        const r = await linkoApi.sendMessage(id, { ...body, requestId: newKey() } as never, signal);
+        if (!r.ok && r.http === 404) {
+          serverId.current = null; // expired → create a new one and try once more
+          continue;
+        }
+        return r;
+      }
+      return null;
+    },
+    [ensureServer],
+  );
+
+  const closeServer = useCallback(() => {
+    const id = serverId.current;
+    serverId.current = null;
+    if (id) void linkoApi.close(id); // PUB-14 – purge server session
+  }, []);
+
+  /** Run a deterministic guided step: render now, record it on the server as an ACTION turn. */
   const startFlow = useCallback(
     (flow: FlowId, userLabel?: string) => {
       const items: ChatMessage[] = [];
@@ -142,77 +227,42 @@ export function useChat(pathname: string) {
       items.push(flowMessage(flow, pathname));
       push(...items);
       track("linko_intent_selected", { intent_id: flow });
-      if (flow === "safety") track("linko_safety_shown");
+      if (flow === "safety" || flow === "safetyCheck") track("linko_safety_shown");
       if (flow === "handoff") track("linko_handoff", { handoff_type: "options_shown" });
+      void sendToServer({ kind: "ACTION", actionId: flow, label: userLabel }).catch(() => undefined);
     },
-    [pathname, push],
+    [pathname, push, sendToServer],
   );
 
-  const askModel = useCallback(
-    async (history: ChatMessage[]) => {
+  /** Free text → PUB-02 TEXT; the server routes safety/human/complaint first, then the verified AI answer. */
+  const ask = useCallback(
+    async (body: { kind: "TEXT"; text: string } | { kind: "ACTION"; actionId: "retry" }) => {
       setIsLoading(true);
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        const res = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            // Only text turns go to the server; the welcome screen is UI-only.
-            messages: history
-              .filter((m) => m.content !== COPY.welcome && m.content.trim())
-              .map(({ role, content }) => ({ role, content })),
-          }),
-        });
-        const answer = (await res.json().catch(() => null)) as LinkoAnswer | null;
-        if (!answer || typeof answer.message !== "string") throw new Error("bad response");
-        if (answer.status === "provider_unavailable" || answer.status === "invalid") {
-          track("linko_error", { error_class: answer.status, component_id: "C04" });
+        const r = await sendToServer(body, controller.signal);
+        if (r?.ok) {
+          const a = r.body.data.answer;
+          if (a.status === "provider_unavailable" || a.status === "invalid") {
+            track("linko_error", { error_class: a.status, component_id: "C04" });
+          }
+          push(fromAnswer(a));
+        } else if (r && !r.ok && r.http === 429) {
+          push({ ...degradedMessage(r.body?.message ?? COPY.rateLimited, false) });
+        } else {
+          track("linko_error", { error_class: r ? `http_${r.http}` : "network", component_id: "C04" });
+          push(degradedMessage());
         }
-        push({
-          id: newId(),
-          role: "assistant",
-          content: answer.message,
-          tone: answer.tone,
-          actions: answer.actions,
-          source: answer.status === "answered" || answer.status === "abstained" || answer.status === "handoff" ? "ai" : "flow",
-          screen:
-            answer.status === "safety"
-              ? FLOWS.safety.screen
-              : answer.status === "complaint"
-                ? FLOWS.complaint.screen
-                : answer.status === "handoff" && answer.actions.some((x) => x.kind === "link" && x.href.includes("tawk.to"))
-                  ? FLOWS.handoff.screen
-                  : undefined,
-          topic:
-            answer.status === "safety"
-              ? FLOWS.safety.topic
-              : answer.status === "complaint"
-                ? FLOWS.complaint.topic
-                : undefined,
-        });
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        track("linko_error", { error_class: "network", component_id: "C04" });
-        push({
-          id: newId(),
-          role: "assistant",
-          tone: "error",
-          content: COPY.degraded,
-          source: "flow",
-          actions: [
-            { kind: "command", label: "Try again", command: "retry", primary: true },
-            { kind: "link", label: "Help Centre", href: "/get-help" },
-            { kind: "flow", label: "Speak to our team", flow: "handoff" },
-          ],
-        });
+        push(degradedMessage());
       } finally {
         setIsLoading(false);
         abortRef.current = null;
       }
     },
-    [push],
+    [push, sendToServer],
   );
 
   /** Free-text question from the composer or an "ask" chip. */
@@ -239,48 +289,56 @@ export function useChat(pathname: string) {
       track("linko_message_sent");
       lastQuestion.current = content;
 
-      // Deterministic routing: safety, human request and complaints skip the model.
+      // Safety / human / complaint show instantly (no wait); the server applies the same rule.
       const routed = routeIntent(content);
       if (routed) {
         push(userMsg, ...extra, flowMessage(routed, pathname));
         track("linko_intent_selected", { intent_id: routed });
         if (routed === "safety") track("linko_safety_shown");
+        void sendToServer({ kind: "TEXT", text: content }).catch(() => undefined);
         return;
       }
 
-      const history = [...messages, userMsg];
       push(userMsg, ...extra);
-      void askModel(history);
+      void ask({ kind: "TEXT", text: content });
     },
-    [askModel, isLoading, messages, pathname, push],
+    [ask, isLoading, pathname, push, sendToServer],
   );
 
-  /** "Try again" after a degraded answer: re-ask the last question once. */
+  /** "Try again" – the server allows 2 retries, then a safe fallback (Doc01 WF-19). */
   const retry = useCallback(() => {
-    if (isLoading || !lastQuestion.current) return;
-    const trimmed = [...messages];
-    if (trimmed[trimmed.length - 1]?.tone === "error") trimmed.pop();
-    setMessages(trimmed);
-    void askModel(trimmed);
-  }, [askModel, isLoading, messages]);
+    if (isLoading) return;
+    setMessages((prev) => (prev[prev.length - 1]?.tone === "error" ? prev.slice(0, -1) : prev));
+    void ask({ kind: "ACTION", actionId: "retry" });
+  }, [ask, isLoading]);
 
-  const restart = useCallback(() => {
+  const reset = useCallback(() => {
     abortRef.current?.abort();
     lastQuestion.current = null;
     setIsLoading(false);
+    closeServer();
     convId.current = newId();
     setMessages([flowMessage("welcome", pathname, true)]);
-  }, [pathname]);
+  }, [closeServer, pathname]);
+
+  const restart = reset;
+
+  /** LK-WF-20 "End chat": close the server session (PUB-14) and start clean. */
+  const endChat = reset;
 
   /** Re-open a saved conversation from Chat history. */
-  const openChat = useCallback((chat: SavedChat) => {
-    abortRef.current?.abort();
-    lastQuestion.current = null;
-    setIsLoading(false);
-    convId.current = chat.id;
-    setMessages(chat.messages);
-    track("linko_intent_selected", { intent_id: "history_opened" });
-  }, []);
+  const openChat = useCallback(
+    (chat: SavedChat) => {
+      abortRef.current?.abort();
+      lastQuestion.current = null;
+      setIsLoading(false);
+      closeServer();
+      convId.current = chat.id;
+      setMessages(chat.messages);
+      track("linko_intent_selected", { intent_id: "history_opened" });
+    },
+    [closeServer],
+  );
 
   /** Delete one saved chat (or all with no id). Returns the remaining list. */
   const deleteSaved = useCallback(
@@ -288,16 +346,10 @@ export function useChat(pathname: string) {
       const rest = id ? readHistory().filter((c) => c.id !== id) : [];
       writeHistory(rest);
       // Deleting the open conversation starts a fresh one so it isn't re-saved.
-      if (!id || id === convId.current) {
-        abortRef.current?.abort();
-        lastQuestion.current = null;
-        setIsLoading(false);
-        convId.current = newId();
-        setMessages([flowMessage("welcome", pathname, true)]);
-      }
+      if (!id || id === convId.current) reset();
       return rest;
     },
-    [pathname],
+    [reset],
   );
 
   const setFeedback = useCallback((id: string, value: "up" | "down") => {
@@ -311,6 +363,9 @@ export function useChat(pathname: string) {
     [push],
   );
 
+  /** Adds the visitor's own choice inside a widget (e.g. "All devices"). */
+  const addUser = useCallback((content: string) => push({ id: newId(), role: "user", content }), [push]);
+
   const topics = Array.from(new Set(messages.map((m) => m.topic).filter(Boolean))) as string[];
 
   return {
@@ -320,11 +375,14 @@ export function useChat(pathname: string) {
     startFlow,
     retry,
     restart,
+    endChat,
     setFeedback,
     addAssistant,
+    addUser,
     topics,
     openChat,
     deleteSaved,
     conversationId: () => convId.current,
+    serverConversationId: () => serverId.current,
   };
 }

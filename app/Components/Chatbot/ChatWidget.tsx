@@ -23,6 +23,7 @@ import { FormEvent, ReactNode, useCallback, useEffect, useId, useRef, useState }
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardCopy,
   ChevronLeft,
   ExternalLink,
   Headset,
@@ -46,7 +47,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChatMessage, SavedChat, readHistory, useChat } from "./useChat";
+import { linkoApi, toActions, TriageData } from "./linkoApi";
 import {
+  AddressContext,
+  ApiCall,
   ASSISTANT,
   COMPANY,
   COPY,
@@ -56,6 +60,7 @@ import {
   SECURE_CARD,
   isAllowedHref,
   normalisePostcode,
+  redactSensitive,
   track,
 } from "@/app/lib/chatbot/linko";
 
@@ -171,6 +176,21 @@ function ActionButton({
     action.primary ? `min-h-12 text-[15px] font-semibold ${T.primary}` : `min-h-11 text-[14px] ${T.secondary}`
   }`;
 
+  // Doc07: a CTA whose backend isn't verified is shown disabled and explains why.
+  if (action.disabledReason) {
+    const rid = `why-${action.label.replace(/\W+/g, "-").toLowerCase()}`;
+    return (
+      <div>
+        <button type="button" className={cls} disabled aria-describedby={rid}>
+          {action.label}
+        </button>
+        <p id={rid} className={`mt-1 px-1 text-[12px] ${T.muted}`}>
+          {action.disabledReason}
+        </p>
+      </div>
+    );
+  }
+
   if (action.kind === "link") {
     const href = action.href;
     if (!isAllowedHref(href)) return null;
@@ -236,21 +256,33 @@ function ActionGroup({
   );
 }
 
-/* ───────────────────────── C08 Postcode + address ──────────────────────── */
+/* ───────────────────────── C08 Postcode + address ────────────────────────
+ * Doc01 LK-WF-03 / CF-01: postcode → address list (PUB-03) → mandatory
+ * selection → exact-premises qualification (PUB-04). Never auto-selects
+ * and never infers availability from the postcode alone.               */
 
-type Address = { id: string; display: string };
+type Address = { addressId: string; label: string };
 type PickerState =
   | { step: "postcode"; error?: string }
   | { step: "loading" }
-  | { step: "results"; addresses: Address[]; selected?: string; error?: string }
+  | { step: "results"; addresses: Address[]; selected?: string; error?: string; checking?: boolean }
   | { step: "done"; ok: boolean };
+
+export type AddressOutcome =
+  | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string }
+  | { kind: "unverified"; label: string } // address chosen, but exact-premises check unavailable
+  | { kind: "failed" }
+  | { kind: "empty" }
+  | { kind: "notListed" };
 
 function AddressPicker({
   active,
+  context,
   onFinished,
 }: {
   active: boolean;
-  onFinished: (outcome: "selected" | "failed" | "empty" | "notListed") => void;
+  context: AddressContext;
+  onFinished: (o: AddressOutcome, ctx: AddressContext) => void;
 }) {
   const [postcode, setPostcode] = useState("");
   const [state, setState] = useState<PickerState>({ step: "postcode" });
@@ -265,6 +297,11 @@ function AddressPicker({
     );
   }
 
+  const finish = (o: AddressOutcome, ok: boolean) => {
+    setState({ step: "done", ok });
+    onFinished(o, context);
+  };
+
   const find = async (e: FormEvent) => {
     e.preventDefault();
     const pc = normalisePostcode(postcode);
@@ -275,60 +312,63 @@ function AddressPicker({
     }
     setPostcode(pc);
     setState({ step: "loading" });
-    track("linko_intent_selected", { intent_id: "postcode_submitted" });
-    try {
-      const res = await fetch("/api/BritishTelecom/search-address", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postcode: pc }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      const data = (await res.json().catch(() => null)) as {
-        success?: boolean;
-        addresses?: { id?: string; display?: string }[];
-      } | null;
-      if (!res.ok || !data?.success) throw new Error("lookup failed");
-      const addresses = (data.addresses ?? [])
-        .filter((a): a is Address => !!a.id && !!a.display)
-        .map((a) => ({ id: a.id, display: a.display }));
-      if (!addresses.length) {
-        setState({ step: "done", ok: false });
-        onFinished("empty");
+    track("linko_intent_selected", { intent_id: "postcode_validated" });
+    const r = await linkoApi.searchAddresses(pc); // PUB-03
+    if (!r.ok) {
+      if (r.http === 400) {
+        setState({ step: "postcode", error: r.body?.message ?? "Enter a full UK postcode, for example SW1A 1AA." });
         return;
       }
-      setState({ step: "results", addresses });
-    } catch {
       track("linko_error", { error_class: "address_lookup", component_id: "C08" });
-      setState({ step: "done", ok: false });
-      onFinished("failed");
+      finish({ kind: "failed" }, false);
+      return;
     }
+    if (!r.body.data.matches.length) {
+      finish({ kind: "empty" }, false);
+      return;
+    }
+    setState({ step: "results", addresses: r.body.data.matches });
   };
 
   if (state.step === "results") {
+    const choose = async (e: FormEvent) => {
+      e.preventDefault();
+      if (!state.selected) {
+        setState({ ...state, error: "Please choose the full address, or select “Try another postcode”." });
+        return;
+      }
+      const chosen = state.addresses.find((a) => a.addressId === state.selected)!;
+      setState({ ...state, checking: true, error: undefined });
+      track("linko_intent_selected", { intent_id: "address_selected" });
+      const q = await linkoApi.qualify(chosen.addressId, context === "business" ? "BUSINESS" : "RESIDENTIAL"); // PUB-04
+      if (q.ok) {
+        finish(
+          {
+            kind: "qualified",
+            label: chosen.label,
+            technologies: q.body.data.technologies,
+            message: q.body.data.message,
+            checkedAt: q.body.sourceEvidence?.checkedAt,
+          },
+          true,
+        );
+      } else {
+        finish({ kind: "unverified", label: chosen.label }, true);
+      }
+    };
     return (
-      <form
-        className="mt-4 space-y-3"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!state.selected) {
-            setState({ ...state, error: "Choose your address from the list, or select “Address not listed”." });
-            return;
-          }
-          setState({ step: "done", ok: true });
-          onFinished("selected");
-        }}
-      >
-        <fieldset>
-          <legend className={`mb-2 text-sm font-semibold ${T.text}`}>Please choose the full address for {postcode}</legend>
-          <div
-            className="max-h-56 space-y-2 overflow-y-auto"
-            aria-describedby={state.error ? `${uid}-err` : undefined}
-          >
+      <form className="mt-4 space-y-3" onSubmit={choose}>
+        <fieldset disabled={state.checking}>
+          <legend className={`mb-1 text-sm font-semibold ${T.text}`}>
+            Please choose the full address. Different properties can have different connections.
+          </legend>
+          <p className={`mb-2 text-xs ${T.muted}`}>Addresses for {postcode}</p>
+          <div className="max-h-56 space-y-2 overflow-y-auto" aria-describedby={state.error ? `${uid}-err` : undefined}>
             {state.addresses.map((a) => (
               <label
-                key={a.id}
+                key={a.addressId}
                 className={`flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-4 py-2 text-sm ${
-                  state.selected === a.id
+                  state.selected === a.addressId
                     ? "border-2 border-[#1B3A63] bg-white font-semibold text-[#1E2A44] linko-dark:border-[#F6C140] linko-dark:bg-slate-900 linko-dark:text-white"
                     : T.row
                 }`}
@@ -336,35 +376,47 @@ function AddressPicker({
                 <input
                   type="radio"
                   name={`${uid}-addr`}
-                  value={a.id}
-                  checked={state.selected === a.id}
-                  onChange={() => setState({ ...state, selected: a.id, error: undefined })}
+                  value={a.addressId}
+                  checked={state.selected === a.addressId}
+                  onChange={() => setState({ ...state, selected: a.addressId, error: undefined })}
                   className="h-4 w-4 accent-[#1B3A63]"
                 />
-                {a.display}
-                {state.selected === a.id && <span className="sr-only">(selected)</span>}
+                {a.label}
               </label>
             ))}
           </div>
         </fieldset>
         {state.error && (
-          <p id={`${uid}-err`} className="text-sm text-red-700 linko-dark:text-red-300">
+          <p id={`${uid}-err`} role="alert" className="text-sm text-red-700 linko-dark:text-red-300">
             {state.error}
           </p>
         )}
-        <button type="submit" className={`flex min-h-12 w-full items-center rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus}`}>
-          Check this address
-        </button>
         <button
-          type="button"
-          className={`flex min-h-11 w-full items-center rounded-lg px-4 text-[14px] ${T.secondary} ${T.focus}`}
-          onClick={() => {
-            setState({ step: "done", ok: false });
-            onFinished("notListed");
-          }}
+          type="submit"
+          disabled={state.checking}
+          className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus} disabled:opacity-60`}
         >
-          Address not listed
+          {state.checking && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />}
+          {state.checking ? "Checking this address…" : "Choose this address"}
         </button>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <button
+            type="button"
+            disabled={state.checking}
+            className={`flex min-h-11 w-full items-center rounded-lg px-4 text-[14px] ${T.secondary} ${T.focus}`}
+            onClick={() => setState({ step: "postcode" })}
+          >
+            Try another postcode
+          </button>
+          <button
+            type="button"
+            disabled={state.checking}
+            className={`flex min-h-11 w-full items-center rounded-lg px-4 text-[14px] ${T.secondary} ${T.focus}`}
+            onClick={() => finish({ kind: "notListed" }, false)}
+          >
+            My address isn&apos;t listed
+          </button>
+        </div>
       </form>
     );
   }
@@ -403,7 +455,7 @@ function AddressPicker({
         className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus} disabled:opacity-60`}
       >
         {state.step === "loading" && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />}
-        {state.step === "loading" ? "Finding addresses…" : "Find my address"}
+        {state.step === "loading" ? "Finding addresses…" : "Find addresses"}
       </button>
       {state.step === "loading" && (
         <p role="status" className="sr-only">
@@ -411,6 +463,431 @@ function AddressPicker({
         </p>
       )}
     </form>
+  );
+}
+
+/* ─────────────── C19 Business specialist form (Doc01 WF-05 / CF-02, PUB-06) ─────────────── */
+
+function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: boolean, reference?: string) => void }) {
+  const uid = useId();
+  const [f, setF] = useState({
+    sitesCount: "",
+    businessName: "",
+    contactName: "",
+    channelType: "EMAIL" as "EMAIL" | "PHONE",
+    channelValue: "",
+    requirements: "",
+    permission: false,
+    marketing: false,
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [closed, setClosed] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
+
+  if (!active || closed) return <p className={`mt-3 text-xs ${T.muted}`}>This enquiry form has closed.</p>;
+
+  const set = (k: keyof typeof f, v: string | boolean) => setF((p) => ({ ...p, [k]: v }));
+  const field = (k: string) => (errors[k] ? `${uid}-${k}-err` : undefined);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const errs: Record<string, string> = {};
+    if (!f.sitesCount) errs.sitesCount = "Choose how many sites this is for.";
+    if (!f.businessName.trim()) errs.businessName = "Enter the business name.";
+    if (!f.contactName.trim()) errs.contactName = "Enter a contact name.";
+    if (f.channelType === "EMAIL" && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.channelValue.trim()))
+      errs.channelValue = "Enter a valid work email address.";
+    if (f.channelType === "PHONE" && !/^\+?[0-9 ()-]{10,20}$/.test(f.channelValue.trim()))
+      errs.channelValue = "Enter a valid phone number.";
+    if (!f.permission) errs.permission = "Please confirm we may contact you about this enquiry.";
+    setErrors(errs);
+    if (Object.keys(errs).length) {
+      requestAnimationFrame(() => summaryRef.current?.focus());
+      return;
+    }
+    setBusy(true);
+    const r = await linkoApi.businessLead({
+      sitesCount: f.sitesCount,
+      businessName: f.businessName.trim(),
+      contactName: f.contactName.trim(),
+      contactChannel: { type: f.channelType, value: f.channelValue.trim() },
+      requirements: redactSensitive(f.requirements.trim()).text,
+      permission: true,
+      marketingOptIn: f.marketing,
+    });
+    setBusy(false);
+    if (!r.ok && r.http === 400 && r.body?.field) {
+      const map: Record<string, string> = { contactChannel: "channelValue" };
+      setErrors({ [map[r.body.field] ?? r.body.field]: r.body.message });
+      return;
+    }
+    setClosed(true);
+    track("linko_handoff", { handoff_type: "business_lead", result_code: r.ok ? "accepted" : "unavailable" });
+    onDone(r.ok, r.ok ? r.body.data.reference : undefined);
+  };
+
+  const input = `min-h-11 w-full rounded-lg border border-[#B8C4D6] bg-white px-3 text-[15px] text-[#1E2A44] linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white ${T.focus}`;
+  const label = `block text-sm font-semibold ${T.text}`;
+  const err = (k: string) =>
+    errors[k] ? (
+      <p id={`${uid}-${k}-err`} className="mt-1 text-sm text-red-700 linko-dark:text-red-300">
+        {errors[k]}
+      </p>
+    ) : null;
+
+  return (
+    <form onSubmit={submit} noValidate className={`mt-4 space-y-4 rounded-xl p-4 ${T.row}`} aria-label="Business specialist enquiry">
+      <p className={`text-xs ${T.muted}`}>
+        We&apos;ll use these details only to respond to this enquiry. Marketing is a separate choice. See our{" "}
+        <Link href="/privacy-notice" className={`underline ${T.link}`}>
+          privacy notice
+        </Link>
+        . Please don&apos;t include financial records or customer data.
+      </p>
+      {Object.keys(errors).length > 0 && (
+        <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 linko-dark:border-red-700 linko-dark:bg-red-950 linko-dark:text-red-200">
+          Please check {Object.keys(errors).length === 1 ? "1 field" : `${Object.keys(errors).length} fields`} below.
+        </div>
+      )}
+      <fieldset aria-describedby={field("sitesCount")}>
+        <legend className={label}>Number of sites (required)</legend>
+        <div className="mt-2 grid grid-cols-3 gap-2">
+          {[
+            ["ONE", "One site"],
+            ["MULTIPLE", "Multiple"],
+            ["NOT_SURE", "Not sure"],
+          ].map(([v, l]) => (
+            <label key={v} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg px-2 text-sm ${f.sitesCount === v ? "border-2 border-[#1B3A63] font-semibold linko-dark:border-[#F6C140]" : T.secondary}`}>
+              <input type="radio" name={`${uid}-sites`} value={v} checked={f.sitesCount === v} onChange={() => set("sitesCount", v)} className="sr-only" />
+              {l}
+            </label>
+          ))}
+        </div>
+        {err("sitesCount")}
+      </fieldset>
+      <div>
+        <label htmlFor={`${uid}-bn`} className={label}>
+          Business name (required)
+        </label>
+        <input id={`${uid}-bn`} className={`mt-1 ${input}`} value={f.businessName} maxLength={120} autoComplete="organization" aria-invalid={!!errors.businessName} aria-describedby={field("businessName")} onChange={(e) => set("businessName", e.target.value)} />
+        {err("businessName")}
+      </div>
+      <div>
+        <label htmlFor={`${uid}-cn`} className={label}>
+          Contact name (required)
+        </label>
+        <input id={`${uid}-cn`} className={`mt-1 ${input}`} value={f.contactName} maxLength={120} autoComplete="name" aria-invalid={!!errors.contactName} aria-describedby={field("contactName")} onChange={(e) => set("contactName", e.target.value)} />
+        {err("contactName")}
+      </div>
+      <fieldset>
+        <legend className={label}>How should we contact you? (required)</legend>
+        <div className="mt-2 flex gap-4 text-sm">
+          {(["EMAIL", "PHONE"] as const).map((t) => (
+            <label key={t} className="flex min-h-9 items-center gap-2">
+              <input type="radio" name={`${uid}-ch`} checked={f.channelType === t} onChange={() => set("channelType", t)} className="h-4 w-4 accent-[#1B3A63]" />
+              {t === "EMAIL" ? "Work email" : "Phone"}
+            </label>
+          ))}
+        </div>
+        <label htmlFor={`${uid}-cv`} className="sr-only">
+          {f.channelType === "EMAIL" ? "Work email" : "Phone number"}
+        </label>
+        <input
+          id={`${uid}-cv`}
+          className={`mt-2 ${input}`}
+          type={f.channelType === "EMAIL" ? "email" : "tel"}
+          autoComplete={f.channelType === "EMAIL" ? "email" : "tel"}
+          value={f.channelValue}
+          maxLength={120}
+          aria-invalid={!!errors.channelValue}
+          aria-describedby={field("channelValue")}
+          onChange={(e) => set("channelValue", e.target.value)}
+        />
+        {err("channelValue")}
+      </fieldset>
+      <div>
+        <label htmlFor={`${uid}-rq`} className={label}>
+          Your requirements (optional)
+        </label>
+        <textarea id={`${uid}-rq`} className={`mt-1 min-h-20 py-2 ${input}`} value={f.requirements} maxLength={1000} onChange={(e) => set("requirements", e.target.value)} />
+      </div>
+      <div>
+        <label className="flex items-start gap-3 text-sm">
+          <input type="checkbox" checked={f.permission} onChange={(e) => set("permission", e.target.checked)} aria-describedby={field("permission")} className="mt-0.5 h-4 w-4 accent-[#1B3A63]" />
+          <span>Zoiko Broadband may contact me about this enquiry. (required)</span>
+        </label>
+        {err("permission")}
+      </div>
+      <label className="flex items-start gap-3 text-sm">
+        <input type="checkbox" checked={f.marketing} onChange={(e) => set("marketing", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#1B3A63]" />
+        <span>Send me occasional business offers by email. (optional)</span>
+      </label>
+      <button type="submit" disabled={busy} className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus} disabled:opacity-60`}>
+        {busy && <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />}
+        {busy ? "Sending…" : "Send to a business specialist"}
+      </button>
+    </form>
+  );
+}
+
+/* ─────────────── LK-WF-12 Wi-Fi guidance: one safe step at a time, max 3 (PUB-10) ─────────────── */
+
+function WifiSteps({
+  active,
+  onEscalate,
+}: {
+  active: boolean;
+  onEscalate: (reason: "safety" | "unresolved" | "error") => void;
+}) {
+  const [steps, setSteps] = useState<TriageData["steps"] | null>(null);
+  const [index, setIndex] = useState(0);
+  const [status, setStatus] = useState<"choose" | "loading" | "steps" | "fixed" | "done">("choose");
+  const [choice, setChoice] = useState<string | null>(null);
+  const stepRef = useRef<HTMLParagraphElement>(null);
+
+  if (!active && status === "choose") return <p className={`mt-3 text-xs ${T.muted}`}>This troubleshooting step has closed.</p>;
+
+  const start = async (allDevices: boolean, label: string) => {
+    setChoice(label);
+    setStatus("loading");
+    const r = await linkoApi.triage({ symptom: "SLOW_WIFI", allDevices });
+    if (!r.ok) {
+      setStatus("done");
+      onEscalate("error");
+      return;
+    }
+    if (r.body.data.safetyEscalation || !r.body.data.steps.length) {
+      setStatus("done");
+      onEscalate(r.body.data.safetyEscalation ? "safety" : "unresolved");
+      return;
+    }
+    track("linko_intent_selected", { intent_id: "troubleshoot_step" });
+    setSteps(r.body.data.steps.slice(0, 3));
+    setIndex(0);
+    setStatus("steps");
+    setTimeout(() => stepRef.current?.focus(), 0);
+  };
+
+  if (status === "choose" || status === "loading") {
+    return (
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Which devices are affected?">
+        {[
+          [true, "All devices"],
+          [false, "One device"],
+        ].map(([all, label]) => (
+          <button
+            key={String(label)}
+            type="button"
+            disabled={status === "loading"}
+            onClick={() => start(all as boolean, label as string)}
+            className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-4 text-left text-[14px] ${T.secondary} ${T.focus} disabled:opacity-60`}
+          >
+            {label}
+          </button>
+        ))}
+        {status === "loading" && (
+          <p role="status" className={`col-span-full text-xs ${T.muted}`}>
+            Getting safe steps…
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  if (status === "fixed") {
+    return (
+      <p role="status" className={`mt-4 rounded-lg px-4 py-3 text-sm ${T.row}`}>
+        You chose “That fixed it”. Great — glad that helped. If it happens again, you can report a fault or speak to our team.
+      </p>
+    );
+  }
+  if (status === "done" || !steps)
+    return <p className={`mt-3 text-xs ${T.muted}`}>{choice ? `You chose: ${choice}. ` : ""}Troubleshooting finished.</p>;
+
+  const step = steps[index];
+  const last = index === steps.length - 1;
+  return (
+    <div className={`mt-4 rounded-xl p-4 ${T.row}`}>
+      {choice && <p className={`mb-2 text-xs ${T.muted}`}>You chose: {choice}</p>}
+      <p className={`text-xs font-semibold uppercase tracking-wide ${T.muted}`}>
+        Step {index + 1} of {steps.length}
+      </p>
+      <p ref={stepRef} tabIndex={-1} className={`mt-1 text-[15px] outline-none ${T.text}`}>
+        {step.text}
+      </p>
+      {step.href && isAllowedHref(step.href) && (
+        <Link href={step.href} className={`mt-2 inline-block text-sm font-semibold underline ${T.link}`}>
+          {step.linkLabel ?? "More help"}
+        </Link>
+      )}
+      <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+        <button
+          type="button"
+          onClick={() => {
+            setStatus("fixed");
+          }}
+          className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${T.primary} ${T.focus}`}
+        >
+          That fixed it
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (last) {
+              // Doc01 WF-12: stop after 3 steps → human handoff.
+              setStatus("done");
+              onEscalate("unresolved");
+            } else {
+              setIndex(index + 1);
+              setTimeout(() => stepRef.current?.focus(), 0);
+            }
+          }}
+          className={`min-h-11 rounded-lg px-3 text-sm ${T.secondary} ${T.focus}`}
+        >
+          {last ? "Still not working" : "Next step"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setStatus("done");
+            onEscalate("unresolved");
+          }}
+          className={`min-h-11 rounded-lg px-3 text-sm ${T.secondary} ${T.focus}`}
+        >
+          Stop and get help
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────── CF-05 preferred move date (preference only) ─────────────── */
+
+function MoveDate({ active, onSaved }: { active: boolean; onSaved: (isoDate: string | null) => void }) {
+  const uid = useId();
+  const [value, setValue] = useState("");
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  if (!active || done) return <p className={`mt-3 text-xs ${T.muted}`}>Move date step completed.</p>;
+  const today = new Date().toISOString().slice(0, 10);
+  return (
+    <form
+      className="mt-4 space-y-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!value || value < today) {
+          setError("Choose a date from today onwards.");
+          return;
+        }
+        setDone(true);
+        onSaved(value);
+      }}
+    >
+      <label htmlFor={`${uid}-d`} className={`block text-sm font-semibold ${T.text}`}>
+        Preferred move date
+      </label>
+      <p id={`${uid}-h`} className={`text-xs ${T.muted}`}>
+        This is a preference only until a move is confirmed.
+      </p>
+      <input
+        id={`${uid}-d`}
+        type="date"
+        min={today}
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setError("");
+        }}
+        aria-invalid={!!error}
+        aria-describedby={`${uid}-h${error ? ` ${uid}-e` : ""}`}
+        className={`min-h-12 w-full rounded-lg border border-[#B8C4D6] bg-[#F7F9FC] px-4 text-[16px] text-[#1E2A44] linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white ${T.focus}`}
+      />
+      {error && (
+        <p id={`${uid}-e`} role="alert" className="text-sm text-red-700 linko-dark:text-red-300">
+          {error}
+        </p>
+      )}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <button type="submit" className={`min-h-12 rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus}`}>
+          Save preference
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setDone(true);
+            onSaved(null);
+          }}
+          className={`min-h-11 rounded-lg px-4 text-[14px] ${T.secondary} ${T.focus}`}
+        >
+          I don&apos;t know yet
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/* ─────────────── LK-WF-17 handoff summary (consented, minimised – PUB-12) ─────────────── */
+
+function HandoffSummary({ topics, serverId }: { topics: string[]; serverId: string | null }) {
+  const [summary, setSummary] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    linkoApi
+      .handoff({ channel: "ANY", shareSummary: true, reason: "USER_REQUEST", conversationId: serverId, topics })
+      .then((r) => {
+        if (!alive) return;
+        if (r.ok && r.body.data.summary) setSummary(r.body.data.summary);
+        else setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const text =
+    summary ??
+    (failed
+      ? [
+          "Linko chat summary (Zoiko Broadband AI assistant)",
+          `Topics: ${topics.length ? topics.join("; ") : "general enquiry"}`,
+          "Nothing was ordered, booked or changed in the chat.",
+        ].join("\n")
+      : null);
+
+  return (
+    <div className={`mt-4 rounded-xl p-4 text-sm ${T.row}`}>
+      <h3 className={`text-[15px] font-bold ${T.text}`}>Summary to share</h3>
+      {text ? (
+        <>
+          <pre className={`mt-2 whitespace-pre-wrap font-sans text-[13px] leading-relaxed ${T.text}`}>{text}</pre>
+          <button
+            type="button"
+            onClick={() =>
+              navigator.clipboard?.writeText(text).then(
+                () => setCopied(true),
+                () => setCopied(false),
+              )
+            }
+            className={`mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold ${T.secondary} ${T.focus}`}
+          >
+            {copied ? <CheckCircle2 size={16} aria-hidden /> : <ClipboardCopy size={16} aria-hidden />}
+            {copied ? "Copied" : "Copy summary"}
+          </button>
+          <span role="status" className="sr-only">
+            {copied ? "Summary copied to clipboard." : ""}
+          </span>
+        </>
+      ) : (
+        <p className={`mt-2 ${T.muted}`} role="status">
+          Preparing summary…
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -457,7 +934,8 @@ function SecureCard() {
 
 /* ────────────────────────── C20 Summary card ──────────────────────────── */
 
-function SummaryCard({ topics }: { topics: string[] }) {
+function SummaryCard({ topics, onFeedback }: { topics: string[]; onFeedback: (v: "up" | "down") => void }) {
+  const [fb, setFb] = useState<"up" | "down" | null>(null);
   return (
     <article className={`mt-4 rounded-xl p-4 text-sm ${T.row}`} aria-label="Conversation summary">
       <h3 className={`text-[15px] font-bold ${T.text}`}>Short summary</h3>
@@ -479,11 +957,43 @@ function SummaryCard({ topics }: { topics: string[] }) {
         <strong>Completed:</strong> nothing has been ordered, booked or changed in this chat. <strong>Pending:</strong> any next step
         happens on our secure pages or with our team.
       </p>
+      <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${T.muted}`}>
+        {fb ? (
+          <span role="status">Thanks for your feedback. Feedback isn&apos;t a complaint and doesn&apos;t change your account.</span>
+        ) : (
+          <>
+            <span>Was this helpful?</span>
+            {(["up", "down"] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => {
+                  setFb(v);
+                  onFeedback(v);
+                }}
+                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
+              >
+                {v === "up" ? <ThumbsUp size={14} aria-hidden /> : <ThumbsDown size={14} aria-hidden />}
+                {v === "up" ? "Yes" : "No"}
+              </button>
+            ))}
+          </>
+        )}
+      </div>
     </article>
   );
 }
 
 /* ─────────────────────────── C04 Message ──────────────────────────────── */
+
+interface WidgetHandlers {
+  serverId: string | null;
+  onAddressDone: (o: AddressOutcome, ctx: AddressContext) => void;
+  onWifiEscalate: (reason: "safety" | "unresolved" | "error") => void;
+  onMoveDate: (isoDate: string | null) => void;
+  onLeadDone: (ok: boolean, reference?: string) => void;
+  onSummaryFeedback: (v: "up" | "down") => void;
+}
 
 function Message({
   msg,
@@ -492,7 +1002,7 @@ function Message({
   topics,
   onAction,
   onFeedback,
-  onAddressDone,
+  w,
 }: {
   msg: ChatMessage;
   isLatest: boolean;
@@ -500,7 +1010,7 @@ function Message({
   topics: string[];
   onAction: (a: LinkoAction) => void;
   onFeedback: (id: string, v: "up" | "down") => void;
-  onAddressDone: (o: "selected" | "failed" | "empty" | "notListed") => void;
+  w: WidgetHandlers;
 }) {
   if (msg.role === "user") {
     return (
@@ -543,19 +1053,32 @@ function Message({
           </p>
         )}
         <MessageText content={msg.content} />
-        {msg.widget === "postcode" && <AddressPicker active={isLatest} onFinished={onAddressDone} />}
+        {msg.widget === "postcode" && (
+          <AddressPicker active={isLatest} context={msg.context ?? "residential"} onFinished={w.onAddressDone} />
+        )}
+        {msg.widget === "wifiSteps" && <WifiSteps active={isLatest} onEscalate={w.onWifiEscalate} />}
+        {msg.widget === "moveDate" && <MoveDate active={isLatest} onSaved={w.onMoveDate} />}
       </div>
 
       {msg.widget === "planCard" && <PlanCard />}
       {msg.widget === "secureCard" && <SecureCard />}
-      {msg.widget === "summary" && <SummaryCard topics={topics} />}
+      {msg.widget === "summary" && <SummaryCard topics={topics} onFeedback={w.onSummaryFeedback} />}
+      {msg.widget === "specialistForm" && <SpecialistForm active={isLatest} onDone={w.onLeadDone} />}
+      {msg.widget === "handoffSummary" && <HandoffSummary topics={topics} serverId={w.serverId} />}
 
       {showActions && <ActionGroup actions={msg.actions!} onAction={onAction} disabled={busy} />}
 
       {msg.source === "ai" && (
         <div className={`mt-2 flex items-center gap-2 text-xs ${T.muted}`}>
           {msg.feedback ? (
-            <span role="status">{COPY.feedbackThanks}</span>
+            <span role="status">
+              {COPY.feedbackThanks}{" "}
+              {msg.feedback === "down" && (
+                <Link href="/contact-us" className={`font-semibold underline ${T.link}`}>
+                  Report an issue
+                </Link>
+              )}
+            </span>
           ) : (
             <>
               <span>Was this helpful?</span>
@@ -599,7 +1122,6 @@ function Welcome({
       <p className="sr-only">Linko said:</p>
       <div className={`rounded-xl px-5 py-4 ${T.card}`}>
         <p className="text-[16px] leading-relaxed">{msg.content}</p>
-        <p className={`mt-1 text-[13px] ${T.muted}`}>{COPY.welcomeHint}</p>
       </div>
       {isLatest && msg.actions && (
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Choose a topic">
@@ -608,7 +1130,15 @@ function Welcome({
           ))}
         </div>
       )}
-      {isLatest && <p className={`mt-5 text-[13px] ${T.muted}`}>{COPY.welcomeHuman}</p>}
+      {isLatest && (
+        <button
+          type="button"
+          onClick={() => onAction({ kind: "flow", label: "Speak to a person", flow: "handoff" })}
+          className={`mt-4 inline-flex min-h-9 items-center gap-1.5 rounded text-[14px] font-semibold hover:underline ${T.link} ${T.focus}`}
+        >
+          <Headset size={16} aria-hidden /> Speak to a person
+        </button>
+      )}
     </div>
   );
 }
@@ -1020,15 +1550,79 @@ export default function ChatWidget() {
       : "";
   const liveText = isLoading ? "Linko is checking" : notice && notice.afterId === lastId ? notice.text : replyText;
 
+  /** Calls a /v1/linko endpoint for an "api" button and shows its typed result (Doc04). */
+  const runApi = async (call: ApiCall, label: string) => {
+    chat.addUser(label);
+    const r = await linkoApi.private(call);
+    if (call === "serviceStatus") {
+      const s = await linkoApi.serviceStatus(); // PUB-09
+      if (s.ok) {
+        const checked = s.body.sourceEvidence?.checkedAt
+          ? ` (checked ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(new Date(s.body.sourceEvidence.checkedAt))})`
+          : "";
+        chat.addAssistant({
+          source: "flow",
+          screen: "Service status and fault triage",
+          content: `${s.body.data.message}${checked}`,
+          actions: toActions(s.body.nextActions),
+        });
+      } else {
+        chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: toActions(s.body?.nextActions) });
+      }
+      return;
+    }
+    if (r.ok) return; // not reachable until MyZoiko sign-in is connected
+    if (r.http === 401) {
+      // PRV-* fail closed → LK-WF-16 sign-in (no private data, no existence leak).
+      chat.addAssistant({
+        source: "flow",
+        screen: "Sign-in and customer verification",
+        content: COPY.signIn,
+        widget: "secureCard",
+        actions: [
+          { kind: "link", label: "Sign in securely", href: "/login", primary: true },
+          { kind: "flow", label: "Continue without signing in", flow: "welcome" },
+          { kind: "flow", label: "Speak to support", flow: "handoff" },
+        ],
+      });
+      return;
+    }
+    chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: toActions(r.body?.nextActions) });
+  };
+
+  const lastNextStep = (): LinkoAction | null => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.widget === "summary" || m.role !== "assistant") continue;
+      const a = m.actions?.find((x) => x.primary && !x.disabledReason && (x.kind === "link" || x.kind === "flow"));
+      if (a) return a;
+    }
+    return null;
+  };
+
   const handleAction = (a: LinkoAction) => {
+    if (a.disabledReason) return;
     if (a.kind === "flow") {
       chat.startFlow(a.flow, a.label);
     } else if (a.kind === "ask") {
       chat.send(a.text);
+    } else if (a.kind === "api") {
+      void runApi(a.call, a.label);
     } else if (a.kind === "command") {
       if (a.command === "retry") chat.retry();
       if (a.command === "restart") chat.restart();
       if (a.command === "close") closePanel();
+      if (a.command === "endChat") {
+        // LK-WF-20 End chat: close the server session (PUB-14), keep saved history, close the panel.
+        chat.endChat();
+        closePanel();
+      }
+      if (a.command === "nextStep") {
+        const next = lastNextStep();
+        if (!next) chat.startFlow("clarify", "Continue to next step");
+        else if (next.kind === "link") router.push(next.href.startsWith("/") ? next.href : "/get-help");
+        else handleAction(next);
+      }
       if (a.command === "copySummary") {
         const text = [
           "Zoiko Broadband – Linko chat summary",
@@ -1044,46 +1638,153 @@ export default function ChatWidget() {
     }
   };
 
-  const handleAddressDone = (outcome: "selected" | "failed" | "empty" | "notListed") => {
-    if (outcome === "selected") {
+  /** Doc01 CF-01 / CF-02 / CF-05 – what happens after the address step. */
+  const handleAddressDone = (o: AddressOutcome, ctx: AddressContext) => {
+    const screen = ctx === "business" ? "Business quote and specialist" : ctx === "moving" ? "Moving home" : "Postcode and exact-address eligibility";
+    const moveDateStep = () =>
       chat.addAssistant({
         source: "flow",
-        screen: "Postcode and exact-address eligibility",
-        topic: "Checking availability",
-        content:
-          "Thank you. The services, speeds and prices for this exact property are confirmed in our secure availability checker — I won't show figures here until they're confirmed for the address. Checking availability doesn't create an order.",
-        actions: [
-          { kind: "link", label: "Check availability", href: "/check-availability", primary: true },
-          { kind: "flow", label: "Use another address", flow: "availability" },
-          { kind: "flow", label: "Ask for help", flow: "handoff" },
-        ],
+        screen: "Moving home",
+        content: "What is your preferred move date?",
+        widget: "moveDate",
       });
-    } else if (outcome === "notListed" || outcome === "empty") {
+
+    if (o.kind === "qualified") {
+      const tech = o.technologies.length ? ` Services returned: ${o.technologies.join(", ")}.` : "";
+      const when = o.checkedAt
+        ? ` Checked at ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(new Date(o.checkedAt))}.`
+        : "";
       chat.addAssistant({
         source: "flow",
-        screen: "Postcode and exact-address eligibility",
-        content:
-          outcome === "empty"
-            ? "I couldn't find any addresses for that postcode. New builds and some properties aren't listed yet — our team can check your address manually."
-            : "No problem. New builds and some properties aren't listed yet — our team can check your address manually.",
-        actions: [
-          { kind: "flow", label: "Ask for help", flow: "handoff", primary: true },
-          { kind: "flow", label: "Use another address", flow: "availability" },
-        ],
+        screen,
+        topic: ctx === "moving" ? "Moving home" : "Checking availability",
+        content: `${o.message}${tech}${when}\n\nContinue securely to review contract information and payment details. Prices and speeds will be confirmed in checkout.`,
+        actions:
+          ctx === "business"
+            ? [
+                { kind: "flow", label: "Speak to a business specialist", flow: "businessSpecialist", primary: true },
+                { kind: "link", label: "Continue to business plans", href: "/business-broadband-plans" },
+              ]
+            : [
+                { kind: "link", label: "Continue securely", href: "/check-availability", primary: true },
+                { kind: "flow", label: "Change address", flow: ctx === "moving" ? "movingAddress" : "availability" },
+                { kind: "flow", label: "Speak to a specialist", flow: "handoff" },
+              ],
       });
-    } else {
-      chat.addAssistant({
-        source: "flow",
-        tone: "error",
-        content: COPY.degraded,
-        actions: [
-          { kind: "flow", label: "Try again", flow: "availability", primary: true },
-          { kind: "link", label: "Save my enquiry", href: "/contact-us" },
-          { kind: "flow", label: "Speak to support", flow: "handoff" },
-          { kind: "flow", label: "Return to start", flow: "welcome" },
-        ],
-      });
+      if (ctx === "moving") moveDateStep();
+      return;
     }
+    if (o.kind === "unverified") {
+      chat.addAssistant({
+        source: "flow",
+        screen,
+        topic: ctx === "moving" ? "Moving home" : "Checking availability",
+        content:
+          "Thanks — I've got the address you chose. I can't confirm the services for this exact address in chat yet, so I won't guess. The availability checker shows the services, speeds and prices confirmed for your address, and checking doesn't create an order.",
+        actions:
+          ctx === "business"
+            ? [
+                { kind: "flow", label: "Speak to a business specialist", flow: "businessSpecialist", primary: true },
+                { kind: "link", label: "Open availability checker", href: "/check-availability" },
+              ]
+            : [
+                { kind: "link", label: "Open availability checker", href: "/check-availability", primary: true },
+                { kind: "flow", label: "Try another postcode", flow: ctx === "moving" ? "movingAddress" : "availability" },
+                { kind: "flow", label: "Speak to a specialist", flow: "handoff" },
+              ],
+      });
+      if (ctx === "moving") moveDateStep();
+      return;
+    }
+    if (o.kind === "notListed" || o.kind === "empty") {
+      chat.addAssistant({
+        source: "flow",
+        screen,
+        content:
+          o.kind === "empty"
+            ? "I couldn't find any addresses for that postcode. New builds and some properties aren't listed yet — a specialist can check your address manually."
+            : "No problem. New builds and some properties aren't listed yet — a specialist can check your address manually.",
+        actions: [
+          { kind: "flow", label: "Speak to a specialist", flow: "handoff", primary: true },
+          { kind: "flow", label: "Try another postcode", flow: ctx === "moving" ? "movingAddress" : ctx === "business" ? "businessAvailability" : "availability" },
+        ],
+      });
+      return;
+    }
+    chat.addAssistant({
+      source: "flow",
+      tone: "error",
+      content: COPY.degraded,
+      actions: [
+        { kind: "flow", label: "Try again", flow: ctx === "moving" ? "movingAddress" : ctx === "business" ? "businessAvailability" : "availability", primary: true },
+        { kind: "link", label: "Open Help Centre", href: "/get-help" },
+        { kind: "flow", label: "Speak to a person", flow: "handoff" },
+      ],
+    });
+  };
+
+  const widgetHandlers: WidgetHandlers = {
+    serverId: chat.serverConversationId(),
+    onAddressDone: handleAddressDone,
+    onWifiEscalate: (reason) => {
+      if (reason === "safety") {
+        chat.startFlow("safety");
+        return;
+      }
+      chat.addAssistant({
+        source: "flow",
+        screen: "Wi-Fi speed and router guidance",
+        tone: reason === "error" ? "error" : undefined,
+        content:
+          reason === "error"
+            ? COPY.degraded
+            : "Thanks for trying those steps. As it's still not right, the best next step is our support team, who can run checks on your line.",
+        actions: [
+          { kind: "link", label: "Report a fault", href: "/report-a-fault", primary: true },
+          { kind: "flow", label: "Contact support", flow: "handoff" },
+        ],
+      });
+    },
+    onMoveDate: (iso) => {
+      const pretty = iso
+        ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/London" }).format(new Date(`${iso}T12:00:00Z`))
+        : null;
+      if (pretty) chat.addUser(`Preferred move date: ${pretty}`);
+      chat.addAssistant({
+        source: "flow",
+        screen: "Moving home",
+        content: `${pretty ? `Thanks — I've noted ${pretty} as your preferred date. It's a preference only until a move is confirmed.` : "That's fine — you can choose a date later."}\n\nExisting customers can start a move request after signing in. I won't cancel or transfer your current service from chat, and I can't promise the same price or speed at your new address.`,
+        actions: [
+          { kind: "api", label: "Start a move request", call: "moveRequest", primary: true },
+          { kind: "link", label: "Find moving help", href: "/moving-home" },
+          { kind: "flow", label: "Speak to a person", flow: "handoff" },
+        ],
+      });
+    },
+    onLeadDone: (ok, reference) => {
+      chat.addAssistant(
+        ok && reference
+          ? {
+              source: "flow",
+              screen: "Business quote and specialist",
+              content: `Your request has been received. Your reference is ${reference}. A business specialist will contact you about your requirements.`,
+              actions: [{ kind: "flow", label: "Start another question", flow: "welcome" }],
+            }
+          : {
+              source: "flow",
+              tone: "error",
+              screen: "Business quote and specialist",
+              content:
+                "I can't send business enquiries from chat just now, so nothing has been submitted. Please use the business enquiry form or call our team — they can help straight away.",
+              actions: [
+                { kind: "link", label: "Use the business enquiry form", href: "/business-broadband", primary: true },
+                { kind: "link", label: `Call ${COMPANY.phone}`, href: COMPANY.phoneHref },
+                { kind: "flow", label: "Speak to a person", flow: "handoff" },
+              ],
+            },
+      );
+    },
+    onSummaryFeedback: (v) => track("linko_feedback", { value: v, scope: "conversation" }),
   };
 
   const submit = () => {
@@ -1231,6 +1932,21 @@ export default function ChatWidget() {
             </button>
           </header>
 
+          {/* Doc01 §3.2 block 02 – trust strip */}
+          <div className="flex flex-wrap items-center gap-x-2 border-b border-[#E1E7F0] bg-[#F7F9FC] px-5 py-2 text-[12px] text-[#33445E] md:px-6 linko-dark:border-slate-700 linko-dark:bg-slate-800 linko-dark:text-slate-300">
+            <span>{COPY.trust}</span>
+            <button
+              type="button"
+              onClick={() => {
+                setView("chat");
+                chat.startFlow("privacy");
+              }}
+              className={`min-h-7 rounded font-semibold underline-offset-2 hover:underline ${T.link} ${T.focus}`}
+            >
+              {COPY.trustLink}
+            </button>
+          </div>
+
           {/* Transcript – the only primary scroll region */}
           {view === "history" && (
             <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 md:px-6">
@@ -1284,7 +2000,7 @@ export default function ChatWidget() {
                   topics={chat.topics}
                   onAction={handleAction}
                   onFeedback={chat.setFeedback}
-                  onAddressDone={handleAddressDone}
+                  w={widgetHandlers}
                 />
               );
             })}
@@ -1368,7 +2084,7 @@ export default function ChatWidget() {
               ·
             </span>
             <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
-              Talk to a person
+              Speak to a person
             </button>
             {!atStart && (
               <>
