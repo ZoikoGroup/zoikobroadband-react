@@ -136,9 +136,11 @@ export type LinkoAction =
   | { kind: "command"; label: string; command: "retry" | "restart" | "close" | "copySummary"; primary?: boolean };
 
 export type MessageTone = "default" | "safety" | "error" | "notice";
-export type MessageWidget = "postcode" | "summary";
+export type MessageWidget = "postcode" | "summary" | "planCard" | "secureCard";
 
 export interface FlowStep {
+  /** Doc07 screen title shown in the header ("Linko / …"). */
+  screen?: string;
   /** Human label used in the end-of-chat summary. */
   topic?: string;
   text: string;
@@ -154,11 +156,14 @@ export const EMERGENCY_LINE =
   "If there is an immediate emergency, use 999 or 112 from a working connection or another person's phone. Linko is not an emergency service.";
 
 export const COPY = {
-  welcome:
-    "Hello, I'm Linko, Zoiko Broadband's AI assistant. I can help you explore broadband, check availability, follow an order or find support. What would you like to do?",
+  // LK-WF-01 wireframe copy.
+  welcome: "Hello. I can help you check availability, plans or support.",
+  welcomeHint: "Choose a topic or type a question.",
+  welcomeHuman: "You can speak to our team at any time.",
   trust: "I'm Linko, Zoiko Broadband's AI assistant.",
   footerDisclaimer: "AI may make mistakes. We confirm live details.",
-  composerPlaceholder: "Type your question…",
+  composerPlaceholder: "Your next message…",
+  composerPlaceholderMobile: "Message Linko…",
   degraded:
     "I can't check that information just now. I haven't placed an order or changed anything. You can try again or speak to our team.",
   rateLimited:
@@ -179,6 +184,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-02 */
   clarify: {
+    screen: "Intent clarification and smart routing",
     topic: "Finding the right help",
     text: "I can help with a new connection, an existing order or support. Which is closest to what you need?",
     actions: [
@@ -193,6 +199,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-03 / CW-01 */
   availability: {
+    screen: "Postcode and exact-address eligibility",
     topic: "Checking availability",
     text: "What is the postcode of the property you would like us to check? I'll then ask you to choose the full address, because different properties can have different connections.",
     widget: "postcode",
@@ -204,10 +211,12 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-04 */
   plans: {
+    screen: "Eligible plan comparison",
     topic: "Comparing plans",
     text: "I can show the eligible plans once your address has been checked. Prices, speeds, set-up charges and contract terms depend on the exact property, so I won't quote figures here — your approved quote will show them before checkout.",
+    widget: "planCard",
     actions: [
-      { kind: "flow", label: "Check my address", flow: "availability", primary: true },
+      { kind: "flow", label: "Review full quote", flow: "availability", primary: true },
       { kind: "link", label: "View all plans", href: PAGES.allPlans },
       { kind: "link", label: "Compare plans", href: PAGES.comparePlans },
       { kind: "ask", label: "FTTP vs SOGEA?", text: "What is the difference between FTTP and SOGEA?" },
@@ -216,6 +225,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-05 */
   business: {
+    screen: "Business quote and specialist",
     topic: "Business broadband",
     text: "I can help with a business connection. Is this for one business site or several? A specialist can confirm options and a tailored quote.",
     actions: [
@@ -225,6 +235,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     ],
   },
   businessSingle: {
+    screen: "Business quote and specialist",
     topic: "Business broadband (one site)",
     text: "Availability depends on the exact business premises. You can check the business address and compare standard business options, or speak to a business specialist about your requirements. Static IP, support levels and any SLA are confirmed for the selected service — I can't promise them here.",
     actions: [
@@ -235,6 +246,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     ],
   },
   businessMulti: {
+    screen: "Business quote and specialist",
     topic: "Business broadband (multiple sites)",
     text: "For several premises, a specialist reviews each site separately and prepares a tailored quote. You can share your requirements through the business enquiry form — please don't send financial records or sensitive customer data in this chat.",
     actions: [
@@ -246,6 +258,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-06 / CW-03 */
   switching: {
+    screen: "One Touch Switch guidance",
     topic: "Switching to Zoiko",
     text: "For most eligible home broadband switches, your new provider manages the change through One Touch Switch, so please don't cancel your current service yourself. Your current provider can tell you about any early-exit charges. Business switches and home moves follow a different route.\n\nDo you also have a landline, alarm or telecare device using your current service?",
     actions: [
@@ -258,6 +271,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-10 / CW-04 */
   moving: {
+    screen: "Moving home",
     topic: "Moving home",
     text: "I can check broadband options at your new address and help you understand the next steps. Moving your existing service may need a new order, and I can't promise you'll keep the same number until our team checks. To see options for your current service, please sign in securely.",
     actions: [
@@ -270,17 +284,20 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-08 / WF-16 / CW-06 */
   track: {
+    screen: "Track your order",
     topic: "Tracking an order",
     text: "I can help you track your order. For privacy, please sign in to your Zoiko account before any personal order or appointment details are shown. I won't ask for your password or one-time code in chat.",
+    widget: "secureCard",
     actions: [
       { kind: "link", label: "Sign in securely", href: PAGES.login, primary: true },
-      { kind: "flow", label: "Continue without signing in", flow: "welcome" },
+      { kind: "flow", label: "Continue as guest", flow: "welcome" },
       speakToPerson,
     ],
   },
 
   /* LK-WF-11 / CW-07 – safety question comes before any troubleshooting */
   fault: {
+    screen: "Service status and fault triage",
     topic: "Reporting a problem",
     text: "I'm sorry your connection is having trouble. Before troubleshooting: does anyone rely on this line for a landline, emergency calls or a telecare alarm?",
     actions: [
@@ -289,6 +306,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     ],
   },
   faultType: {
+    screen: "Wi-Fi speed and router guidance",
     topic: "Troubleshooting",
     text: "Is the problem no connection, slow speed, Wi-Fi drop-outs or the phone line? I'll go one safe step at a time, and you can skip to support whenever you like.",
     actions: [
@@ -303,6 +321,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-13 */
   billing: {
+    screen: "Billing and payment support",
     topic: "Billing",
     text: "I can explain general billing questions, or help you open your bill securely. For your protection, please don't enter payment-card or bank details here — account-specific figures are only shown after you sign in.",
     actions: [
@@ -315,6 +334,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-14 */
   complaint: {
+    screen: "Cancellation, refund and complaints",
     topic: "Cancellation or complaint",
     text: "I can explain the process or help you contact the right team. Any charges, refunds or cancellation dates must be checked against your contract. You can make a complaint without signing in. If an eligible complaint isn't resolved within six weeks, or you receive a deadlock letter, you may be able to take it to an independent ADR scheme.",
     actions: [
@@ -327,6 +347,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-15 – safety overrides every other intent */
   safety: {
+    screen: "Digital voice and telecare safety",
     topic: "Digital voice and telecare safety",
     tone: "safety",
     text: `Digital phone services may not work during a power cut without suitable backup. If you use telecare or depend on your landline for emergency calls, please speak with our support team before changing services or restarting equipment.\n\n${EMERGENCY_LINE}`,
@@ -340,6 +361,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-17 */
   handoff: {
+    screen: "Human escalation and callback",
     topic: "Speaking to our team",
     text: "I can help you contact our team. Would you like to start a live chat, request a callback or see other contact options? This chat isn't passed to an adviser, so you may need to explain your question again. Current opening hours are shown on our Get help page.",
     actions: [
@@ -354,6 +376,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-18 */
   privacy: {
+    screen: "Privacy, AI limits and transcript controls",
     topic: "Privacy and AI",
     text: "I'm an AI assistant. I'll use the information needed to answer your question, and I'll only pass details to a human team if you ask. This chat is kept in your browser tab only and is cleared when you close the tab or end the chat. Please don't share passwords, one-time codes or payment-card numbers.",
     actions: [
@@ -366,6 +389,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
 
   /* LK-WF-20 */
   end: {
+    screen: "Conversation summary and close",
     text: COPY.summaryIntro,
     widget: "summary",
     actions: [
@@ -376,30 +400,52 @@ export const FLOWS: Record<FlowId, FlowStep> = {
   },
 };
 
-/** First-turn actions, lightly adapted to the page the visitor is on (WF-01, Doc02). */
+/** First-turn actions (LK-WF-01: Check availability, Compare plans, Track an order, Get support),
+ * with the first chip adapted to the page the visitor is on (Doc02). */
 export function welcomeActions(pathname: string): LinkoAction[] {
   const base: LinkoAction[] = [
     { kind: "flow", label: "Check availability", flow: "availability" },
     { kind: "flow", label: "Compare plans", flow: "plans" },
-    { kind: "flow", label: "Business broadband", flow: "business" },
     { kind: "flow", label: "Track an order", flow: "track" },
-    { kind: "flow", label: "Report a problem", flow: "fault" },
-    speakToPerson,
+    { kind: "flow", label: "Get support", flow: "clarify" },
   ];
-  const promote = (flow: FlowId, label: string) => {
-    const rest = base.filter((a) => !(a.kind === "flow" && a.flow === flow));
-    return [{ kind: "flow", label, flow } as LinkoAction, ...rest].slice(0, 6);
-  };
   const p = pathname || "/";
-  if (p.startsWith("/business") || p.startsWith("/multi-site")) return promote("business", "Business broadband");
-  if (p.startsWith("/report-a-fault") || p.includes("led-light") || p.includes("wi-fi") || p.includes("wireless"))
-    return promote("fault", "Report a problem");
-  if (p.startsWith("/payments-billing")) return promote("billing", "Billing question");
-  if (p.startsWith("/moving-home")) return promote("moving", "Moving home");
-  if (p.startsWith("/switch-to-zoiko")) return promote("switching", "Switching to Zoiko");
-  if (p.startsWith("/digital-lines") || p.startsWith("/landline")) return promote("safety", "Digital voice & telecare");
-  return base;
+  let page: LinkoAction | null = null;
+  if (p.startsWith("/business") || p.startsWith("/multi-site")) page = { kind: "flow", label: "Business broadband", flow: "business" };
+  else if (p.startsWith("/report-a-fault") || p.includes("led-light") || p.includes("wi-fi") || p.includes("wireless"))
+    page = { kind: "flow", label: "Report a problem", flow: "fault" };
+  else if (p.startsWith("/payments-billing")) page = { kind: "flow", label: "Billing question", flow: "billing" };
+  else if (p.startsWith("/moving-home")) page = { kind: "flow", label: "Moving home", flow: "moving" };
+  else if (p.startsWith("/switch-to-zoiko")) page = { kind: "flow", label: "Switching to Zoiko", flow: "switching" };
+  else if (p.startsWith("/digital-lines") || p.startsWith("/landline")) page = { kind: "flow", label: "Digital voice & telecare", flow: "safety" };
+  // Page intent replaces "Compare plans" so there are always four clear first-turn actions.
+  return page ? [base[0], page, base[2], base[3]] : base;
 }
+
+/** Doc07 fig. 3 – data-constrained cards. Values are deliberately absent until a live authority exists. */
+export const PLAN_CARD = {
+  title: "Plans matched to your address",
+  note: "Example layout — no tariff values authorised",
+  rows: [
+    ["Monthly price", "From authorised quote"],
+    ["Download / upload", "Address-qualified range"],
+    ["Contract", "Selected plan term"],
+    ["Upfront charges", "Itemised, if applicable"],
+  ],
+} as const;
+
+export const SECURE_CARD = {
+  title: "Authenticated order view",
+  banner: "Private details are hidden in public chat.",
+  rows: [
+    ["Order status", "Only after verification"],
+    ["Engineer appointment", "Supplier-confirmed"],
+    ["Payment actions", "Hosted secure transfer"],
+  ],
+  footnote: "Linko never shows invented data, secrets, full card details or unauthorised order identifiers.",
+} as const;
+
+export const ERROR_SCREEN = "Degraded, error and unsafe inputs";
 
 /* ─────────────────────── Deterministic intent router ──────────────────────
  * Doc08: "Policy engine and intent router (deterministic before the model)".

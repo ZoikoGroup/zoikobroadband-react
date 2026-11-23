@@ -26,6 +26,8 @@ export interface ChatMessage {
   actions?: LinkoAction[];
   /** "flow" = deterministic guided step, "ai" = model answer. */
   source?: "flow" | "ai";
+  /** Doc07 screen title for the header. */
+  screen?: string;
   topic?: string;
   feedback?: "up" | "down";
 }
@@ -46,6 +48,7 @@ function flowMessage(flow: FlowId, pathname: string, initial = false): ChatMessa
     widget: step.widget,
     actions: flow === "welcome" ? welcomeActions(pathname) : step.actions,
     source: "flow",
+    screen: step.screen,
     topic: step.topic,
   };
 }
@@ -127,6 +130,14 @@ export function useChat(pathname: string) {
           tone: answer.tone,
           actions: answer.actions,
           source: answer.status === "answered" || answer.status === "abstained" || answer.status === "handoff" ? "ai" : "flow",
+          screen:
+            answer.status === "safety"
+              ? FLOWS.safety.screen
+              : answer.status === "complaint"
+                ? FLOWS.complaint.screen
+                : answer.status === "handoff" && answer.actions.some((x) => x.kind === "link" && x.href.includes("tawk.to"))
+                  ? FLOWS.handoff.screen
+                  : undefined,
           topic:
             answer.status === "safety"
               ? FLOWS.safety.topic
