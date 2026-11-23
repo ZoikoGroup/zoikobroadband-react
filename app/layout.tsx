@@ -7,6 +7,7 @@ import Header from "./Components/Header/Header";
 import dynamic from "next/dynamic";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "./context/CartContext";
+import ChatWidget from "./Components/Chatbot/ChatWidget";
 
 const Footer = dynamic(() => import("./Components/Footer/Footer"), {
   ssr: true,
@@ -50,6 +51,7 @@ export default function RootLayout({
           </ThemeProvider>
         </CartProvider>
         <Footer />
+        <ChatWidget />
       </body>
     </html>
   );
