@@ -11,7 +11,7 @@ import { useCart } from "@/app/context/CartContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { ChevronDown, MapPin, Search, UserRound, X } from "lucide-react";
+import { ChevronDown, MapPin, Search, UserRound } from "lucide-react";
 
 type OpenPanel = number | "account" | "search" | null;
 
@@ -148,7 +148,7 @@ export default function Header() {
                   openMenu === "search" ? "bg-[#E6F0FB] dark:bg-gray-800" : "hover:bg-slate-100 dark:hover:bg-gray-800"
                 }`}
               >
-                {openMenu === "search" ? <X aria-hidden className="h-5 w-5" /> : <Search aria-hidden className="h-5 w-5" />}
+                <Search aria-hidden className="h-5 w-5" />
               </button>
 
               {/* Cart (unchanged behaviour) — shown once it has items, keeping the bar as per design */}
