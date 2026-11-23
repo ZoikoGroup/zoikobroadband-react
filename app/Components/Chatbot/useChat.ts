@@ -1,30 +1,63 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  COPY,
+  FLOWS,
+  FlowId,
+  LinkoAction,
+  LinkoAnswer,
+  MessageTone,
+  MessageWidget,
+  redactSensitive,
+  routeIntent,
+  track,
+  welcomeActions,
+} from "@/app/lib/chatbot/linko";
 
 export type ChatRole = "user" | "assistant";
-export type ChatMessage = { id: string; role: ChatRole; content: string };
 
-const STORAGE_KEY = "zoiko-chat-history";
+export interface ChatMessage {
+  id: string;
+  role: ChatRole;
+  content: string;
+  tone?: MessageTone;
+  widget?: MessageWidget;
+  actions?: LinkoAction[];
+  /** "flow" = deterministic guided step, "ai" = model answer. */
+  source?: "flow" | "ai";
+  topic?: string;
+  feedback?: "up" | "down";
+}
 
-export const WELCOME_MESSAGE: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Hi, I'm Zoe 👋 I can help with plans, availability, switching, setup, router issues and billing. What can I help you with today?",
-};
+const STORAGE_KEY = "linko-chat-v1";
 
 function newId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
-export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+function flowMessage(flow: FlowId, pathname: string, initial = false): ChatMessage {
+  const step = FLOWS[flow];
+  return {
+    id: initial ? "welcome" : newId(),
+    role: "assistant",
+    content: step.text,
+    tone: step.tone,
+    widget: step.widget,
+    actions: flow === "welcome" ? welcomeActions(pathname) : step.actions,
+    source: "flow",
+    topic: step.topic,
+  };
+}
 
-  // Restore the conversation for this browser tab.
+export function useChat(pathname: string) {
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [flowMessage("welcome", pathname, true)]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [restored, setRestored] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+  const lastQuestion = useRef<string | null>(null);
+
+  // Restore this tab's conversation (sessionStorage only – cleared when the tab closes).
   useEffect(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -35,79 +68,163 @@ export function useChat() {
     } catch {
       // storage unavailable – start fresh
     }
+    setRestored(true);
   }, []);
 
   useEffect(() => {
+    if (!restored) return;
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
     } catch {
       // ignore
     }
-  }, [messages]);
+  }, [messages, restored]);
 
-  const send = useCallback(
-    async (text: string) => {
-      const content = text.trim();
-      if (!content || isLoading) return;
+  const push = useCallback((...items: ChatMessage[]) => {
+    setMessages((prev) => [...prev, ...items]);
+  }, []);
 
-      setError(null);
-      const userMsg: ChatMessage = { id: newId(), role: "user", content };
-      const botMsg: ChatMessage = { id: newId(), role: "assistant", content: "" };
-      const history = [...messages, userMsg];
-      setMessages([...history, botMsg]);
+  /** Run a deterministic guided step (no AI call). */
+  const startFlow = useCallback(
+    (flow: FlowId, userLabel?: string) => {
+      const items: ChatMessage[] = [];
+      if (userLabel) items.push({ id: newId(), role: "user", content: userLabel });
+      items.push(flowMessage(flow, pathname));
+      push(...items);
+      track("linko_intent_selected", { intent_id: flow });
+      if (flow === "safety") track("linko_safety_shown");
+      if (flow === "handoff") track("linko_handoff", { handoff_type: "options_shown" });
+    },
+    [pathname, push],
+  );
+
+  const askModel = useCallback(
+    async (history: ChatMessage[]) => {
       setIsLoading(true);
-
       const controller = new AbortController();
       abortRef.current = controller;
-
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           signal: controller.signal,
           body: JSON.stringify({
-            // The welcome message is UI-only; don't send it to the model.
+            // Only text turns go to the server; the welcome screen is UI-only.
             messages: history
-              .filter((m) => m.id !== WELCOME_MESSAGE.id)
+              .filter((m) => m.content !== COPY.welcome && m.content.trim())
               .map(({ role, content }) => ({ role, content })),
           }),
         });
-
-        if (!res.ok || !res.body) {
-          const data = await res.json().catch(() => null);
-          throw new Error(data?.error || "Something went wrong. Please try again.");
+        const answer = (await res.json().catch(() => null)) as LinkoAnswer | null;
+        if (!answer || typeof answer.message !== "string") throw new Error("bad response");
+        if (answer.status === "provider_unavailable" || answer.status === "invalid") {
+          track("linko_error", { error_class: answer.status, component_id: "C04" });
         }
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let acc = "";
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          acc += decoder.decode(value, { stream: true });
-          setMessages((prev) =>
-            prev.map((m) => (m.id === botMsg.id ? { ...m, content: acc } : m)),
-          );
-        }
+        push({
+          id: newId(),
+          role: "assistant",
+          content: answer.message,
+          tone: answer.tone,
+          actions: answer.actions,
+          source: answer.status === "answered" || answer.status === "abstained" || answer.status === "handoff" ? "ai" : "flow",
+          topic:
+            answer.status === "safety"
+              ? FLOWS.safety.topic
+              : answer.status === "complaint"
+                ? FLOWS.complaint.topic
+                : undefined,
+        });
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        setError((err as Error).message);
-        // Remove the empty bot bubble on failure.
-        setMessages((prev) => prev.filter((m) => !(m.id === botMsg.id && !m.content)));
+        track("linko_error", { error_class: "network", component_id: "C04" });
+        push({
+          id: newId(),
+          role: "assistant",
+          tone: "error",
+          content: COPY.degraded,
+          source: "flow",
+          actions: [
+            { kind: "command", label: "Try again", command: "retry", primary: true },
+            { kind: "link", label: "Help Centre", href: "/get-help" },
+            { kind: "flow", label: "Speak to our team", flow: "handoff" },
+          ],
+        });
       } finally {
         setIsLoading(false);
         abortRef.current = null;
       }
     },
-    [messages, isLoading],
+    [push],
   );
 
-  const reset = useCallback(() => {
+  /** Free-text question from the composer or an "ask" chip. */
+  const send = useCallback(
+    (text: string) => {
+      const raw = text.trim();
+      if (!raw || isLoading) return;
+
+      // DLP in the browser: secrets never leave the device.
+      const { text: content, removed } = redactSensitive(raw);
+      const userMsg: ChatMessage = { id: newId(), role: "user", content };
+      const extra: ChatMessage[] = [];
+      if (removed.length) {
+        track("linko_dlp_redacted", { kinds: removed.length });
+        extra.push({
+          id: newId(),
+          role: "assistant",
+          tone: "notice",
+          source: "flow",
+          content: COPY.dlpNotice(removed.join(" and ")),
+          actions: [{ kind: "link", label: "Secure sign-in", href: "/login" }],
+        });
+      }
+      track("linko_message_sent");
+      lastQuestion.current = content;
+
+      // Deterministic routing: safety, human request and complaints skip the model.
+      const routed = routeIntent(content);
+      if (routed) {
+        push(userMsg, ...extra, flowMessage(routed, pathname));
+        track("linko_intent_selected", { intent_id: routed });
+        if (routed === "safety") track("linko_safety_shown");
+        return;
+      }
+
+      const history = [...messages, userMsg];
+      push(userMsg, ...extra);
+      void askModel(history);
+    },
+    [askModel, isLoading, messages, pathname, push],
+  );
+
+  /** "Try again" after a degraded answer: re-ask the last question once. */
+  const retry = useCallback(() => {
+    if (isLoading || !lastQuestion.current) return;
+    const trimmed = [...messages];
+    if (trimmed[trimmed.length - 1]?.tone === "error") trimmed.pop();
+    setMessages(trimmed);
+    void askModel(trimmed);
+  }, [askModel, isLoading, messages]);
+
+  const restart = useCallback(() => {
     abortRef.current?.abort();
-    setMessages([WELCOME_MESSAGE]);
-    setError(null);
+    lastQuestion.current = null;
     setIsLoading(false);
+    setMessages([flowMessage("welcome", pathname, true)]);
+  }, [pathname]);
+
+  const setFeedback = useCallback((id: string, value: "up" | "down") => {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, feedback: value } : m)));
+    track("linko_feedback", { value });
   }, []);
 
-  return { messages, isLoading, error, send, reset };
+  /** Adds a message produced by a widget (e.g. the address checker). */
+  const addAssistant = useCallback(
+    (msg: Omit<ChatMessage, "id" | "role">) => push({ id: newId(), role: "assistant", ...msg }),
+    [push],
+  );
+
+  const topics = Array.from(new Set(messages.map((m) => m.topic).filter(Boolean))) as string[];
+
+  return { messages, isLoading, send, startFlow, retry, restart, setFeedback, addAssistant, topics };
 }

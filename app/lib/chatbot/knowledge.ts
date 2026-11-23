@@ -1,152 +1,101 @@
 /**
- * Zoiko Broadband chatbot knowledge base.
+ * Linko knowledge base (public, approved-for-chat content only).
  *
- * This is the ONLY information the assistant is allowed to answer from.
- * Content is taken from the FAQ sections already published on the site.
- * When you change an FAQ or policy on the website, update it here too.
- *
- * Keep this text stable between requests: it is sent as a cached prompt
- * prefix, and any change invalidates the cache (costs a little more once).
+ * Rules from the Linko spec (Doc06 / Doc12 / Doc13):
+ *  - Only PUBLIC information goes here. No account data, prices, fees,
+ *    speeds, refund amounts, retention periods or opening hours unless the
+ *    business has signed them off.
+ *  - Website wording the spec flags as unverified or conflicting
+ *    ("24/7", "unlimited", callback within 2 hours, cooling-off start,
+ *    contract length, PCI/bank-grade claims, speed-code membership,
+ *    automatic compensation) is deliberately NOT included.
+ *  - Every item is still DRAFT pending Product / Legal approval.
  */
+import { COMPANY } from "./linko";
 
-export const COMPANY = {
-  name: "Zoiko Broadband",
-  website: "https://www.zoikobroadband.com",
-  phone: "+44 (0)20 7164 6399",
-  phoneHref: "tel:+442071646399",
-  supportEmail: "support@zoikobroadband.com",
-  infoEmail: "info@zoikobroadband.com",
-};
-
-/** Site pages the assistant may link to (relative URLs). */
-export const PAGES: Record<string, string> = {
-  "Check availability / postcode checker": "/check-availability",
-  "All plans": "/all-plans",
-  "All broadband deals": "/all-broadband-deals",
-  "Compare plans": "/compare-plans",
-  "Full fibre (FTTP)": "/full-fibre",
-  "Part fibre (SOGEA)": "/part-fibre",
-  "Fibre packages": "/fibre-packages",
-  Bundles: "/bundles",
-  Landline: "/landline",
-  "Digital lines (digital phone)": "/digital-lines",
-  "Business broadband": "/business-broadband",
-  "Business broadband plans": "/business-broadband-plans",
-  "Multi-site connectivity": "/multi-site-connectivity",
-  "Switch to Zoiko": "/switch-to-zoiko",
-  "Moving home": "/moving-home",
-  "Which speed do I need?": "/which-speed-do-i-need",
-  "Setup & installation": "/setup-installation",
-  "Installation & routers": "/installation-routers",
-  "Installation guide": "/installation-guide",
-  "Router LED light meanings": "/led-light-meanings",
-  "Change Wi-Fi channel": "/change-wi-fi-channel",
-  "Wired vs wireless speed": "/wired-a-wireless-speed",
-  "Report a fault": "/report-a-fault",
-  "Payments & billing": "/payments-billing",
-  "Get help": "/get-help",
-  "Contact us": "/contact-us",
-  "Ofcom speed commitment": "/ofcom-speed-commitment",
-  "Refer a friend": "/refer-a-friend",
-  "Black Friday offers": "/black-friday",
-  "Log in / My Zoiko account": "/login",
-  "Privacy notice": "/privacy-notice",
-  "Terms & conditions": "/terms-conditions",
-};
+export { COMPANY };
 
 export const KNOWLEDGE = `
-# About Zoiko Broadband
-- UK broadband provider offering Full Fibre (FTTP) and Part Fibre (SOGEA) broadband for homes and businesses, plus digital phone lines, bundles and multi-site business connectivity.
-- Friendly UK-based support team.
+# About Zoiko Broadband and Linko
+- Zoiko Broadband offers UK residential and business broadband services: Full Fibre (FTTP) and Part Fibre (SOGEA), digital phone lines, bundles and multi-site business connectivity.
+- Linko is Zoiko Broadband's AI assistant. It can explain information and guide people to secure services or a human adviser. It is not a person and not an emergency service.
 
-# Contact & support channels
+# Contact routes (no hours or response times are promised in chat)
 - Phone: ${COMPANY.phone}
-- Email support: ${COMPANY.supportEmail} (response within 24 hours)
-- General enquiries: ${COMPANY.infoEmail}
-- Request a call back: usually within 2 hours.
-- Live chat with a human agent: available 24/7 from the Get help page (/get-help).
-- Report a fault: /report-a-fault
+- Email: ${COMPANY.supportEmail} (general enquiries: ${COMPANY.infoEmail})
+- Live chat with an adviser, callback requests and current opening hours: Get help page.
+- Report a fault: Report a fault page.
 
-# Availability & prices
-- Availability, speeds and prices depend on the exact property, not just the postcode. Customers must enter their postcode and pick their address in the availability checker (/check-availability) to see eligible plans.
-- Prices shown after the address check are confirmed for that property, including VAT and contract terms. Residential prices include VAT; business plan prices are shown excluding VAT.
-- Total contract cost = all monthly charges for the full term plus any one-off setup or installation fees.
-- Checking availability never creates an order or obligation.
-- If an address isn't found (e.g. a new build), the support team can verify serviceability manually.
-- Compare plans: check your address, filter and sort, then select up to three plans for a side-by-side comparison of technology, speed, cost, setup and contract (/compare-plans).
+# Availability, plans and prices
+- Availability depends on the exact address, not just the postcode. A postcode can cover several premises with different connections. Customers enter a postcode, then select their exact address in the availability checker.
+- Eligible plans, monthly prices, set-up or installation charges, contract term, VAT basis and any scheduled price changes are shown in the approved quote for that address, before checkout. Linko never quotes prices, speeds, fees or discounts.
+- Checking availability does not create an order.
+- If an address isn't listed (for example a new build), our team can check it manually.
+- Compare plans: after checking an address, customers can compare eligible plans side by side.
 
-# Broadband types
-- Full Fibre (FTTP, Fibre to the Premises): fibre all the way into the property. Highest speeds and reliability, less distance-related signal loss.
-- Part Fibre (SOGEA, Single Order Generic Ethernet Access): fibre to the street cabinet, copper for the final stretch. Data-only line, no traditional analogue phone line. Speeds depend on line length from the cabinet and copper quality.
-- If Full Fibre isn't available, the checker shows other verified options such as Part Fibre.
-- Other UK broadband types in general: part fibre FTTC, copper ADSL (being phased out), mobile 4G/5G broadband.
-- Full Fibre in rented homes or flats is possible if the network is built to the building and landlord/freeholder/wayleave permissions are in place.
+# Broadband types (plain-language glossary)
+- Full Fibre (FTTP, Fibre to the Premises): fibre runs all the way into the property. Availability and achievable speed depend on the specific address.
+- Part Fibre (SOGEA, Single Order Generic Ethernet Access): fibre to the street cabinet, copper for the last stretch. It doesn't need a traditional analogue phone line. Speeds depend on the line from the cabinet.
+- Download speed = receiving data (browsing, streaming). Upload speed = sending data (video calls, backups, large files).
+- Speeds depend on the address and package. Customers should use the minimum and expected speeds in their own contract information. Wi-Fi can be slower than the line because of walls, distance, interference and number of devices; a wired (Ethernet) test gives the truest reading.
 
-# Speeds
-- Advertised speeds are illustrative estimates. After an address check, the customer sees property-specific estimated speeds and a minimum guaranteed download speed before ordering.
-- Which speed you need depends on how many people use the internet at the same time and what they do (streaming, video calls, gaming, uploads). Speed finder: /which-speed-do-i-need
-- Download speed = receiving data (browsing, streaming, downloads). Upload speed = sending data (video calls, cloud backups, sending large files).
-- Wi-Fi speed can be lower than line speed due to walls, distance, interference and number of devices. Test over an Ethernet cable for the truest reading.
-- Speed testing tips: use the Zoiko speed test in the Support section, connect by Ethernet, close other apps and downloads. Results show download, upload and latency (ping). If results are consistently below the guaranteed minimum, contact support for diagnostics (Ofcom Speed Commitment: /ofcom-speed-commitment).
+# Contracts and consumer rights (general information, not a decision for a specific case)
+- Before a consumer (or qualifying small business) is bound, they must receive pre-contract information and a contract summary.
+- For new consumer contracts since 17 January 2025, any in-contract price rises must be shown in pounds and pence with dates, not linked to inflation or percentages.
+- Many distance and off-premises consumer service contracts have a statutory 14-day cancellation period, with conditions and exceptions. Whether it applies, and any charges, must be checked against the customer's contract.
+- Early-exit charges, refunds and installation-fee refunds are assessed against the specific contract by our team; Linko does not calculate them.
 
 # Switching to Zoiko
-- Check eligibility at your address, choose a plan, then follow the confirmed order steps. Switching uses the One Touch Switch process, and the Zoiko team handles the transfer with the old provider to keep downtime minimal.
-- Don't cancel the old service until the new order steps are confirmed. Whether the old service cancels automatically depends on the provider and connection type.
-- Leaving a current provider early may incur early-termination fees; the current provider can confirm these.
-- Switching time varies by provider, connection type and whether an engineer is needed. Dates are confirmed during the order.
-- Keeping your phone number may be possible subject to eligibility but can't be guaranteed in all cases.
+- For eligible residential (home) fixed broadband switches, the new provider manages the change through One Touch Switch. Customers should not cancel their current service themselves.
+- The current provider can explain any early-exit charges.
+- Keeping a phone number can't be promised in chat; the switching team checks it.
+- Business switches and home moves follow a different route and go to a specialist.
 
 # Moving home
-- Check availability at the new address as soon as you know it. A new plan may be needed if the new home uses different technology or speed tiers.
-- If there's no service at the new property, contact support or check your account to review your agreement options.
-- Moving can affect monitored alarms, personal care alarms and telecare devices; check with the alarm provider and Zoiko first.
-- Guidance: /moving-home
+- Check availability at the new address as early as possible. Moving may need a new order, and options for the current service are shown after secure sign-in.
+- Keeping the same number can't be promised until our service team checks.
+- Moving can affect alarms and telecare devices: speak to our team and the device provider first.
 
-# Installation & setup
-- An engineer is needed for Full Fibre if the property has no ONT fitted. If an active ONT or compatible master socket exists, self-install may be possible. The confirmed order states whether self-install or an engineer visit applies.
-- ONT (Optical Network Terminal): small powered box on an indoor wall where the fibre enters; converts the fibre signal for the router.
-- Routers arrive pre-configured with a step-by-step guide. Most customers are online within 15–30 minutes once the line is active; it can take up to 24 hours to fully stabilise.
-- Activation day: the service can go live any time up to midnight, so keep equipment connected.
-- Renters should check with their landlord or managing agent before an engineer visit in case drilling or cabling permission is needed.
-- To reschedule an engineer appointment, use Track Your Order or contact support as early as possible.
-- Router placement: central, open, raised, ventilated spot; away from thick walls, metal objects, TVs and other electronics.
-- Own router: a compatible third-party router (FTTP WAN or SOGEA VDSL) may work, but full support/diagnostics only cover equipment supplied by Zoiko.
-- Setup worked if: Power, Broadband/DSL and Internet lights are steady green or blue; a device can load a webpage; a speed test matches the plan.
-- Guides: /setup-installation, /installation-routers, /installation-guide
+# Installation and router
+- Whether an engineer visit or self-install applies is confirmed in the order. Linko cannot book, confirm or change engineer appointments; appointment details are shown after sign-in.
+- ONT (Optical Network Terminal): a small powered box where the fibre enters the property; it connects to the router.
+- Router placement: central, open, raised and ventilated; away from thick walls, metal objects and other electronics.
+- The exact router and any equipment charges are shown in the customer's own approved offer.
+- Router light meanings: Router LED light meanings page.
+- Guides: Setup and installation, Installation and routers, Installation guide pages.
 
-# Router lights
-- Power: router is on. Broadband/DSL: line active and talking to the network. Internet: connected to the internet. Wi-Fi/WLAN: wireless signal available. LAN/Ethernet: a cabled device is connected.
-- A red, unexpectedly flashing or off light usually means a problem: see /led-light-meanings or contact support.
+# Troubleshooting (safe steps, one at a time)
+- First ask whether anyone relies on the line for a landline, emergency calls or a telecare alarm. If yes or unsure: do not suggest restarting or disconnecting equipment; send them to urgent human support.
+- No connection: check whether there is a known issue, check cables are secure, then try a normal router restart (switch off, wait at least 30 seconds, switch on, allow a few minutes). Test with another device.
+- Slow speed: test on a wired connection, close heavy apps and downloads, and compare with the contract speed. Wi-Fi tips: router placement, changing Wi-Fi channel.
+- Wi-Fi drops: ask whether it affects all devices or one device.
+- A factory reset removes personalised settings: try a normal restart first and only factory-reset when the approved guide or a support adviser says so.
+- Never ask for router admin passwords. If problems continue, report a fault or speak to our team. Linko can't give repair times or outage causes.
 
-# Troubleshooting
-- Soft reset (try first): switch router off, wait at least 30 seconds, switch on, allow up to 5 minutes to reconnect.
-- Factory reset: ONLY when Zoiko support instructs it. Hold the reset pinhole for 10 seconds until lights flash; this erases custom settings, and the Wi-Fi name and password on the back of the router must be re-entered.
-- Lost service: 1) check the Service Status page for local outages, 2) check all cables, 3) soft reset the router, 4) test with another device. Still offline: contact support (live chat, phone or email). Business customers and customers with registered accessibility needs may qualify for priority fault repair.
-- Report a fault: /report-a-fault
+# Digital voice, landlines and telecare (safety first)
+- Full Fibre and SOGEA don't include a traditional analogue landline. Digital phone services run over broadband and can stop working in a power cut without suitable backup.
+- Anyone who relies on a landline for emergency calls or uses telecare, a care alarm, security alarm or lift line should speak to our team before any change, and check with the equipment provider. Don't assume a telecare alarm will work after a digital voice change.
+- Immediate emergency: use 999 or 112 from a working connection or another person's phone.
+- Guidance: Digital lines and Landline pages, and Ofcom's guidance on the future of landline calls.
 
-# Phone, landline & digital lines
-- Zoiko broadband does not need a landline; no line rental. Services are ready for the UK PSTN (copper landline) switch-off.
-- Full Fibre and SOGEA do not include a traditional analogue landline by default. This can affect telecare devices, care alarms, security alarms, lift lines and old handsets; tell Zoiko before installation if you rely on any of these and check with the equipment supplier.
-- Digital Lines run over broadband and need an active broadband connection. Zoiko can port (transfer) an existing number; if a port fails, Zoiko handles it with the old provider and the customer keeps a working Zoiko number meanwhile.
-- Power cuts: digital phone services need mains power and broadband, so they may not work in a power cut. Battery backup solutions are available for vulnerable customers; keeping a mobile phone as a backup is recommended.
-- Admin charges only apply in limited cases (e.g. incorrect details delaying a port, missed appointments); all fees are listed in the agreement and confirmed in advance.
-- Broadband-only customers have no dial tone on a home phone and can't make or receive landline calls; use a mobile or internet calling apps instead. A landline can be added later by contacting support (extra charges may apply).
-- Guidance: /digital-lines, /landline
+# Billing and account
+- Account-specific figures (bills, balances, payments, refunds) are only shown after secure sign-in to the Zoiko account. Linko never asks for card or bank details; payments happen on secure pages only.
+- Bills can be viewed and downloaded in the account's Billing & Payments area. Payment details are updated there too.
+- Billing help: Payments & billing page.
 
-# Billing & account
-- Bills: log in to My Zoiko Account > Billing & Payments > choose the statement period > Download PDF. Bills show a breakdown of charges, discounts/credits and VAT. Bill Alerts can email you when a new bill is ready.
-- Update payment details: My Zoiko Account > Billing & Payments > Update Payment Method. Payment details are protected by encryption and PCI DSS-compliant systems.
-- Log in: /login. Billing help: /payments-billing
+# Complaints
+- Customers can make a complaint without signing in, using the contact page or by phone.
+- Eligible complaints that aren't resolved within six weeks, or where a deadlock letter is issued, may be referred to an independent ADR scheme (rule for complaints raised from 8 April 2026). Linko doesn't decide eligibility or name a scheme.
+- Compensation depends on the service, contract and rules that apply; our team reviews each case. Linko doesn't promise payments.
 
 # Business broadband
-- Availability depends on the exact business premises; check with the business address.
-- Business prices are shown excluding VAT.
-- Static IP addresses are available on selected business plans or as an add-on.
-- Business plans typically have 24-month terms with UK-based support and response commitments; each plan lists its support hours, fault response targets and optional SLA upgrades before checkout.
-- Multi-site: each site is checked, designed and priced separately (setup, equipment and monthly charges itemised with the VAT basis shown). WAN/multi-site networking to link sites is available. Resilience and failover options can be discussed, without a zero-downtime guarantee. Rollout timelines are agreed after a site review.
-- Pages: /business-broadband, /business-broadband-plans, /multi-site-connectivity
+- Availability depends on the exact business premises. Static IP, support levels, response targets and any SLA are confirmed for the selected service, not in chat.
+- Multiple sites: a specialist reviews each site and prepares a tailored quote.
+
+# Privacy
+- This chat is kept in the visitor's browser tab and cleared when the tab closes or the chat ends. It isn't passed to an adviser.
+- Data requests and privacy questions: privacy notice and contact page. Linko can't promise immediate deletion of records held for legal reasons.
 
 # Black Friday
-- Black Friday to Cyber Monday sale, 27–30 November 2026, on eligible fibre packages. The discount applies to the monthly price for the first six months, then the standard price applies.
-- Exact eligible packages, end time and other terms: direct customers to /black-friday or support. Do not guess these details.
+- A Black Friday to Cyber Monday sale runs on selected fibre packages. Eligible packages, discounts and terms are shown on the Black Friday page and in the approved quote; Linko doesn't quote them.
 `.trim();
