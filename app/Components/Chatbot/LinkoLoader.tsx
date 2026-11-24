@@ -9,7 +9,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { ASSISTANT, track } from "@/app/lib/chatbot/linko";
+import { track } from "@/app/lib/chatbot/linko";
 
 const ENABLED = process.env.NEXT_PUBLIC_LINKO_ENABLED !== "false";
 const loadWidget = () => import("./ChatWidget");
@@ -49,17 +49,17 @@ export default function LinkoLoader() {
         setMode("open");
       }}
       aria-label="Ask Linko – Zoiko Broadband AI assistant"
+      title="Ask Linko"
       aria-expanded={false}
-      className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] flex h-[60px] items-center gap-3 rounded-full bg-[#15213D] p-2.5 text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C49A45] sm:pr-6"
+      className="fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] flex h-[76px] w-[76px] items-center justify-center rounded-full bg-[#15213D] text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C49A45]"
     >
       <span
         aria-hidden
-        style={{ width: 40, height: 40, fontSize: 20 }}
+        style={{ width: 54, height: 54, fontSize: 27 }}
         className="inline-flex shrink-0 select-none items-center justify-center rounded-full bg-[#C49A45] font-bold leading-none text-[#15213D]"
       >
         O
       </span>
-      <span className="hidden text-[15px] font-semibold sm:inline">{ASSISTANT.launcherLabel}</span>
     </button>
   );
 }

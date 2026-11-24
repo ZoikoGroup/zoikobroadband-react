@@ -2308,7 +2308,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
           aria-modal={isMobile}
           aria-labelledby="linko-title"
           style={{ colorScheme: darkMode ? "dark" : "light" }}
-          className={`${darkMode ? "linko-dark " : ""}fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-[96px] md:right-5 md:h-[min(740px,calc(100dvh-120px))] md:w-[min(520px,calc(100vw-3rem))] md:rounded-2xl md:border-2 md:border-[#B8C4D6] linko-dark:bg-slate-900 linko-dark:text-slate-100 md:linko-dark:border-slate-700`}
+          className={`${darkMode ? "linko-dark " : ""}fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-[112px] md:right-5 md:h-[min(740px,calc(100dvh-136px))] md:w-[min(520px,calc(100vw-3rem))] md:rounded-2xl md:border-2 md:border-[#B8C4D6] linko-dark:bg-slate-900 linko-dark:text-slate-100 md:linko-dark:border-slate-700`}
         >
           <style>{`@keyframes linkoIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
 
@@ -2618,10 +2618,10 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
           // WCAG 2.5.3: the accessible name starts with the visible label "Ask Linko".
           aria-label={open ? "Ask Linko – minimise the Zoiko Broadband AI assistant" : "Ask Linko – Zoiko Broadband AI assistant"}
           aria-expanded={open}
-          className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] ${open ? "hidden md:flex" : "flex"} h-[60px] items-center gap-3 rounded-full ${T.header} p-2.5 text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] sm:pr-6 ${T.focus}`}
+          title={open ? "Minimise Linko" : "Ask Linko"}
+          className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] ${open ? "hidden md:flex" : "flex"} h-[76px] w-[76px] items-center justify-center rounded-full ${T.header} text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] ${T.focus}`}
         >
-          <LinkoMark size={40} />
-          <span className="hidden text-[15px] font-semibold sm:inline">{ASSISTANT.launcherLabel}</span>
+          <LinkoMark size={54} />
         </button>
       )}
     </>
