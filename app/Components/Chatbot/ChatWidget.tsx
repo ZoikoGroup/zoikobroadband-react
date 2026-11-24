@@ -2427,20 +2427,8 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
             </button>
           </header>
 
-          {/* Doc01 §3.2 block 02 – trust strip */}
-          <div className="flex flex-wrap items-center gap-x-2 border-b border-[#E1E7F0] bg-[#F7F9FC] px-5 py-0.5 text-[14px] text-[#33445E] md:px-6 linko-dark:border-slate-700 linko-dark:bg-slate-800 linko-dark:text-slate-300">
-            <span>{COPY.trust}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setView("chat");
-                chat.startFlow("privacy");
-              }}
-              className={`min-h-11 rounded font-semibold underline-offset-2 hover:underline ${T.link} ${T.focus}`}
-            >
-              {COPY.trustLink}
-            </button>
-          </div>
+          {/* The trust strip was removed at the product owner's request; the AI disclosure stays in the header
+              ("AI assistant · Public"), the footer disclaimer, and the Privacy links (footer and menu). */}
 
           {/* Transcript – the only primary scroll region */}
           {view === "history" && (
