@@ -5,6 +5,8 @@
  */
 import { NextRequest } from "next/server";
 import { apiError, envelope, limit, newCorrelationId, nowIso } from "@/app/lib/linko-api/http";
+import { persistToolInvocation } from "@/app/lib/linko-db/persist";
+import { sha256 } from "@/app/lib/linko-db/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +54,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  persistToolInvocation(req.nextUrl.searchParams.get("conversationId"), "PUB_09", "ALLOW", sha256(`PUB_09|${area}`), "UNKNOWN");
   return envelope(
     cid,
     "UNAVAILABLE",

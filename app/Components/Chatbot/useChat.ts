@@ -44,6 +44,10 @@ export interface ChatMessage {
   screen?: string;
   topic?: string;
   feedback?: "up" | "down";
+  /** Time the message was added (ms) – shown as HH:mm (Doc07 C04). */
+  at?: number;
+  /** Knowledge sections an AI answer was based on (Doc06 evidence label). */
+  sources?: { id: string; title: string; source: string }[];
 }
 
 const STORAGE_KEY = "linko-chat-v1";
@@ -52,13 +56,28 @@ function newId() {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function stamp<T extends ChatMessage>(m: T): T {
+  return m.at ? m : { ...m, at: Date.now() };
+}
+
 /* ───────────────────────── Saved chat history ─────────────────────────
- * Kept in this browser only (localStorage), never on Zoiko's servers.
- * Messages are already redacted (no card numbers, passwords or codes) and
- * address-picker results are never part of the transcript.              */
+ * OPT-IN only (Doc06 C12, Doc03 FRS-D04, Doc07 LK-WF-18 "no pre-ticked choices"):
+ * nothing is kept in localStorage unless the visitor turns on "Save chat history".
+ * Saved chats expire after HISTORY_TTL_DAYS (pending Legal sign-off) and are
+ * already redacted (no card numbers, passwords or codes).                */
 
 const HISTORY_KEY = "linko-history-v1";
+const SAVE_PREF_KEY = "linko-save-history";
 const MAX_SAVED = 20;
+export const HISTORY_TTL_DAYS = Number(process.env.NEXT_PUBLIC_LINKO_HISTORY_TTL_DAYS || 30);
+
+export function readSavePreference(): boolean {
+  try {
+    return localStorage.getItem(SAVE_PREF_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
 
 export interface SavedChat {
   id: string;
@@ -70,7 +89,11 @@ export interface SavedChat {
 export function readHistory(): SavedChat[] {
   try {
     const v = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
-    return Array.isArray(v) ? (v as SavedChat[]) : [];
+    if (!Array.isArray(v)) return [];
+    const cutoff = Date.now() - HISTORY_TTL_DAYS * 24 * 60 * 60 * 1000;
+    const fresh = (v as SavedChat[]).filter((c) => c && c.updatedAt >= cutoff);
+    if (fresh.length !== v.length) writeHistory(fresh); // purge expired chats
+    return fresh;
   } catch {
     return [];
   }
@@ -119,6 +142,7 @@ function degradedMessage(message: string = COPY.degraded, withRetry = true): Cha
       ...(withRetry ? [{ kind: "command", label: "Try again", command: "retry", primary: true } as LinkoAction] : []),
       { kind: "link", label: "Open Help Centre", href: "/get-help" },
       { kind: "flow", label: "Speak to a person", flow: "handoff", primary: !withRetry },
+      { kind: "command", label: "Start over", command: "restart" },
     ],
   };
 }
@@ -136,13 +160,30 @@ function fromAnswer(a: MessageData["answer"]): ChatMessage {
     source: isError ? "flow" : a.source,
     screen: a.screen,
     topic: a.topic,
+    sources: !isError && a.source === "ai" ? a.sources : undefined,
   };
+}
+
+function analyticsFor(flow: FlowId) {
+  if (flow === "safety" || flow === "safetyCheck") {
+    track("linko_safety_shown");
+    track("linko_voice_safety_notice");
+  }
+  if (flow === "handoff") track("linko_handoff", { handoff_type: "options_shown" });
+  if (flow === "complaint") track("linko_complaint_started");
+  if (flow === "switchingYes" || flow === "switching") track("linko_switch_route_selected", { route: flow === "switchingYes" ? "residential_ots" : "question" });
+  if (flow === "switchingYes") track("linko_ots_guidance_shown");
+  if (flow === "plans") track("linko_plans_viewed");
+  if (flow === "clarify") track("linko_intent_clarified");
 }
 
 export function useChat(pathname: string) {
   const [messages, setMessages] = useState<ChatMessage[]>(() => [flowMessage("welcome", pathname, true)]);
   const [isLoading, setIsLoading] = useState(false);
   const [restored, setRestored] = useState(false);
+  const [saveHistory, setSaveHistoryState] = useState(false);
+  /** Confirmed receipts from systems of record (e.g. a CRM reference) – shown apart from "information only" topics. */
+  const [receipts, setReceipts] = useState<string[]>([]);
   const abortRef = useRef<AbortController | null>(null);
   const lastQuestion = useRef<string | null>(null);
   const convId = useRef<string>(newId()); // local history id
@@ -164,6 +205,7 @@ export function useChat(pathname: string) {
     } catch {
       // storage unavailable – start fresh
     }
+    setSaveHistoryState(readSavePreference());
     setRestored(true);
   }, []);
 
@@ -175,20 +217,37 @@ export function useChat(pathname: string) {
     } catch {
       // ignore
     }
-    if (!messages.some((m) => m.role === "user")) return;
+    if (!saveHistory || !messages.some((m) => m.role === "user")) return;
     const entry: SavedChat = { id: convId.current, title: chatTitle(messages), updatedAt: Date.now(), messages };
     writeHistory([entry, ...readHistory().filter((c) => c.id !== convId.current)]);
-  }, [messages, restored]);
+  }, [messages, restored, saveHistory]);
+
+  /** Turn "Save chat history" on or off. Turning it off deletes everything already saved. */
+  const setSaveHistory = useCallback((on: boolean) => {
+    try {
+      if (on) localStorage.setItem(SAVE_PREF_KEY, "on");
+      else {
+        localStorage.removeItem(SAVE_PREF_KEY);
+        writeHistory([]);
+      }
+    } catch {
+      // storage unavailable
+    }
+    setSaveHistoryState(on);
+  }, []);
 
   const push = useCallback((...items: ChatMessage[]) => {
-    setMessages((prev) => [...prev, ...items]);
+    setMessages((prev) => [...prev, ...items.map(stamp)]);
   }, []);
 
   /** PUB-01: create the server conversation on first use. */
   const ensureServer = useCallback(async (): Promise<string | null> => {
     if (serverId.current) return serverId.current;
     const r = await linkoApi.createConversation(pathname);
-    if (r.ok) serverId.current = r.body.data.conversationId;
+    if (r.ok) {
+      serverId.current = r.body.data.conversationId;
+      track("linko_session_started");
+    }
     return serverId.current;
   }, [pathname]);
 
@@ -203,14 +262,22 @@ export function useChat(pathname: string) {
         if (!id) return null;
         const r = await linkoApi.sendMessage(id, { ...body, requestId: newKey() } as never, signal);
         if (!r.ok && r.http === 404) {
-          serverId.current = null; // expired → create a new one and try once more
+          serverId.current = null; // expired → create a new one and try once more (Doc03 §05.1: tell the visitor)
+          if (attempt === 0)
+            push({
+              id: newId(),
+              role: "assistant",
+              tone: "notice",
+              source: "flow",
+              content: "Your earlier chat session expired, so I've started a fresh one. I may need you to repeat a detail.",
+            });
           continue;
         }
         return r;
       }
       return null;
     },
-    [ensureServer],
+    [ensureServer, push],
   );
 
   const closeServer = useCallback(() => {
@@ -227,11 +294,24 @@ export function useChat(pathname: string) {
       items.push(flowMessage(flow, pathname));
       push(...items);
       track("linko_intent_selected", { intent_id: flow });
-      if (flow === "safety" || flow === "safetyCheck") track("linko_safety_shown");
-      if (flow === "handoff") track("linko_handoff", { handoff_type: "options_shown" });
+      analyticsFor(flow);
+      // Doc09 telemetry: the answer to the telecare / emergency-line question (no free text).
+      const SAFETY_ANSWERS: Record<string, string> = { Yes: "yes", No: "no", "Not sure": "unsure", "Prefer not to say": "declined" };
+      if (userLabel && SAFETY_ANSWERS[userLabel] && (flow === "safety" || flow === "faultStatus"))
+        track("linko_fault_safety_triaged", { answer: SAFETY_ANSWERS[userLabel] });
       void sendToServer({ kind: "ACTION", actionId: flow, label: userLabel }).catch(() => undefined);
+      // Doc10 HS-WF-10-03 / HF-03: safety and contact-option screens also put a case in the staff queue
+      // (no topics are shared without the visitor's choice; P0 for safety).
+      if (flow === "handoffSafety" || flow === "handoffChannels") {
+        void ensureServer().then((id) =>
+          linkoApi.handoff(
+            { channel: flow === "handoffSafety" ? "PHONE" : "ANY", shareSummary: false, reason: flow === "handoffSafety" ? "SAFETY" : "USER_REQUEST", conversationId: id },
+            newKey(),
+          ),
+        );
+      }
     },
-    [pathname, push, sendToServer],
+    [ensureServer, pathname, push, sendToServer],
   );
 
   /** Free text → PUB-02 TEXT; the server routes safety/human/complaint first, then the verified AI answer. */
@@ -247,6 +327,7 @@ export function useChat(pathname: string) {
           if (a.status === "provider_unavailable" || a.status === "invalid") {
             track("linko_error", { error_class: a.status, component_id: "C04" });
           }
+          if (a.message === COPY.clarifyFallback) track("linko_fallback_offered");
           push(fromAnswer(a));
         } else if (r && !r.ok && r.http === 429) {
           push({ ...degradedMessage(r.body?.message ?? COPY.rateLimited, false) });
@@ -283,7 +364,10 @@ export function useChat(pathname: string) {
           tone: "notice",
           source: "flow",
           content: COPY.dlpNotice(removed.join(" and ")),
-          actions: [{ kind: "link", label: "Secure sign-in", href: "/login" }],
+          actions: [
+            { kind: "link", label: "Secure sign-in", href: "/login" },
+            { kind: "link", label: "Pay securely", href: "/payments-billing" },
+          ],
         });
       }
       track("linko_message_sent");
@@ -294,7 +378,8 @@ export function useChat(pathname: string) {
       if (routed) {
         push(userMsg, ...extra, flowMessage(routed, pathname));
         track("linko_intent_selected", { intent_id: routed });
-        if (routed === "safety") track("linko_safety_shown");
+        if (routed === "complaint") track("linko_complaint_recognised", { trigger: "wording" });
+        analyticsFor(routed);
         void sendToServer({ kind: "TEXT", text: content }).catch(() => undefined);
         return;
       }
@@ -318,13 +403,26 @@ export function useChat(pathname: string) {
     setIsLoading(false);
     closeServer();
     convId.current = newId();
-    setMessages([flowMessage("welcome", pathname, true)]);
+    setReceipts([]);
+    setMessages([stamp(flowMessage("welcome", pathname, true))]);
   }, [closeServer, pathname]);
 
   const restart = reset;
 
   /** LK-WF-20 "End chat": close the server session (PUB-14) and start clean. */
-  const endChat = reset;
+  const endChat = useCallback(
+    (completion: "summary" | "abandon" | "handoff" = "abandon") => {
+      track("linko_session_ended", { completion });
+      reset();
+    },
+    [reset],
+  );
+
+  /** Stop waiting for an answer (Doc07 §08 "cancel if safe" – nothing is changed by a question). */
+  const cancel = useCallback(() => {
+    abortRef.current?.abort();
+    setIsLoading(false);
+  }, []);
 
   /** Re-open a saved conversation from Chat history. */
   const openChat = useCallback(
@@ -355,6 +453,7 @@ export function useChat(pathname: string) {
   const setFeedback = useCallback((id: string, value: "up" | "down") => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, feedback: value } : m)));
     track("linko_feedback", { value });
+    if (value === "down") track("linko_answer_disputed");
   }, []);
 
   /** Adds a message produced by a widget (e.g. the address checker). */
@@ -380,9 +479,16 @@ export function useChat(pathname: string) {
     addAssistant,
     addUser,
     topics,
+    receipts,
+    addReceipt: (r: string) => setReceipts((prev) => (prev.includes(r) ? prev : [...prev, r])),
     openChat,
     deleteSaved,
+    saveHistory,
+    setSaveHistory,
+    cancel,
     conversationId: () => convId.current,
     serverConversationId: () => serverId.current,
+    /** PUB-01 on demand, for widgets that call the API directly (address search). */
+    getServerId: ensureServer,
   };
 }

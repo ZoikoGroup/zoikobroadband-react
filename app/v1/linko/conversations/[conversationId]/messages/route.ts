@@ -11,8 +11,10 @@
 import { NextRequest } from "next/server";
 import { COPY, FLOWS, FlowId, LinkoAnswer, redactSensitive, welcomeActions } from "@/app/lib/chatbot/linko";
 import { generateAnswer } from "@/app/lib/linko-api/assistant";
+import { KB_VERSION, contentHash, evidenceRef, knowledgeById } from "@/app/lib/chatbot/knowledge";
 import { apiError, BusinessStatus, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_ACTIONS } from "@/app/lib/linko-api/http";
-import { Conversation, ConvState, getConversation } from "@/app/lib/linko-api/store";
+import { Conversation, ConvState, getConversation, saveConversation } from "@/app/lib/linko-api/store";
+import { clearIntentSlots, persistCitations, persistComplaint, persistEvent, persistMessage, persistSlot } from "@/app/lib/linko-db/persist";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +23,7 @@ const INTENT_VERSION = "intent-registry-2026-11-23";
 const MAX_CHARS = 2000;
 const MAX_RETRIES = 2;
 const MAX_CLARIFY = 2;
+// Messages a visitor can send per minute; chip clicks (ACTION) have their own, larger bucket (NFR-05).
 const HISTORY_LIMIT = 20;
 
 type ReplyAnswer = LinkoAnswer & {
@@ -29,11 +32,38 @@ type ReplyAnswer = LinkoAnswer & {
   widget?: string;
   context?: string;
   source: "flow" | "ai";
+  sources?: { id: string; title: string; source: string }[];
 };
 
-function push(conv: Conversation, role: "user" | "assistant", content: string) {
+/** Map a Doc01 screen title to its LK-WF id for chat_event.screen_ref (DM-05). */
+const SCREEN_REFS: Record<string, string> = {
+  "Intent clarification and smart routing": "LK-WF-02",
+  "Postcode and exact-address eligibility": "LK-WF-03",
+  "Eligible plan comparison": "LK-WF-04",
+  "Business quote and specialist": "LK-WF-05",
+  "One Touch Switch guidance": "LK-WF-06",
+  "Track your order": "LK-WF-08",
+  "Engineer appointment": "LK-WF-09",
+  "Moving home": "LK-WF-10",
+  "Service status and fault triage": "LK-WF-11",
+  "Wi-Fi speed and router guidance": "LK-WF-12",
+  "Billing and payment support": "LK-WF-13",
+  "Cancellation, refund and complaints": "LK-WF-14",
+  "Digital voice and telecare safety": "LK-WF-15",
+  "Sign-in and customer verification": "LK-WF-16",
+  "Human escalation and callback": "LK-WF-17",
+  "Privacy, AI limits and transcript controls": "LK-WF-18",
+  "Conversation summary and close": "LK-WF-20",
+};
+function screenRef(screen?: string) {
+  return screen ? (SCREEN_REFS[screen] ?? null) : "LK-WF-01";
+}
+
+function push(conv: Conversation, role: "user" | "assistant", content: string, piiMasked = false) {
   if (!content.trim()) return;
   conv.history.push({ role, content: content.slice(0, MAX_CHARS) });
+  conv.msgSeq += 1;
+  persistMessage(conv.id, conv.msgSeq, role === "user" ? "USER" : "ASSISTANT", content.slice(0, MAX_CHARS), piiMasked);
   if (conv.history.length > HISTORY_LIMIT) conv.history.splice(0, conv.history.length - HISTORY_LIMIT);
 }
 
@@ -77,20 +107,38 @@ function businessStatus(answer: ReplyAnswer): BusinessStatus {
   return answer.source === "flow" ? "CONFIRMED" : "INDICATIVE"; // model wording is never an authoritative fact
 }
 
-async function answerText(conv: Conversation, signal: AbortSignal): Promise<{ answer: ReplyAnswer; http: number }> {
-  const { answer, http } = await generateAnswer(conv.history.slice(), signal);
-  const source: "flow" | "ai" = ["answered", "abstained", "handoff"].includes(answer.status) && !answer.tone ? "ai" : "flow";
+async function digest(text: string) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function answerText(conv: Conversation, signal: AbortSignal, cid: string): Promise<{ answer: ReplyAnswer; http: number }> {
+  const { answer, http } = await generateAnswer(conv.history.slice(), signal, {
+    cid,
+    userTurns: conv.userTurns,
+    safetyFlag: conv.slots.safetyFlag === true,
+    sessionId: conv.id,
+  });
+  const source: "flow" | "ai" =
+    answer.flow || answer.tone || !["answered", "abstained", "handoff"].includes(answer.status) ? "flow" : "ai";
   let reply: ReplyAnswer = { ...answer, source };
+  // Deterministic routed steps carry their screen and topic like a chip click would.
+  if (answer.flow && !["safety", "complaint", "handoff"].includes(answer.status)) {
+    const step = FLOWS[answer.flow];
+    reply = { ...reply, screen: step.screen, topic: step.topic, widget: step.widget, context: step.context };
+    if (step.topic && !conv.topics.includes(step.topic)) conv.topics.push(step.topic);
+  }
 
   // Doc01 WF-02: no more than 2 clarification turns → generic help + human handover.
   if (answer.status === "abstained") {
     conv.clarifyCount += 1;
     if (conv.clarifyCount < MAX_CLARIFY) {
       // Doc01 WF-01/02: unknown → one clarifying question with routing chips (human route still visible).
+      // FRS-E06 / AI-03: say plainly that it can't answer, then one clarifying question (LK-WF-02 CTAs).
       reply = {
         status: "abstained",
-        message: FLOWS.clarify.text,
-        actions: FLOWS.clarify.actions,
+        message: `I can't answer that reliably from approved information. ${FLOWS.clarify.text}`,
+        actions: [...FLOWS.clarify.actions, { kind: "flow", label: "Speak to a person", flow: "handoff" }],
         screen: FLOWS.clarify.screen,
         topic: FLOWS.clarify.topic,
         source: "flow",
@@ -122,9 +170,6 @@ async function answerText(conv: Conversation, signal: AbortSignal): Promise<{ an
 
 export async function POST(req: NextRequest, ctx: { params: Promise<{ conversationId: string }> }) {
   const cid = newCorrelationId();
-  const limited = limit(req, cid, "msg");
-  if (limited) return limited;
-
   const { conversationId } = await ctx.params;
   const conv = getConversation(conversationId);
   if (!conv) {
@@ -134,12 +179,22 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
   const body = await readJson(req);
   if (!body) return apiError(cid, "VALIDATION_ERROR", "Request body must be JSON.");
   const { kind, text, actionId, requestId, label } = body as Record<string, unknown>;
+  // Per-IP and per-conversation limits; button clicks use a larger bucket than typed messages.
+  const limited =
+    limit(req, cid, kind === "ACTION" ? "msg-action" : "msg", kind === "ACTION" ? 60 : 15) ??
+    limit(req, cid, `conv:${conversationId}`, kind === "ACTION" ? 60 : 20, conversationId);
+  if (limited) return limited;
   if (typeof requestId !== "string" || requestId.length < 8 || requestId.length > 64) {
     return apiError(cid, "VALIDATION_ERROR", "requestId is required (8–64 characters).", { field: "requestId" });
   }
 
-  // Safe replay of a repeated request (double click, network retry).
+  // Safe replay of a repeated request (double click, network retry). The same requestId
+  // with a different body is rejected (Doc05 DM-30 / T-26).
+  const requestDigest = await digest(JSON.stringify([kind, text ?? null, actionId ?? null]));
   const prior = conv.replies.get(requestId);
+  if (prior && prior.digest !== requestDigest) {
+    return apiError(cid, "VALIDATION_ERROR", "This requestId was already used for a different message.", { field: "requestId" });
+  }
   if (prior) {
     return new Response(prior.body, {
       status: prior.status,
@@ -160,9 +215,10 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
     }
     const r = redactSensitive(text.trim());
     redacted = r.removed;
-    push(conv, "user", r.text);
+    push(conv, "user", r.text, r.removed.length > 0);
     conv.retryCount = 0;
-    result = await answerText(conv, req.signal);
+    conv.userTurns += 1;
+    result = await answerText(conv, req.signal, cid);
     intentId = result.answer.source === "flow" ? result.answer.status : "free_text";
   } else if (kind === "ACTION") {
     if (typeof actionId !== "string") {
@@ -188,13 +244,14 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
       } else {
         // Drop a trailing failed reply so the model sees the user's question last.
         while (conv.history.length && conv.history[conv.history.length - 1].role === "assistant") conv.history.pop();
-        result = await answerText(conv, req.signal);
+        result = await answerText(conv, req.signal, cid);
         if (result.answer.status === "answered") conv.retryCount = 0;
       }
       intentId = "retry";
     } else if (actionId in FLOWS) {
       if (typeof label === "string" && label.trim()) push(conv, "user", redactSensitive(label.slice(0, 120)).text);
       result = { answer: flowReply(conv, actionId as FlowId), http: 200 };
+      if (conv.intent !== actionId) clearIntentSlots(conv.id); // T-38: slots end with their intent
       conv.intent = actionId;
       conv.clarifyCount = 0;
       intentId = actionId;
@@ -211,8 +268,27 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
   }
 
   push(conv, "assistant", result.answer.message);
+  // DM-24: record which approved knowledge version the AI answer cited.
+  const cited = (result.answer.sources ?? [])
+    .map((s) => knowledgeById(s.id))
+    .filter((k): k is NonNullable<typeof k> => Boolean(k))
+    .map((k) => ({ id: k.id, versionHash: contentHash(k.text) }));
+  if (cited.length) persistCitations(conv.id, conv.msgSeq, cited);
+  // Doc10 §07.1: the first time dissatisfaction is expressed is preserved and recorded once.
+  if (result.answer.status === "complaint" && !conv.slots.complaintFirstAt) {
+    conv.slots.complaintFirstAt = nowIso();
+    persistComplaint(conv.id, "REQUESTED", null);
+  }
   conv.state = stateFor(result.answer);
+  // Doc09 §02.3 safety_flag: once set, restart/reset advice is blocked for the rest of the conversation.
+  if (result.answer.status === "safety" || intentId === "safety" || intentId === "safetyCheck" || intentId === "handoffSafety") {
+    if (!conv.slots.safetyFlag) persistSlot(conv.id, "safety_flag", "BOOLEAN", "true");
+    conv.slots.safetyFlag = true;
+  }
 
+  // Note: provider outages are returned as HTTP 200 with business status UNAVAILABLE (not 503) on purpose —
+  // the reply is a complete, safe answer the widget must render (Doc04 §04.2 envelope), not a transport error.
+  const sources = result.answer.sources ?? [];
   const res = envelope(
     cid,
     businessStatus(result.answer),
@@ -223,13 +299,44 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
       redacted,
     },
     {
+      // All flow and knowledge copy is still DRAFT_NOT_APPROVED (Doc06), so evidence is INDICATIVE until sign-off.
       sourceEvidence:
         result.answer.source === "flow"
-          ? { source: "approved_flows", version: "doc01-v1.0", checkedAt: nowIso(), status: "VERIFIED" }
-          : { source: "approved_kb+model", version: "kb-draft", checkedAt: nowIso(), status: "INDICATIVE" },
+          ? { source: "approved_flows", version: "doc01-v1.0-draft", checkedAt: nowIso(), status: "INDICATIVE" }
+          : {
+              source: sources.length ? `knowledge:${sources.map((s) => evidenceRef(s.id)).join(",")}` : "knowledge",
+              version: KB_VERSION,
+              checkedAt: nowIso(),
+              status: "INDICATIVE",
+            },
     },
   );
-  conv.replies.set(requestId, { at: Date.now(), body: await res.clone().text(), status: res.status });
+  conv.replies.set(requestId, { at: Date.now(), body: await res.clone().text(), status: res.status, digest: requestDigest });
+  saveConversation(conv);
+  persistEvent(conv.id, `TURN_${String(intentId).toUpperCase()}`.slice(0, 64), screenRef(result.answer.screen), {
+    source: result.answer.source,
+    status: result.answer.status,
+    state: conv.state,
+    redactions: redacted.length,
+  });
+  // Doc13 §12.2 per-turn decision log — no message text, pseudonymous conversation id.
+  console.info(
+    JSON.stringify({
+      event: "linko_turn",
+      cid,
+      conv: (await digest(conversationId)).slice(0, 12),
+      intent: intentId,
+      source: result.answer.source,
+      status: result.answer.status,
+      business_status: businessStatus(result.answer),
+      state: conv.state,
+      safety_flag: conv.slots.safetyFlag === true,
+      redaction_count: redacted.length,
+      redaction_kinds: redacted,
+      kb_version: KB_VERSION,
+      sources: (result.answer.sources ?? []).map((s) => evidenceRef(s.id)),
+    }),
+  );
   if (conv.replies.size > 50) conv.replies.delete(conv.replies.keys().next().value!);
   return res;
 }

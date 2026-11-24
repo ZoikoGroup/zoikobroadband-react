@@ -46,8 +46,8 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ChatMessage, SavedChat, readHistory, useChat } from "./useChat";
-import { linkoApi, toActions, TriageData } from "./linkoApi";
+import { ChatMessage, HISTORY_TTL_DAYS, SavedChat, readHistory, useChat } from "./useChat";
+import { linkoApi, newKey, toActions, TriageData } from "./linkoApi";
 import {
   AddressContext,
   ApiCall,
@@ -176,15 +176,15 @@ function ActionButton({
     action.primary ? `min-h-12 text-[15px] font-semibold ${T.primary}` : `min-h-11 text-[14px] ${T.secondary}`
   }`;
 
+  const rid = useId();
   // Doc07: a CTA whose backend isn't verified is shown disabled and explains why.
   if (action.disabledReason) {
-    const rid = `why-${action.label.replace(/\W+/g, "-").toLowerCase()}`;
     return (
       <div>
         <button type="button" className={cls} disabled aria-describedby={rid}>
           {action.label}
         </button>
-        <p id={rid} className={`mt-1 px-1 text-[12px] ${T.muted}`}>
+        <p id={rid} className={`mt-1 px-1 text-[14px] ${T.muted}`}>
           {action.disabledReason}
         </p>
       </div>
@@ -198,12 +198,16 @@ function ActionButton({
     const onClick = () => {
       if (href.startsWith("tel:") || href.includes("tawk.to"))
         track("linko_handoff", { handoff_type: href.startsWith("tel:") ? "phone" : "live_chat" });
+      else if (href === "/get-help") track("linko_handoff", { handoff_type: "callback" });
+      else if (href === "/contact-us") track("linko_handoff", { handoff_type: "enquiry" });
       track("linko_flow_exit", { reason_code: "link" });
     };
     if (href.startsWith("/")) {
       return (
         <Link href={href} className={cls} onClick={onClick}>
           {action.label}
+          {/* Doc11 AU-WF-11-01: announce that a secure page is opening */}
+          {href === "/login" && <span className="sr-only"> – opens Zoiko&apos;s secure sign-in page</span>}
         </Link>
       );
     }
@@ -272,6 +276,7 @@ export type AddressOutcome =
   | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string }
   | { kind: "unverified"; label: string } // address chosen, but exact-premises check unavailable
   | { kind: "failed" }
+  | { kind: "expired" } // the selection token expired (AVL-03)
   | { kind: "empty" }
   | { kind: "notListed" };
 
@@ -279,10 +284,12 @@ function AddressPicker({
   active,
   context,
   onFinished,
+  getServerId,
 }: {
   active: boolean;
   context: AddressContext;
   onFinished: (o: AddressOutcome, ctx: AddressContext) => void;
+  getServerId: () => Promise<string | null>;
 }) {
   const [postcode, setPostcode] = useState("");
   const [state, setState] = useState<PickerState>({ step: "postcode" });
@@ -313,7 +320,12 @@ function AddressPicker({
     setPostcode(pc);
     setState({ step: "loading" });
     track("linko_intent_selected", { intent_id: "postcode_validated" });
-    const r = await linkoApi.searchAddresses(pc); // PUB-03
+    const sid = await getServerId();
+    if (!sid) {
+      finish({ kind: "failed" }, false);
+      return;
+    }
+    const r = await linkoApi.searchAddresses(sid, pc); // PUB-03 (tokens are bound to this conversation)
     if (!r.ok) {
       if (r.http === 400) {
         setState({ step: "postcode", error: r.body?.message ?? "Enter a full UK postcode, for example SW1A 1AA." });
@@ -340,8 +352,15 @@ function AddressPicker({
       const chosen = state.addresses.find((a) => a.addressId === state.selected)!;
       setState({ ...state, checking: true, error: undefined });
       track("linko_intent_selected", { intent_id: "address_selected" });
-      const q = await linkoApi.qualify(chosen.addressId, context === "business" ? "BUSINESS" : "RESIDENTIAL"); // PUB-04
-      if (q.ok) {
+      const sid = await getServerId();
+      const q = sid
+        ? await linkoApi.qualify(sid, chosen.addressId, context === "business" ? "BUSINESS" : "RESIDENTIAL") // PUB-04
+        : null;
+      if (q && !q.ok && q.http === 404) {
+        finish({ kind: "expired" }, false);
+        return;
+      }
+      if (q?.ok) {
         finish(
           {
             kind: "qualified",
@@ -427,8 +446,8 @@ function AddressPicker({
       <label htmlFor={`${uid}-pc`} className={`block text-sm font-semibold ${T.text}`}>
         Postcode
       </label>
-      <p id={`${uid}-hint`} className={`text-xs ${T.muted}`}>
-        For example, SW1A 1AA
+      <p id={`${uid}-hint`} className={`text-sm ${T.muted}`}>
+        For example, SW1A 1AA. We only use your postcode to list addresses — it isn&apos;t sent to our AI provider.
       </p>
       <input
         ref={inputRef}
@@ -468,10 +487,24 @@ function AddressPicker({
 
 /* ─────────────── C19 Business specialist form (Doc01 WF-05 / CF-02, PUB-06) ─────────────── */
 
-function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: boolean, reference?: string) => void }) {
+export type LeadResult = "accepted" | "unavailable" | "uncertain";
+
+function SpecialistForm({
+  active,
+  onDone,
+  initialSites = "",
+}: {
+  active: boolean;
+  onDone: (result: LeadResult, reference?: string) => void;
+  /** The site count the visitor already chose in the business step (FRS-B03: don't ask twice). */
+  initialSites?: string;
+}) {
   const uid = useId();
+  // One Idempotency-Key per form, reused for every resubmission (Doc04 §04.1, AC-42).
+  const [idemKey] = useState(() => newKey());
   const [f, setF] = useState({
-    sitesCount: "",
+    sitesCount: initialSites,
+    siteOutwardCode: "",
     businessName: "",
     contactName: "",
     channelType: "EMAIL" as "EMAIL" | "PHONE",
@@ -500,6 +533,8 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
       errs.channelValue = "Enter a valid work email address.";
     if (f.channelType === "PHONE" && !/^\+?[0-9 ()-]{10,20}$/.test(f.channelValue.trim()))
       errs.channelValue = "Enter a valid phone number.";
+    if (f.siteOutwardCode.trim() && !/^[A-Z]{1,2}\d[A-Z\d]?$/i.test(f.siteOutwardCode.trim()))
+      errs.siteOutwardCode = "Enter the first part of the postcode only, for example SW1A.";
     if (!f.permission) errs.permission = "Please confirm we may contact you about this enquiry.";
     setErrors(errs);
     if (Object.keys(errs).length) {
@@ -509,22 +544,26 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
     setBusy(true);
     const r = await linkoApi.businessLead({
       sitesCount: f.sitesCount,
+      ...(f.siteOutwardCode.trim() ? { siteOutwardCode: f.siteOutwardCode.trim().toUpperCase() } : {}),
       businessName: f.businessName.trim(),
       contactName: f.contactName.trim(),
       contactChannel: { type: f.channelType, value: f.channelValue.trim() },
       requirements: redactSensitive(f.requirements.trim()).text,
       permission: true,
       marketingOptIn: f.marketing,
-    });
+    }, idemKey);
     setBusy(false);
-    if (!r.ok && r.http === 400 && r.body?.field) {
+    if (!r.ok && r.http === 400 && r.body?.field && r.body.field !== "Idempotency-Key") {
       const map: Record<string, string> = { contactChannel: "channelValue" };
       setErrors({ [map[r.body.field] ?? r.body.field]: r.body.message });
       return;
     }
+    // 504 TIMEOUT: the CRM may have it already — never say "nothing was sent" (AC-42).
+    const result: LeadResult = r.ok ? "accepted" : r.http === 504 || r.http === 0 ? "uncertain" : "unavailable";
     setClosed(true);
-    track("linko_handoff", { handoff_type: "business_lead", result_code: r.ok ? "accepted" : "unavailable" });
-    onDone(r.ok, r.ok ? r.body.data.reference : undefined);
+    track("linko_handoff", { handoff_type: "business_lead", result_code: result });
+    if (!r.ok) track("linko_tool_failure", { tool: "business_lead", http: r.http });
+    onDone(result, r.ok ? r.body.data.reference : undefined);
   };
 
   const input = `min-h-11 w-full rounded-lg border border-[#B8C4D6] bg-white px-3 text-[15px] text-[#1E2A44] linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white ${T.focus}`;
@@ -547,10 +586,20 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
       </p>
       {Object.keys(errors).length > 0 && (
         <div ref={summaryRef} tabIndex={-1} role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 linko-dark:border-red-700 linko-dark:bg-red-950 linko-dark:text-red-200">
-          Please check {Object.keys(errors).length === 1 ? "1 field" : `${Object.keys(errors).length} fields`} below.
+          <p>Please check {Object.keys(errors).length === 1 ? "1 field" : `${Object.keys(errors).length} fields`}:</p>
+          {/* LK-UX-QA-017: each error is summarised and linked to its field */}
+          <ul className="mt-1 list-disc pl-5">
+            {Object.entries(errors).map(([k, msg]) => (
+              <li key={k}>
+                <a href={`#${uid}-${k}-field`} className="underline">
+                  {msg}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
-      <fieldset aria-describedby={field("sitesCount")}>
+      <fieldset id={`${uid}-sitesCount-field`} tabIndex={-1} aria-describedby={field("sitesCount")}>
         <legend className={label}>Number of sites (required)</legend>
         <div className="mt-2 grid grid-cols-3 gap-2">
           {[
@@ -558,7 +607,7 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
             ["MULTIPLE", "Multiple"],
             ["NOT_SURE", "Not sure"],
           ].map(([v, l]) => (
-            <label key={v} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg px-2 text-sm ${f.sitesCount === v ? "border-2 border-[#1B3A63] font-semibold linko-dark:border-[#F6C140]" : T.secondary}`}>
+            <label key={v} className={`flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-lg px-2 text-sm focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[#C49A45] ${f.sitesCount === v ? "border-2 border-[#1B3A63] font-semibold linko-dark:border-[#F6C140]" : T.secondary}`}>
               <input type="radio" name={`${uid}-sites`} value={v} checked={f.sitesCount === v} onChange={() => set("sitesCount", v)} className="sr-only" />
               {l}
             </label>
@@ -567,34 +616,53 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
         {err("sitesCount")}
       </fieldset>
       <div>
-        <label htmlFor={`${uid}-bn`} className={label}>
+        <label htmlFor={`${uid}-siteOutwardCode-field`} className={label}>
+          First site postcode area (optional)
+        </label>
+        <p id={`${uid}-pc-hint`} className={`text-sm ${T.muted}`}>
+          The first part only, for example SW1A.
+        </p>
+        <input
+          id={`${uid}-siteOutwardCode-field`}
+          className={`mt-1 ${input} uppercase`}
+          value={f.siteOutwardCode}
+          maxLength={4}
+          autoComplete="off"
+          aria-invalid={!!errors.siteOutwardCode}
+          aria-describedby={`${uid}-pc-hint${errors.siteOutwardCode ? ` ${uid}-siteOutwardCode-err` : ""}`}
+          onChange={(e) => set("siteOutwardCode", e.target.value)}
+        />
+        {err("siteOutwardCode")}
+      </div>
+      <div>
+        <label htmlFor={`${uid}-businessName-field`} className={label}>
           Business name (required)
         </label>
-        <input id={`${uid}-bn`} className={`mt-1 ${input}`} value={f.businessName} maxLength={120} autoComplete="organization" aria-invalid={!!errors.businessName} aria-describedby={field("businessName")} onChange={(e) => set("businessName", e.target.value)} />
+        <input id={`${uid}-businessName-field`} className={`mt-1 ${input}`} value={f.businessName} maxLength={120} autoComplete="organization" aria-invalid={!!errors.businessName} aria-describedby={field("businessName")} onChange={(e) => set("businessName", e.target.value)} />
         {err("businessName")}
       </div>
       <div>
-        <label htmlFor={`${uid}-cn`} className={label}>
+        <label htmlFor={`${uid}-contactName-field`} className={label}>
           Contact name (required)
         </label>
-        <input id={`${uid}-cn`} className={`mt-1 ${input}`} value={f.contactName} maxLength={120} autoComplete="name" aria-invalid={!!errors.contactName} aria-describedby={field("contactName")} onChange={(e) => set("contactName", e.target.value)} />
+        <input id={`${uid}-contactName-field`} className={`mt-1 ${input}`} value={f.contactName} maxLength={120} autoComplete="name" aria-invalid={!!errors.contactName} aria-describedby={field("contactName")} onChange={(e) => set("contactName", e.target.value)} />
         {err("contactName")}
       </div>
       <fieldset>
         <legend className={label}>How should we contact you? (required)</legend>
         <div className="mt-2 flex gap-4 text-sm">
           {(["EMAIL", "PHONE"] as const).map((t) => (
-            <label key={t} className="flex min-h-9 items-center gap-2">
+            <label key={t} className="flex min-h-11 items-center gap-2">
               <input type="radio" name={`${uid}-ch`} checked={f.channelType === t} onChange={() => set("channelType", t)} className="h-4 w-4 accent-[#1B3A63]" />
               {t === "EMAIL" ? "Work email" : "Phone"}
             </label>
           ))}
         </div>
-        <label htmlFor={`${uid}-cv`} className="sr-only">
+        <label htmlFor={`${uid}-channelValue-field`} className="sr-only">
           {f.channelType === "EMAIL" ? "Work email" : "Phone number"}
         </label>
         <input
-          id={`${uid}-cv`}
+          id={`${uid}-channelValue-field`}
           className={`mt-2 ${input}`}
           type={f.channelType === "EMAIL" ? "email" : "tel"}
           autoComplete={f.channelType === "EMAIL" ? "email" : "tel"}
@@ -614,13 +682,13 @@ function SpecialistForm({ active, onDone }: { active: boolean; onDone: (ok: bool
       </div>
       <div>
         <label className="flex items-start gap-3 text-sm">
-          <input type="checkbox" checked={f.permission} onChange={(e) => set("permission", e.target.checked)} aria-describedby={field("permission")} className="mt-0.5 h-4 w-4 accent-[#1B3A63]" />
+          <input id={`${uid}-permission-field`} type="checkbox" checked={f.permission} onChange={(e) => set("permission", e.target.checked)} aria-invalid={!!errors.permission} aria-describedby={field("permission")} className="mt-0.5 h-5 w-5 accent-[#1B3A63]" />
           <span>Zoiko Broadband may contact me about this enquiry. (required)</span>
         </label>
         {err("permission")}
       </div>
       <label className="flex items-start gap-3 text-sm">
-        <input type="checkbox" checked={f.marketing} onChange={(e) => set("marketing", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#1B3A63]" />
+        <input type="checkbox" checked={f.marketing} onChange={(e) => set("marketing", e.target.checked)} className="mt-0.5 h-5 w-5 accent-[#1B3A63]" />
         <span>Send me occasional business offers by email. (optional)</span>
       </label>
       <button type="submit" disabled={busy} className={`flex min-h-12 w-full items-center gap-2 rounded-lg px-4 text-[15px] font-semibold ${T.primary} ${T.focus} disabled:opacity-60`}>
@@ -642,16 +710,18 @@ function WifiSteps({
 }) {
   const [steps, setSteps] = useState<TriageData["steps"] | null>(null);
   const [index, setIndex] = useState(0);
-  const [status, setStatus] = useState<"choose" | "loading" | "steps" | "fixed" | "done">("choose");
+  const [status, setStatus] = useState<"issue" | "choose" | "loading" | "steps" | "fixed" | "done">("issue");
   const [choice, setChoice] = useState<string | null>(null);
   const stepRef = useRef<HTMLParagraphElement>(null);
 
-  if (!active && status === "choose") return <p className={`mt-3 text-xs ${T.muted}`}>This troubleshooting step has closed.</p>;
+  if (!active && (status === "issue" || status === "choose"))
+    return <p className={`mt-3 text-xs ${T.muted}`}>This troubleshooting step has closed.</p>;
 
-  const start = async (allDevices: boolean, label: string) => {
+  // The visitor reached this step by answering "No" to the telecare / emergency-line question.
+  const start = async (symptom: string, label: string, allDevices?: boolean) => {
     setChoice(label);
     setStatus("loading");
-    const r = await linkoApi.triage({ symptom: "SLOW_WIFI", allDevices });
+    const r = await linkoApi.triage({ symptom, allDevices, digitalVoice: false, telecareOrAlarm: false });
     if (!r.ok) {
       setStatus("done");
       onEscalate("error");
@@ -669,9 +739,72 @@ function WifiSteps({
     setTimeout(() => stepRef.current?.focus(), 0);
   };
 
+  const btn = `flex min-h-11 w-full items-center gap-2 rounded-lg px-4 text-left text-[14px] ${T.secondary} ${T.focus} disabled:opacity-60`;
+  if (status === "issue") {
+    return (
+      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="What's the problem?">
+        <button type="button" className={btn} onClick={() => start("NO_CONNECTION", "No connection")}>
+          No connection
+        </button>
+        <button type="button" className={btn} onClick={() => start("SLOW_SPEED", "Slow speed")}>
+          Slow speed
+        </button>
+        <button type="button" className={btn} onClick={() => { setChoice("Wi-Fi problems"); setStatus("choose"); }}>
+          Wi-Fi problems
+        </button>
+        <button type="button" className={btn} onClick={() => start("WIFI_DROPS", "Wi-Fi drop-outs", true)}>
+          Wi-Fi drop-outs
+        </button>
+        <button type="button" className={btn} onClick={() => start("NO_CONNECTION", "Router problem")}>
+          Router problem
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => {
+            setChoice("Phone line");
+            setStatus("done");
+            onEscalate("safety"); // phone-line faults always go to the safety route (Doc01 WF-15)
+          }}
+        >
+          Phone line
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => {
+            setChoice("Something else");
+            setStatus("done");
+            onEscalate("unresolved");
+          }}
+        >
+          Something else
+        </button>
+        <button
+          type="button"
+          className={btn}
+          onClick={() => {
+            setChoice("Skip diagnostics");
+            setStatus("done");
+            track("linko_diagnostics_completed", { outcome: "skipped" });
+            onEscalate("unresolved");
+          }}
+        >
+          Skip diagnostics
+        </button>
+      </div>
+    );
+  }
+
   if (status === "choose" || status === "loading") {
     return (
-      <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Which devices are affected?">
+      <>
+      {/* Doc01 WF-12 wording + Doc03 FRS-F05 caveat */}
+      <p className={`mt-3 text-[14px] ${T.text}`}>
+        Is the problem affecting all devices or just one? That helps us distinguish Wi-Fi coverage from a connection fault — though I can&apos;t
+        test your line from here.
+      </p>
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Which devices are affected?">
         {[
           [true, "All devices"],
           [false, "One device"],
@@ -680,18 +813,24 @@ function WifiSteps({
             key={String(label)}
             type="button"
             disabled={status === "loading"}
-            onClick={() => start(all as boolean, label as string)}
+            onClick={() => start("SLOW_WIFI", `Wi-Fi problems – ${label}`, all as boolean)}
             className={`flex min-h-11 w-full items-center gap-2 rounded-lg px-4 text-left text-[14px] ${T.secondary} ${T.focus} disabled:opacity-60`}
           >
             {label}
           </button>
         ))}
         {status === "loading" && (
-          <p role="status" className={`col-span-full text-xs ${T.muted}`}>
+          <p role="status" className={`col-span-full text-sm ${T.muted}`}>
             Getting safe steps…
           </p>
         )}
+        {status === "choose" && (
+          <button type="button" className={`${btn} md:col-span-2`} onClick={() => setStatus("issue")}>
+            <ArrowLeft size={16} aria-hidden /> Back
+          </button>
+        )}
       </div>
+      </>
     );
   }
 
@@ -721,11 +860,24 @@ function WifiSteps({
           {step.linkLabel ?? "More help"}
         </Link>
       )}
-      <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2">
+        {index > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setIndex(index - 1);
+              setTimeout(() => stepRef.current?.focus(), 0);
+            }}
+            className={`min-h-11 rounded-lg px-3 text-sm ${T.secondary} ${T.focus}`}
+          >
+            Back
+          </button>
+        )}
         <button
           type="button"
           onClick={() => {
             setStatus("fixed");
+            track("linko_diagnostics_completed", { outcome: "fixed" });
           }}
           className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${T.primary} ${T.focus}`}
         >
@@ -770,7 +922,7 @@ function MoveDate({ active, onSaved }: { active: boolean; onSaved: (isoDate: str
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   if (!active || done) return <p className={`mt-3 text-xs ${T.muted}`}>Move date step completed.</p>;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
   return (
     <form
       className="mt-4 space-y-2"
@@ -829,62 +981,152 @@ function MoveDate({ active, onSaved }: { active: boolean; onSaved: (isoDate: str
 
 /* ─────────────── LK-WF-17 handoff summary (consented, minimised – PUB-12) ─────────────── */
 
-function HandoffSummary({ topics, serverId }: { topics: string[]; serverId: string | null }) {
-  const [summary, setSummary] = useState<string | null>(null);
+/** Reason sent with the handoff summary, from the journeys in this chat (most serious first). */
+function reasonFromTopics(topics: string[]) {
+  if (topics.includes("Digital voice and telecare safety")) return "SAFETY";
+  if (topics.includes("Cancellation or complaint")) return "COMPLAINT";
+  if (topics.includes("Accessibility and support needs")) return "VULNERABILITY";
+  if (topics.some((t) => t.startsWith("Business"))) return "BUSINESS";
+  if (topics.includes("Reporting a problem") || topics.includes("Troubleshooting")) return "FAULT";
+  if (topics.includes("Billing")) return "BILLING";
+  if (topics.includes("Tracking an order")) return "ORDER";
+  return "USER_REQUEST";
+}
+
+/**
+ * LK-WF-17 / Doc10 HS-WF-10-02/06: the visitor previews the summary first, can untick topics,
+ * chooses separately whether our team may read this chat, and can send nothing or withdraw later.
+ * Nothing is recorded until they choose (no pre-ticked consent).
+ */
+function HandoffSummary({ topics, receipts, serverId }: { topics: string[]; receipts: string[]; serverId: string | null }) {
+  const uid = useId();
+  const [chosen, setChosen] = useState<string[]>(topics);
+  const [shareChat, setShareChat] = useState(false);
+  const [state, setState] = useState<"review" | "sending" | "shared" | "declined" | "withdrawn" | "error">("review");
+  const [ref, setRef] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [key] = useState(() => newKey());
+  const reason = reasonFromTopics(topics);
 
-  useEffect(() => {
-    let alive = true;
-    linkoApi
-      .handoff({ channel: "ANY", shareSummary: true, reason: "USER_REQUEST", conversationId: serverId, topics })
-      .then((r) => {
-        if (!alive) return;
-        if (r.ok && r.body.data.summary) setSummary(r.body.data.summary);
-        else setFailed(true);
-      });
-    return () => {
-      alive = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const preview = [
+    "Linko chat summary (Zoiko Broadband AI assistant)",
+    `Topics: ${chosen.length ? chosen.join("; ") : "general enquiry"}`,
+    ...(receipts.length ? [`Confirmed: ${receipts.join("; ")}`] : ["Nothing was ordered, booked or changed in the chat."]),
+  ].join("\n");
 
-  const text =
-    summary ??
-    (failed
-      ? [
-          "Linko chat summary (Zoiko Broadband AI assistant)",
-          `Topics: ${topics.length ? topics.join("; ") : "general enquiry"}`,
-          "Nothing was ordered, booked or changed in the chat.",
-        ].join("\n")
-      : null);
+  const send = async (share: boolean) => {
+    setState("sending");
+    const r = await linkoApi.handoff(
+      { channel: "ANY", shareSummary: share, shareTranscript: share && shareChat, reason, conversationId: serverId, topics: share ? chosen : [] },
+      key,
+    );
+    if (!r.ok) {
+      setState(share ? "error" : "declined");
+      return;
+    }
+    setRef(r.body.data.handoffRef ?? null);
+    setState(share ? "shared" : "declined");
+  };
+
+  const withdraw = async () => {
+    if (!ref) return;
+    await linkoApi.withdrawHandoff(ref);
+    setState("withdrawn");
+  };
 
   return (
     <div className={`mt-4 rounded-xl p-4 text-sm ${T.row}`}>
       <h3 className={`text-[15px] font-bold ${T.text}`}>Summary to share</h3>
-      {text ? (
+      {state === "review" || state === "sending" ? (
         <>
-          <pre className={`mt-2 whitespace-pre-wrap font-sans text-[13px] leading-relaxed ${T.text}`}>{text}</pre>
-          <button
-            type="button"
-            onClick={() =>
-              navigator.clipboard?.writeText(text).then(
-                () => setCopied(true),
-                () => setCopied(false),
-              )
-            }
-            className={`mt-3 inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold ${T.secondary} ${T.focus}`}
+          <p className={`mt-1 ${T.muted}`}>Check what our team will see. Untick anything you&apos;d rather not share.</p>
+          {topics.length > 0 && (
+            <fieldset className="mt-2">
+              <legend className="sr-only">Topics to share</legend>
+              {topics.map((t) => (
+                <label key={t} className="flex min-h-11 items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={chosen.includes(t)}
+                    onChange={(e) => setChosen((c) => (e.target.checked ? [...c, t] : c.filter((x) => x !== t)))}
+                    className="h-5 w-5 accent-[#1B3A63]"
+                  />
+                  {t}
+                </label>
+              ))}
+            </fieldset>
+          )}
+          <pre
+            id={`${uid}-preview`}
+            className={`mt-2 whitespace-pre-wrap rounded-lg bg-[#F7F9FC] p-3 font-sans text-[14px] leading-relaxed linko-dark:bg-slate-800 ${T.text}`}
           >
-            {copied ? <CheckCircle2 size={16} aria-hidden /> : <ClipboardCopy size={16} aria-hidden />}
-            {copied ? "Copied" : "Copy summary"}
-          </button>
+            {preview}
+          </pre>
+          <label className="mt-2 flex min-h-11 items-start gap-3">
+            <input type="checkbox" checked={shareChat} onChange={(e) => setShareChat(e.target.checked)} className="mt-0.5 h-5 w-5 accent-[#1B3A63]" />
+            <span>Also let our support team read this chat (sensitive details are removed). Optional — you can still get help without it.</span>
+          </label>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={state === "sending"}
+              onClick={() => send(true)}
+              className={`min-h-11 rounded-lg px-4 font-semibold ${T.primary} ${T.focus} disabled:opacity-60`}
+            >
+              Share this summary
+            </button>
+            <button
+              type="button"
+              disabled={state === "sending"}
+              onClick={() => send(false)}
+              className={`min-h-11 rounded-lg px-4 ${T.secondary} ${T.focus} disabled:opacity-60`}
+            >
+              Send nothing
+            </button>
+          </div>
+        </>
+      ) : state === "shared" ? (
+        <>
+          <p className={`mt-1 ${T.text}`} role="status">
+            Shared with our support team{shareChat ? ", including this chat" : ""}. It isn&apos;t a live transfer — please also contact the team using
+            one of the options below, and you can paste this summary there.
+          </p>
+          <pre className={`mt-2 whitespace-pre-wrap font-sans text-[14px] leading-relaxed ${T.text}`}>{preview}</pre>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                navigator.clipboard?.writeText(preview).then(
+                  () => setCopied(true),
+                  () => setCopied(false),
+                )
+              }
+              className={`inline-flex min-h-11 items-center gap-2 rounded-lg px-3 font-semibold ${T.secondary} ${T.focus}`}
+            >
+              {copied ? <CheckCircle2 size={16} aria-hidden /> : <ClipboardCopy size={16} aria-hidden />}
+              {copied ? "Copied" : "Copy summary"}
+            </button>
+            {ref && (
+              <button type="button" onClick={withdraw} className={`min-h-11 rounded-lg px-3 ${T.secondary} ${T.focus}`}>
+                Withdraw what I shared
+              </button>
+            )}
+          </div>
           <span role="status" className="sr-only">
             {copied ? "Summary copied to clipboard." : ""}
           </span>
         </>
+      ) : state === "withdrawn" ? (
+        <p className={`mt-2 ${T.text}`} role="status">
+          Withdrawn — our team can no longer see the summary{shareChat ? " or this chat" : ""}.
+        </p>
+      ) : state === "declined" ? (
+        <p className={`mt-2 ${T.text}`} role="status">
+          No problem — nothing from this chat has been shared. You can still contact the team below.
+        </p>
       ) : (
-        <p className={`mt-2 ${T.muted}`} role="status">
-          Preparing summary…
+        <p className={`mt-2 ${T.text}`} role="status">
+          I couldn&apos;t share the summary just now. You can copy it instead: <span className="whitespace-pre-wrap">{preview}</span>
         </p>
       )}
     </div>
@@ -910,10 +1152,7 @@ function PlanCard() {
   return (
     <article className={`mt-4 rounded-xl p-4 ${T.row}`} aria-label={PLAN_CARD.title}>
       <h3 className={`text-[15px] font-bold ${T.text}`}>{PLAN_CARD.title}</h3>
-      <p className={`mt-0.5 text-xs ${T.muted}`}>{PLAN_CARD.note}</p>
-      <div className="mt-3 rounded-lg bg-[#EEF2F8] px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#2B4C7E] linko-dark:bg-slate-800 linko-dark:text-slate-200">
-        Plan name from live catalogue
-      </div>
+      <p className={`mt-0.5 text-sm ${T.muted}`}>{PLAN_CARD.note}</p>
       <DetailRows rows={PLAN_CARD.rows} />
     </article>
   );
@@ -934,8 +1173,20 @@ function SecureCard() {
 
 /* ────────────────────────── C20 Summary card ──────────────────────────── */
 
-function SummaryCard({ topics, onFeedback }: { topics: string[]; onFeedback: (v: "up" | "down") => void }) {
+// Doc07 C17: don't ask "Was this helpful?" after a complaint or a safety conversation.
+const NO_FEEDBACK_TOPICS = ["Cancellation or complaint", "Digital voice and telecare safety"];
+
+function SummaryCard({
+  topics,
+  receipts,
+  onFeedback,
+}: {
+  topics: string[];
+  receipts: string[];
+  onFeedback: (v: "up" | "down") => void;
+}) {
   const [fb, setFb] = useState<"up" | "down" | null>(null);
+  const askFeedback = !topics.some((t) => NO_FEEDBACK_TOPICS.includes(t));
   return (
     <article className={`mt-4 rounded-xl p-4 text-sm ${T.row}`} aria-label="Conversation summary">
       <h3 className={`text-[15px] font-bold ${T.text}`}>Short summary</h3>
@@ -953,12 +1204,28 @@ function SummaryCard({ topics, onFeedback }: { topics: string[]; onFeedback: (v:
       ) : (
         <p className="mt-2">General questions only.</p>
       )}
-      <p className={`mt-3 border-t border-[#E1E7F0] pt-3 text-xs linko-dark:border-slate-700 ${T.muted}`}>
-        <strong>Completed:</strong> nothing has been ordered, booked or changed in this chat. <strong>Pending:</strong> any next step
-        happens on our secure pages or with our team.
+      {/* AT-61 / Doc07 C20: confirmed (system-accepted) items are kept apart from information-only topics. */}
+      <p className={`mt-3 border-t border-[#E1E7F0] pt-3 text-sm linko-dark:border-slate-700 ${T.muted}`}>
+        {receipts.length ? (
+          <>
+            <strong>Confirmed:</strong> {receipts.join("; ")}. <strong>Nothing else</strong> has been ordered, booked or changed in
+            this chat.
+          </>
+        ) : (
+          <>
+            <strong>Completed:</strong> nothing has been ordered, booked or changed in this chat.
+          </>
+        )}{" "}
+        <strong>Pending:</strong> any next step happens on our secure pages or with our team.
       </p>
-      <div className={`mt-3 flex flex-wrap items-center gap-2 text-xs ${T.muted}`}>
-        {fb ? (
+      {topics.includes("Cancellation or complaint") && (
+        <p className={`mt-2 text-sm ${T.muted}`}>
+          Ending this chat doesn&apos;t make, close or resolve a complaint. If you&apos;ve raised one with our team, it stays open until
+          they reply.
+        </p>
+      )}
+      <div className={`mt-3 flex flex-wrap items-center gap-2 text-sm ${T.muted}`}>
+        {!askFeedback ? null : fb ? (
           <span role="status">Thanks for your feedback. Feedback isn&apos;t a complaint and doesn&apos;t change your account.</span>
         ) : (
           <>
@@ -971,7 +1238,7 @@ function SummaryCard({ topics, onFeedback }: { topics: string[]; onFeedback: (v:
                   setFb(v);
                   onFeedback(v);
                 }}
-                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
+                className={`flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
               >
                 {v === "up" ? <ThumbsUp size={14} aria-hidden /> : <ThumbsDown size={14} aria-hidden />}
                 {v === "up" ? "Yes" : "No"}
@@ -986,12 +1253,24 @@ function SummaryCard({ topics, onFeedback }: { topics: string[]; onFeedback: (v:
 
 /* ─────────────────────────── C04 Message ──────────────────────────────── */
 
+const TIME_FMT = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" });
+const DATE_TIME_FMT = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+  timeZone: "Europe/London",
+});
+
 interface WidgetHandlers {
   serverId: string | null;
+  receipts: string[];
+  businessSites: string;
+  getServerId: () => Promise<string | null>;
   onAddressDone: (o: AddressOutcome, ctx: AddressContext) => void;
   onWifiEscalate: (reason: "safety" | "unresolved" | "error") => void;
   onMoveDate: (isoDate: string | null) => void;
-  onLeadDone: (ok: boolean, reference?: string) => void;
+  onLeadDone: (result: LeadResult, reference?: string) => void;
   onSummaryFeedback: (v: "up" | "down") => void;
 }
 
@@ -1012,13 +1291,19 @@ function Message({
   onFeedback: (id: string, v: "up" | "down") => void;
   w: WidgetHandlers;
 }) {
+  const time = msg.at ? TIME_FMT.format(new Date(msg.at)) : null;
   if (msg.role === "user") {
     return (
-      <div className="flex justify-end">
-        <p className="sr-only">You said:</p>
+      <div className="flex flex-col items-end">
+        <p className="sr-only">You said{time ? ` at ${time}` : ""}:</p>
         <div className="max-w-[85%] whitespace-pre-wrap rounded-xl bg-[#1B3A63] px-4 py-3 text-[15px] leading-relaxed text-white">
           {msg.content}
         </div>
+        {time && (
+          <time aria-hidden className={`mt-1 text-[12px] ${T.muted}`}>
+            {time}
+          </time>
+        )}
       </div>
     );
   }
@@ -1035,7 +1320,7 @@ function Message({
 
   return (
     <div>
-      <p className="sr-only">Linko said:</p>
+      <p className="sr-only">Linko said{time ? ` at ${time}` : ""}:</p>
       <div className={`rounded-xl px-5 py-4 text-[15px] leading-relaxed ${toneStyles[tone]}`}>
         {tone === "safety" && (
           <p className="mb-2 flex items-center gap-2 font-bold">
@@ -1054,7 +1339,7 @@ function Message({
         )}
         <MessageText content={msg.content} />
         {msg.widget === "postcode" && (
-          <AddressPicker active={isLatest} context={msg.context ?? "residential"} onFinished={w.onAddressDone} />
+          <AddressPicker active={isLatest} context={msg.context ?? "residential"} onFinished={w.onAddressDone} getServerId={w.getServerId} />
         )}
         {msg.widget === "wifiSteps" && <WifiSteps active={isLatest} onEscalate={w.onWifiEscalate} />}
         {msg.widget === "moveDate" && <MoveDate active={isLatest} onSaved={w.onMoveDate} />}
@@ -1062,14 +1347,27 @@ function Message({
 
       {msg.widget === "planCard" && <PlanCard />}
       {msg.widget === "secureCard" && <SecureCard />}
-      {msg.widget === "summary" && <SummaryCard topics={topics} onFeedback={w.onSummaryFeedback} />}
-      {msg.widget === "specialistForm" && <SpecialistForm active={isLatest} onDone={w.onLeadDone} />}
-      {msg.widget === "handoffSummary" && <HandoffSummary topics={topics} serverId={w.serverId} />}
+      {msg.widget === "summary" && <SummaryCard topics={topics} receipts={w.receipts} onFeedback={w.onSummaryFeedback} />}
+      {msg.widget === "specialistForm" && <SpecialistForm active={isLatest} onDone={w.onLeadDone} initialSites={w.businessSites} />}
+      {msg.widget === "handoffSummary" && <HandoffSummary topics={topics} receipts={w.receipts} serverId={w.serverId} />}
 
       {showActions && <ActionGroup actions={msg.actions!} onAction={onAction} disabled={busy} />}
 
       {msg.source === "ai" && (
-        <div className={`mt-2 flex items-center gap-2 text-xs ${T.muted}`}>
+        // Doc06 evidence label / Doc07 C15 KBSource: AI answers say what they're based on and that they're AI-generated.
+        // With no verified source there is no source label at all (never an invented one).
+        <p className={`mt-2 text-[14px] ${T.muted}`}>
+          {msg.sources?.length ? `Based on: ${msg.sources.map((s) => s.source).join("; ")} · ` : ""}AI-generated, may need checking
+        </p>
+      )}
+      {time && (
+        <time aria-hidden className={`mt-1 block text-[12px] ${T.muted}`}>
+          {time}
+        </time>
+      )}
+
+      {msg.source === "ai" && (
+        <div className={`mt-2 flex flex-wrap items-center gap-2 text-sm ${T.muted}`}>
           {msg.feedback ? (
             <span role="status">
               {COPY.feedbackThanks}{" "}
@@ -1085,14 +1383,14 @@ function Message({
               <button
                 type="button"
                 onClick={() => onFeedback(msg.id, "up")}
-                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
+                className={`flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
               >
                 <ThumbsUp size={14} aria-hidden /> Useful
               </button>
               <button
                 type="button"
                 onClick={() => onFeedback(msg.id, "down")}
-                className={`flex min-h-8 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
+                className={`flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
               >
                 <ThumbsDown size={14} aria-hidden /> Not useful
               </button>
@@ -1120,8 +1418,8 @@ function Welcome({
       {/* Mobile reference shows an "Ask Linko" heading above the welcome card. */}
       <h3 className={`mb-4 text-[22px] font-bold md:hidden ${T.text}`}>Ask Linko</h3>
       <p className="sr-only">Linko said:</p>
-      <div className={`rounded-xl px-5 py-4 ${T.card}`}>
-        <p className="text-[16px] leading-relaxed">{msg.content}</p>
+      <div className={`rounded-xl px-4 py-3.5 ${T.card}`}>
+        <p className="text-[15px] leading-relaxed">{msg.content}</p>
       </div>
       {isLatest && msg.actions && (
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" role="group" aria-label="Choose a topic">
@@ -1129,15 +1427,6 @@ function Welcome({
             <ActionButton key={i} action={a} onAction={onAction} />
           ))}
         </div>
-      )}
-      {isLatest && (
-        <button
-          type="button"
-          onClick={() => onAction({ kind: "flow", label: "Speak to a person", flow: "handoff" })}
-          className={`mt-4 inline-flex min-h-9 items-center gap-1.5 rounded text-[14px] font-semibold hover:underline ${T.link} ${T.focus}`}
-        >
-          <Headset size={16} aria-hidden /> Speak to a person
-        </button>
       )}
     </div>
   );
@@ -1310,17 +1599,22 @@ function formatSavedDate(ts: number) {
 
 function HistoryView({
   currentId,
+  saving,
+  onToggleSaving,
   onBack,
   onNew,
   onOpen,
   onDelete,
 }: {
   currentId: string;
+  saving: boolean;
+  onToggleSaving: (on: boolean) => void;
   onBack: () => void;
   onNew: () => void;
   onOpen: (c: SavedChat) => void;
   onDelete: (id?: string) => SavedChat[];
 }) {
+  const uid = useId();
   const [items, setItems] = useState<SavedChat[]>(() => readHistory());
   const [confirmClear, setConfirmClear] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -1336,10 +1630,31 @@ function HistoryView({
       <button
         type="button"
         onClick={onBack}
-        className={`inline-flex w-fit items-center gap-1.5 rounded-md text-[15px] font-semibold ${T.link} ${T.focus}`}
+        className={`inline-flex min-h-11 w-fit items-center gap-1.5 rounded-md text-[15px] font-semibold ${T.link} ${T.focus}`}
       >
         <ArrowLeft size={18} aria-hidden /> Back to chat
       </button>
+
+      {/* Opt-in, never pre-ticked (Doc07 LK-WF-18, Doc06 C12). Turning it off deletes saved chats. */}
+      <label htmlFor={`${uid}-save`} className={`mt-4 flex min-h-11 items-start gap-3 rounded-xl p-3 text-[14px] ${T.row}`}>
+        <input
+          id={`${uid}-save`}
+          type="checkbox"
+          checked={saving}
+          onChange={(e) => {
+            onToggleSaving(e.target.checked);
+            if (!e.target.checked) setItems([]);
+          }}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-[#1B3A63]"
+        />
+        <span>
+          <span className={`block font-semibold ${T.text}`}>Save chat history on this device</span>
+          <span className={T.muted}>
+            Off by default. When on, chats are kept in this browser for up to {HISTORY_TTL_DAYS} days. Turning it off deletes saved
+            chats. Avoid on shared devices.
+          </span>
+        </span>
+      </label>
 
       <h3 ref={headingRef} tabIndex={-1} className={`mt-6 text-[12px] font-bold uppercase tracking-[0.12em] outline-none ${T.muted}`}>
         Chat history
@@ -1354,7 +1669,9 @@ function HistoryView({
       </button>
 
       {items.length === 0 ? (
-        <p className={`mt-8 text-center text-[15px] ${T.muted}`}>No saved chats in this browser yet.</p>
+        <p className={`mt-8 text-center text-[15px] ${T.muted}`}>
+          {saving ? "No saved chats in this browser yet." : "Chat history is off, so chats aren't saved on this device."}
+        </p>
       ) : (
         <>
           <ul className="mt-4 space-y-2" aria-label="Saved chats">
@@ -1366,7 +1683,7 @@ function HistoryView({
                   className={`min-w-0 flex-1 px-4 py-3 text-left hover:bg-[#F7F9FC] linko-dark:hover:bg-slate-800 ${T.focus}`}
                 >
                   <span className={`block truncate text-[14px] font-semibold ${T.text}`}>{c.title}</span>
-                  <span className={`mt-0.5 block text-[12px] ${T.muted}`}>
+                  <span className={`mt-0.5 block text-[14px] ${T.muted}`}>
                     {formatSavedDate(c.updatedAt)} · {count(c)} message{count(c) === 1 ? "" : "s"}
                     {c.id === currentId ? " · Open now" : ""}
                   </span>
@@ -1394,11 +1711,11 @@ function HistoryView({
                       setItems(onDelete());
                       setConfirmClear(false);
                     }}
-                    className={`min-h-10 rounded-lg bg-red-700 px-3 font-semibold text-white hover:bg-red-800 ${T.focus}`}
+                    className={`min-h-11 rounded-lg bg-red-700 px-3 font-semibold text-white hover:bg-red-800 ${T.focus}`}
                   >
                     Delete all
                   </button>
-                  <button type="button" onClick={() => setConfirmClear(false)} className={`min-h-10 rounded-lg px-3 ${T.secondary} ${T.focus}`}>
+                  <button type="button" onClick={() => setConfirmClear(false)} className={`min-h-11 rounded-lg px-3 ${T.secondary} ${T.focus}`}>
                     Cancel
                   </button>
                 </div>
@@ -1407,7 +1724,7 @@ function HistoryView({
               <button
                 type="button"
                 onClick={() => setConfirmClear(true)}
-                className={`min-h-9 rounded text-[13px] font-medium text-red-700 hover:underline linko-dark:text-red-300 ${T.focus}`}
+                className={`min-h-11 rounded text-[14px] font-medium text-red-700 hover:underline linko-dark:text-red-300 ${T.focus}`}
               >
                 Clear all history
               </button>
@@ -1416,30 +1733,40 @@ function HistoryView({
         </>
       )}
 
-      <p className={`mt-auto pt-8 text-center text-[12px] leading-relaxed ${T.muted}`}>
-        Chats are saved in this browser on this device until you clear them. They aren&apos;t stored by Zoiko Broadband.
+      <p className={`mt-auto pt-8 text-center text-[14px] leading-relaxed ${T.muted}`}>
+        Saved chats stay only in this browser. While a chat is open, a copy with sensitive details removed is held briefly on our
+        servers and deleted when the chat ends.
       </p>
     </div>
   );
 }
 
-/** Plain-text transcript (already redacted) for "Download transcript". */
+/** Masks emails, phone numbers and full postcodes in an exported transcript (Doc03 FRS-D10 / Z02). */
+function maskForExport(text: string) {
+  return text
+    .replace(/[^\s@]+@[^\s@]+\.[^\s@]{2,}/g, "[email]")
+    .replace(/(?:\+44\s?|\b0)\d(?:[\s-]?\d){8,10}\b/g, (m) => (m.replace(/\D/g, "") === COMPANY.phoneHref.replace(/\D/g, "") ? m : "[phone]"))
+    .replace(/\b([A-PR-UWYZ][A-HK-Y]?\d[A-Z\d]?)\s?\d[ABD-HJLNP-UW-Z]{2}\b/gi, "$1 ***");
+}
+
+/** Redacted plain-text transcript for "Download transcript". */
 function downloadTranscript(messages: ChatMessage[]) {
   const lines = [
-    "Zoiko Broadband – Linko AI assistant transcript",
+    "Zoiko Broadband – Linko AI assistant transcript (redacted)",
+    "Card numbers, passwords, codes, email addresses, phone numbers and full postcodes are removed.",
     `Saved: ${new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/London" }).format(new Date())}`,
     "Linko is an AI assistant. Nothing in this chat places an order or changes your account.",
     "",
   ];
   for (const m of messages) {
     if (m.role === "assistant" && m.content === COPY.welcome) continue;
-    lines.push(`${m.role === "user" ? "You" : "Linko"}: ${m.content.replace(/\*\*/g, "")}`, "");
+    lines.push(`${m.role === "user" ? "You" : "Linko"}: ${maskForExport(m.content.replace(/\*\*/g, ""))}`, "");
   }
   const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `linko-chat-${new Date().toISOString().slice(0, 10)}.txt`;
+  a.download = `linko-redacted-transcript-${new Date().toISOString().slice(0, 10)}.txt`;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -1448,9 +1775,10 @@ function downloadTranscript(messages: ChatMessage[]) {
 
 /* ───────────────────────────── Main widget ────────────────────────────── */
 
-export default function ChatWidget() {
+export default function ChatWidget({ startOpen = false }: { startOpen?: boolean }) {
   const pathname = usePathname() || "/";
-  const [open, setOpen] = useState(false);
+  // startOpen: the lightweight launcher (LinkoLoader) loaded this panel because the visitor clicked it.
+  const [open, setOpen] = useState(startOpen);
   const [input, setInput] = useState("");
   const [notice, setNotice] = useState<{ text: string; afterId: string } | null>(null);
   const [view, setView] = useState<"chat" | "history">("chat");
@@ -1507,23 +1835,82 @@ export default function ChatWidget() {
     return () => document.removeEventListener("keydown", onKey);
   }, [open, closePanel]);
 
-  // Lock page scroll behind the full-screen mobile sheet.
+  // Full-screen mobile sheet is modal: lock page scroll, make the page inert and trap Tab inside (Doc07 C02).
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
-    if (!open || window.innerWidth >= 768) return;
+    const mq = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (!open || !isMobile) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const root = panelRef.current?.parentElement;
+    const siblings = Array.from(document.body.children).filter(
+      (el) => el instanceof HTMLElement && !el.contains(panelRef.current) && el.tagName !== "SCRIPT",
+    ) as HTMLElement[];
+    siblings.forEach((el) => el.setAttribute("inert", ""));
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const f = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), textarea, input:not([disabled]), select, [tabindex]:not([tabindex="-1"])'),
+      ).filter((el) => el.offsetParent !== null);
+      if (!f.length) return;
+      const first = f[0];
+      const last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    void root;
     return () => {
       document.body.style.overflow = prev;
+      siblings.forEach((el) => el.removeAttribute("inert"));
+      document.removeEventListener("keydown", onKey);
     };
-  }, [open]);
+  }, [open, isMobile]);
 
-  // Keep the newest message in view.
+  // Offline state (Doc07 C05): Send is disabled while the device is offline.
+  const [offline, setOffline] = useState(false);
+  useEffect(() => {
+    const update = () => setOffline(!navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  // Keep the newest message in view — but don't pull the visitor down while they're reading earlier messages (LK-WF-04).
+  const nearBottom = useRef(true);
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
+    const onScroll = () => {
+      nearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [open, view]);
+  const lastRole = messages[messages.length - 1]?.role;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (!nearBottom.current && lastRole !== "user") return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     el.scrollTo({ top: el.scrollHeight, behavior: reduce ? "auto" : "smooth" });
-  }, [messages, isLoading, open]);
+    nearBottom.current = true;
+  }, [messages, isLoading, open, lastRole]);
 
   // Current LK-WF screen title for the header: the latest guided step (AI answers keep the journey title).
   let screen: string | null = null;
@@ -1544,35 +1931,69 @@ export default function ChatWidget() {
   // Announce only the newest assistant message (derived – each reply is read once, not the whole log).
   const lastMsg = messages[messages.length - 1];
   const lastId = lastMsg?.id ?? "";
+  // Doc01 §3.4: never auto-read a whole generated reply — announce the reply, its position and the first sentence only.
+  const assistantCount = messages.filter((m) => m.role === "assistant").length;
+  const firstSentence = (lastMsg?.content ?? "").replace(/\*\*/g, "").split(/(?<=[.!?])\s/)[0].slice(0, 160);
   const replyText =
     lastMsg?.role === "assistant"
-      ? (lastMsg.tone === "safety" ? "Safety information. " : "Linko: ") + lastMsg.content.replace(/\*\*/g, "").slice(0, 400)
+      ? `${lastMsg.tone === "safety" ? "Safety information from Linko" : "Linko replied"} (message ${assistantCount}). ${firstSentence}`
       : "";
   const liveText = isLoading ? "Linko is checking" : notice && notice.afterId === lastId ? notice.text : replyText;
 
   /** Calls a /v1/linko endpoint for an "api" button and shows its typed result (Doc04). */
-  const runApi = async (call: ApiCall, label: string) => {
-    chat.addUser(label);
-    const r = await linkoApi.private(call);
+  const [apiBusy, setApiBusy] = useState(false);
+  /** Safe exits whenever an API step fails without its own next actions (Doc01 WF-19 / AC-29). */
+  const apiFallback = (call: ApiCall, label: string, next?: LinkoAction[]): LinkoAction[] =>
+    next?.length
+      ? next
+      : [
+          { kind: "command", label: "Try again", command: "retry", primary: true, retryApi: { call, label } } as LinkoAction,
+          { kind: "link", label: "Open Help Centre", href: "/get-help" },
+          { kind: "flow", label: "Speak to a person", flow: "handoff" },
+        ];
+
+  const runApi = async (call: ApiCall, label: string, echo = true) => {
+    if (apiBusy) return;
+    if (echo) chat.addUser(label);
+    setApiBusy(true);
+    try {
+      await runApiInner(call, label);
+    } finally {
+      setApiBusy(false);
+    }
+  };
+
+  const runApiInner = async (call: ApiCall, label: string) => {
     if (call === "serviceStatus") {
-      const s = await linkoApi.serviceStatus(); // PUB-09
+      const s = await linkoApi.serviceStatus(); // PUB-09 (public – no private call first)
       if (s.ok) {
         const checked = s.body.sourceEvidence?.checkedAt
-          ? ` (checked ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(new Date(s.body.sourceEvidence.checkedAt))})`
+          ? ` (checked ${DATE_TIME_FMT.format(new Date(s.body.sourceEvidence.checkedAt))})`
           : "";
+        const incidents = (s.body.data.incidents ?? [])
+          .map((i) => `- ${i.summary}${i.updatedAt ? ` (updated ${TIME_FMT.format(new Date(i.updatedAt))})` : ""}`)
+          .join("\n");
         chat.addAssistant({
           source: "flow",
           screen: "Service status and fault triage",
-          content: `${s.body.data.message}${checked}`,
-          actions: toActions(s.body.nextActions),
+          content: `${s.body.data.message}${checked}${incidents ? `\n\n${incidents}` : ""}`,
+          actions: toActions(s.body.nextActions).length
+            ? toActions(s.body.nextActions)
+            : [
+                { kind: "flow", label: "Troubleshoot connection", flow: "faultType", primary: true },
+                { kind: "link", label: "Report a fault", href: "/report-a-fault" },
+              ],
         });
       } else {
-        chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: toActions(s.body?.nextActions) });
+        track("linko_tool_failure", { tool: "service_status", http: s.http });
+        chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: apiFallback(call, label, toActions(s.body?.nextActions)) });
       }
       return;
     }
+    const r = await linkoApi.private(call);
     if (r.ok) return; // not reachable until MyZoiko sign-in is connected
     if (r.http === 401) {
+      track("linko_auth_required", { call });
       // PRV-* fail closed → LK-WF-16 sign-in (no private data, no existence leak).
       chat.addAssistant({
         source: "flow",
@@ -1587,7 +2008,8 @@ export default function ChatWidget() {
       });
       return;
     }
-    chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: toActions(r.body?.nextActions) });
+    track("linko_tool_failure", { tool: call, http: r.http });
+    chat.addAssistant({ source: "flow", tone: "error", content: COPY.degraded, actions: apiFallback(call, label, toActions(r.body?.nextActions)) });
   };
 
   const lastNextStep = (): LinkoAction | null => {
@@ -1609,12 +2031,14 @@ export default function ChatWidget() {
     } else if (a.kind === "api") {
       void runApi(a.call, a.label);
     } else if (a.kind === "command") {
-      if (a.command === "retry") chat.retry();
+      const retryApi = (a as LinkoAction & { retryApi?: { call: ApiCall; label: string } }).retryApi;
+      if (a.command === "retry" && retryApi) void runApi(retryApi.call, retryApi.label, false);
+      else if (a.command === "retry") chat.retry();
       if (a.command === "restart") chat.restart();
       if (a.command === "close") closePanel();
       if (a.command === "endChat") {
         // LK-WF-20 End chat: close the server session (PUB-14), keep saved history, close the panel.
-        chat.endChat();
+        chat.endChat(messages.some((m) => m.widget === "summary") ? "summary" : chat.topics.includes("Speaking to our team") ? "handoff" : "abandon");
         closePanel();
       }
       if (a.command === "nextStep") {
@@ -1627,7 +2051,9 @@ export default function ChatWidget() {
         const text = [
           "Zoiko Broadband – Linko chat summary",
           ...chat.topics.map((t) => `• ${t} (information only)`),
-          "Nothing has been ordered, booked or changed in this chat.",
+          ...(chat.receipts.length
+            ? chat.receipts.map((r) => `• Confirmed: ${r}`)
+            : ["Nothing has been ordered, booked or changed in this chat."]),
           `Need help? Call ${COMPANY.phone} or visit zoikobroadband.com/get-help`,
         ].join("\n");
         navigator.clipboard?.writeText(text).then(
@@ -1649,10 +2075,25 @@ export default function ChatWidget() {
         widget: "moveDate",
       });
 
+    track("linko_availability_result", { outcome: o.kind, journey: ctx });
+    if (o.kind === "expired") {
+      chat.addAssistant({
+        source: "flow",
+        screen,
+        content: "That address selection has expired, so I haven't checked it. Please search the postcode again.",
+        actions: [
+          { kind: "flow", label: "Try another postcode", flow: ctx === "moving" ? "movingAddress" : ctx === "business" ? "businessAvailability" : "availability", primary: true },
+          { kind: "flow", label: "Speak to a specialist", flow: "handoff" },
+        ],
+      });
+      return;
+    }
     if (o.kind === "qualified") {
-      const tech = o.technologies.length ? ` Services returned: ${o.technologies.join(", ")}.` : "";
+      // FRS-A06: plain-language technology names.
+      const TECH: Record<string, string> = { FTTP: "Full Fibre (FTTP)", SOGEA: "Part Fibre (SOGEA)" };
+      const tech = o.technologies.length ? ` Services returned: ${o.technologies.map((t) => TECH[t] ?? t).join(", ")}.` : "";
       const when = o.checkedAt
-        ? ` Checked at ${new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/London" }).format(new Date(o.checkedAt))}.`
+        ? ` Checked ${DATE_TIME_FMT.format(new Date(o.checkedAt))}.`
         : "";
       chat.addAssistant({
         source: "flow",
@@ -1725,8 +2166,16 @@ export default function ChatWidget() {
 
   const widgetHandlers: WidgetHandlers = {
     serverId: chat.serverConversationId(),
+    receipts: chat.receipts,
+    businessSites:
+      { "One site": "ONE", "Multiple sites": "MULTIPLE", "Not sure": "NOT_SURE" }[
+        [...messages].reverse().find((m) => m.role === "user" && ["One site", "Multiple sites", "Not sure"].includes(m.content))
+          ?.content ?? ""
+      ] ?? "",
+    getServerId: chat.getServerId,
     onAddressDone: handleAddressDone,
     onWifiEscalate: (reason) => {
+      if (reason === "unresolved") track("linko_diagnostics_completed", { outcome: "unresolved" });
       if (reason === "safety") {
         chat.startFlow("safety");
         return;
@@ -1761,16 +2210,31 @@ export default function ChatWidget() {
         ],
       });
     },
-    onLeadDone: (ok, reference) => {
+    onLeadDone: (result, reference) => {
+      if (result === "accepted" && reference) chat.addReceipt(`Business enquiry sent – reference ${reference} (pending)`);
       chat.addAssistant(
-        ok && reference
+        result === "accepted" && reference
           ? {
               source: "flow",
               screen: "Business quote and specialist",
-              content: `Your request has been received. Your reference is ${reference}. A business specialist will contact you about your requirements.`,
+              topic: "Business specialist enquiry",
+              // §08.3: received and being checked – no promise of contact time.
+              content: `Your request has been received and is being checked. Reference: ${reference}.`,
               actions: [{ kind: "flow", label: "Start another question", flow: "welcome" }],
             }
-          : {
+          : result === "uncertain"
+            ? {
+                source: "flow",
+                tone: "error",
+                screen: "Business quote and specialist",
+                content:
+                  "I couldn't confirm whether your enquiry reached our team. Please don't send it again — call us and we'll check for you.",
+                actions: [
+                  { kind: "link", label: `Call ${COMPANY.phone}`, href: COMPANY.phoneHref, primary: true },
+                  { kind: "flow", label: "Speak to a person", flow: "handoff" },
+                ],
+              }
+            : {
               source: "flow",
               tone: "error",
               screen: "Business quote and specialist",
@@ -1788,10 +2252,11 @@ export default function ChatWidget() {
   };
 
   const submit = () => {
-    if (!input.trim() || isLoading) return;
+    if (!input.trim() || isLoading || offline) return;
     setView("chat");
     chat.send(input);
     setInput("");
+    if (inputRef.current) inputRef.current.style.height = "";
     inputRef.current?.focus();
   };
 
@@ -1820,16 +2285,30 @@ export default function ChatWidget() {
   const atStart = messages.length <= 1;
   const remaining = 2000 - input.length;
 
+  // C03 header variants: public / escalation / degraded / offline (Doc07).
+  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const headerStatus = offline
+    ? "AI assistant · Offline"
+    : lastAssistant?.tone === "error"
+      ? "AI assistant · Limited service"
+      : screen === "Human escalation and callback"
+        ? "AI assistant · Contact options for our team"
+        : "AI assistant · Public";
+
+  // Doc01 C08 / Doc03 §7.3: warn before sending if the draft looks like sensitive data.
+  const draftSensitive = input.trim() ? redactSensitive(input).removed : [];
+
   return (
     <>
       {open && (
         <section
           ref={panelRef}
           role="dialog"
-          aria-modal="false"
+          lang="en-GB"
+          aria-modal={isMobile}
           aria-labelledby="linko-title"
           style={{ colorScheme: darkMode ? "dark" : "light" }}
-          className={`${darkMode ? "linko-dark " : ""}fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-6 md:right-6 md:h-[min(780px,80dvh)] md:min-h-[480px] md:w-[432px] md:rounded-2xl md:border-2 md:border-[#B8C4D6] linko-dark:bg-slate-900 linko-dark:text-slate-100 md:linko-dark:border-slate-700`}
+          className={`${darkMode ? "linko-dark " : ""}fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-white pb-[env(safe-area-inset-bottom)] text-[#1E2A44] shadow-[0_12px_40px_rgba(21,33,61,0.18)] motion-safe:animate-[linkoIn_180ms_ease-out] md:inset-auto md:bottom-[96px] md:right-5 md:h-[min(740px,calc(100dvh-120px))] md:w-[min(520px,calc(100vw-3rem))] md:rounded-2xl md:border-2 md:border-[#B8C4D6] linko-dark:bg-slate-900 linko-dark:text-slate-100 md:linko-dark:border-slate-700`}
         >
           <style>{`@keyframes linkoIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}`}</style>
 
@@ -1840,12 +2319,13 @@ export default function ChatWidget() {
               type="button"
               onClick={() => (atStart ? closePanel() : chat.startFlow("welcome"))}
               aria-label={atStart ? "Close Linko" : "Back to start"}
-              className={`flex h-11 w-8 shrink-0 items-center justify-center rounded-md hover:bg-white/10 md:hidden ${T.focus}`}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-md hover:bg-white/10 md:hidden ${T.focus}`}
             >
               <ChevronLeft size={22} aria-hidden />
             </button>
+            {/* Doc07 figure 1: gold circular O (placeholder until Brand supplies the approved asset). */}
             <span className="hidden md:inline-flex">
-              <LinkoMark size={40} />
+              <LinkoMark size={36} />
             </span>
             <div className="min-w-0 flex-1">
               <h2 id="linko-title" ref={headingRef} tabIndex={-1} className="text-[17px] font-bold leading-snug outline-none">
@@ -1868,7 +2348,7 @@ export default function ChatWidget() {
                   )}
                 </span>
               </h2>
-              <p className="text-[12px] text-white/75 md:text-[13px]">{ASSISTANT.label} · Public</p>
+              <p className="text-[13px] text-white/80">{headerStatus}</p>
             </div>
             <HeaderMenu
               items={[
@@ -1895,12 +2375,23 @@ export default function ChatWidget() {
                 },
                 { id: "dark", label: "Dark mode", icon: <Moon size={18} />, checked: darkMode, onSelect: toggleDark },
                 {
+                  id: "privacy",
+                  label: "Privacy and AI",
+                  icon: <Info size={18} />,
+                  onSelect: () => {
+                    setView("chat");
+                    chat.startFlow("privacy");
+                  },
+                },
+                {
                   id: "help",
-                  label: "Help Center",
+                  label: "Help Centre",
                   icon: <LifeBuoy size={18} />,
                   separatorBefore: true,
                   onSelect: () => router.push("/get-help"),
                 },
+                // Doc11 FR-11-001: a persistent route to secure sign-in (opens Zoiko's sign-in page).
+                { id: "signin", label: "Sign in securely", icon: <Lock size={18} />, onSelect: () => router.push("/login") },
                 {
                   id: "support",
                   label: "Contact support",
@@ -1921,11 +2412,15 @@ export default function ChatWidget() {
             >
               <Minus size={20} aria-hidden />
             </button>
+            {/* Close ends the session (PUB-14 purge); Minimise keeps it (Doc03 §05.1, FRS-Z03). */}
             <button
               type="button"
-              onClick={closePanel}
-              aria-label="Close Linko"
-              title="Close"
+              onClick={() => {
+                chat.endChat("abandon");
+                closePanel();
+              }}
+              aria-label="End chat and close Linko"
+              title="End chat and close"
               className={`flex h-11 w-10 shrink-0 items-center justify-center rounded-md hover:bg-white/10 ${T.focus}`}
             >
               <X size={20} aria-hidden />
@@ -1933,7 +2428,7 @@ export default function ChatWidget() {
           </header>
 
           {/* Doc01 §3.2 block 02 – trust strip */}
-          <div className="flex flex-wrap items-center gap-x-2 border-b border-[#E1E7F0] bg-[#F7F9FC] px-5 py-2 text-[12px] text-[#33445E] md:px-6 linko-dark:border-slate-700 linko-dark:bg-slate-800 linko-dark:text-slate-300">
+          <div className="flex flex-wrap items-center gap-x-2 border-b border-[#E1E7F0] bg-[#F7F9FC] px-5 py-0.5 text-[14px] text-[#33445E] md:px-6 linko-dark:border-slate-700 linko-dark:bg-slate-800 linko-dark:text-slate-300">
             <span>{COPY.trust}</span>
             <button
               type="button"
@@ -1941,7 +2436,7 @@ export default function ChatWidget() {
                 setView("chat");
                 chat.startFlow("privacy");
               }}
-              className={`min-h-7 rounded font-semibold underline-offset-2 hover:underline ${T.link} ${T.focus}`}
+              className={`min-h-11 rounded font-semibold underline-offset-2 hover:underline ${T.link} ${T.focus}`}
             >
               {COPY.trustLink}
             </button>
@@ -1952,6 +2447,11 @@ export default function ChatWidget() {
             <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 md:px-6">
               <HistoryView
                 currentId={chat.conversationId()}
+                saving={chat.saveHistory}
+                onToggleSaving={(on) => {
+                  chat.setSaveHistory(on);
+                  setNotice({ text: on ? "Chat history will be saved on this device." : "Chat history turned off and saved chats deleted.", afterId: lastId });
+                }}
                 onBack={() => setView("chat")}
                 onNew={startNewChat}
                 onOpen={(c) => {
@@ -1980,7 +2480,7 @@ export default function ChatWidget() {
               <button
                 type="button"
                 onClick={() => chat.startFlow("welcome")}
-                className={`hidden items-center gap-1 rounded-md text-xs font-medium md:inline-flex ${T.link} ${T.focus}`}
+                className={`hidden min-h-11 items-center gap-1 rounded-md text-sm font-medium md:inline-flex ${T.link} ${T.focus}`}
               >
                 <ChevronLeft size={14} aria-hidden /> Back to start
               </button>
@@ -2006,10 +2506,16 @@ export default function ChatWidget() {
             })}
 
             {/* C16 Loader */}
-            {isLoading && (
-              <div className={`flex items-center gap-2 rounded-xl px-5 py-4 text-[15px] ${T.card}`}>
+            {(isLoading || apiBusy) && (
+              <div className={`flex items-center gap-2 rounded-xl px-5 py-3 text-[15px] ${T.card}`}>
                 <Loader2 size={16} className="motion-safe:animate-spin" aria-hidden />
-                Linko is checking…
+                <span className="flex-1">Linko is checking…</span>
+                {isLoading && (
+                  // Doc07 §08: cancel is safe – asking a question never changes anything.
+                  <button type="button" onClick={chat.cancel} className={`min-h-11 rounded-lg px-3 text-sm font-semibold ${T.secondary} ${T.focus}`}>
+                    Stop
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -2030,12 +2536,27 @@ export default function ChatWidget() {
             <label htmlFor="linko-input" className="sr-only">
               Message Linko
             </label>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-2 md:pl-3 linko-dark:md:border-slate-600 linko-dark:md:bg-slate-800">
+            {offline && (
+              <p role="status" className="mb-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[14px] text-amber-900 linko-dark:border-amber-700 linko-dark:bg-amber-950 linko-dark:text-amber-100">
+                You&apos;re offline — messages can&apos;t be sent until your connection is back.
+              </p>
+            )}
+            {draftSensitive.length > 0 && (
+              <p id="linko-dlp-warning" role="status" className="mb-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-[14px] text-sky-900 linko-dark:border-sky-700 linko-dark:bg-sky-950 linko-dark:text-sky-100">
+                This looks like {draftSensitive.join(" and ")}. Please don&apos;t share it here — it will be removed before sending.
+              </p>
+            )}
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-2 md:pl-3 md:focus-within:outline md:focus-within:outline-2 md:focus-within:outline-offset-2 md:focus-within:outline-[#C49A45] linko-dark:md:border-slate-600 linko-dark:md:bg-slate-800">
               <textarea
                 id="linko-input"
                 ref={inputRef}
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value);
+                  // UI-04: grow with the text up to the max height.
+                  e.target.style.height = "auto";
+                  e.target.style.height = `${Math.min(e.target.scrollHeight, 128)}px`;
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
                     e.preventDefault();
@@ -2045,18 +2566,18 @@ export default function ChatWidget() {
                 rows={1}
                 maxLength={2000}
                 placeholder={COPY.composerPlaceholder}
-                aria-describedby="linko-input-hint"
+                aria-describedby={draftSensitive.length ? "linko-dlp-warning linko-input-hint" : "linko-input-hint"}
                 className={`max-h-32 min-h-12 w-full flex-1 resize-none rounded-lg border border-[#B8C4D6] bg-white px-4 py-3 text-[16px] text-[#1E2A44] placeholder:text-[#8A97AB] md:min-h-10 md:rounded-none md:border-0 md:bg-transparent md:px-1 md:py-2 md:text-[15px] md:outline-none linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white md:linko-dark:bg-transparent ${T.focus} md:focus-visible:outline-none`}
               />
               <button
                 type="submit"
-                disabled={!input.trim() || isLoading}
-                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-40 md:min-h-11 md:w-auto linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] ${T.focus}`}
+                disabled={!input.trim() || isLoading || offline}
+                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-80 md:min-h-10 md:w-auto md:px-5 md:text-[14px] linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] ${T.focus}`}
               >
                 Send
               </button>
             </div>
-            <p id="linko-input-hint" className={`mt-2 flex justify-between gap-2 text-[12px] ${T.muted}`}>
+            <p id="linko-input-hint" className={`mt-2 flex justify-between gap-2 text-[13px] ${T.muted}`}>
               <span>{COPY.footerDisclaimer}</span>
               {remaining < 200 && <span aria-live="polite">{remaining} characters left</span>}
             </p>
@@ -2073,25 +2594,25 @@ export default function ChatWidget() {
                 setView("chat");
                 chat.startFlow("safety");
               }}
-              className={`order-last ml-auto inline-flex min-h-9 items-center gap-1.5 rounded px-0.5 font-semibold text-[#B42318] hover:underline linko-dark:text-red-300 ${T.focus}`}
+              className={`order-last ml-auto inline-flex min-h-11 items-center gap-1 rounded px-0.5 text-[#B42318] hover:underline linko-dark:text-red-300 ${T.focus}`}
             >
-              <ShieldAlert size={16} aria-hidden /> I need safety help
+              <ShieldAlert size={14} aria-hidden /> Safety help
             </button>
-            <button type="button" onClick={() => { setView("chat"); chat.startFlow("privacy"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("privacy"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
               Privacy
             </button>
             <span aria-hidden className={T.muted}>
               ·
             </span>
-            <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
-              Speak to a person
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+              Talk to a person
             </button>
             {!atStart && (
               <>
                 <span aria-hidden className={T.muted}>
                   ·
                 </span>
-                <button type="button" onClick={() => { setView("chat"); chat.startFlow("end"); }} className={`min-h-9 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+                <button type="button" onClick={() => { setView("chat"); chat.startFlow("end"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
                   End chat
                 </button>
               </>
@@ -2100,14 +2621,16 @@ export default function ChatWidget() {
         </section>
       )}
 
-      {/* C01 Launcher – persistent O at the safe bottom corner */}
-      {!open && (
+      {/* C01 Launcher – persistent O at the safe bottom corner; on desktop the panel opens above it */}
+      {(
         <button
           ref={launcherRef}
           type="button"
-          onClick={openPanel}
-          aria-label="Open Linko AI assistant"
-          className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] flex h-[60px] items-center gap-3 rounded-full ${T.header} p-2.5 text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] sm:pr-6 ${T.focus}`}
+          onClick={open ? closePanel : openPanel}
+          // WCAG 2.5.3: the accessible name starts with the visible label "Ask Linko".
+          aria-label={open ? "Ask Linko – minimise the Zoiko Broadband AI assistant" : "Ask Linko – Zoiko Broadband AI assistant"}
+          aria-expanded={open}
+          className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] ${open ? "hidden md:flex" : "flex"} h-[60px] items-center gap-3 rounded-full ${T.header} p-2.5 text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] sm:pr-6 ${T.focus}`}
         >
           <LinkoMark size={40} />
           <span className="hidden text-[15px] font-semibold sm:inline">{ASSISTANT.launcherLabel}</span>

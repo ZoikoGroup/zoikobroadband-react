@@ -1,11 +1,17 @@
 /**
- * Linko answer engine (shared by PUB-02 /v1/linko/conversations/{id}/messages and /api/chat).
+ * Linko answer engine (used by PUB-02 /v1/linko/conversations/{id}/messages).
  * Pipeline (Doc12): intake + redaction → deterministic routing → gates → model → verify.
  */
-import { SYSTEM_PROMPT } from "@/app/lib/chatbot/systemPrompt";
+import { getSystemPrompt } from "@/app/lib/chatbot/systemPrompt";
+import { KB_VERSION, activeKnowledge, contentHash, kbReady } from "@/app/lib/chatbot/knowledge";
+import { welcomeActions } from "@/app/lib/chatbot/linko";
+import { callProvider, countInputTokens, providerConfig } from "./providers";
+import { aiOverrideActive, persistEvent, persistModelInvocation } from "@/app/lib/linko-db/persist";
+import "@/app/lib/linko-db/knowledgeApproval";
 import {
   COPY,
   FLOWS,
+  LINKO_RELEASE,
   LinkoAction,
   LinkoAnswer,
   actionFromRoute,
@@ -16,40 +22,64 @@ import {
 
 /* ───────────── Configuration (owner-approved values go in env) ───────────── */
 
-const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const MODEL_ALLOWLIST = (process.env.GROQ_MODEL_ALLOWLIST || "openai/gpt-oss-120b,openai/gpt-oss-20b")
-  .split(",")
-  .map((s) => s.trim());
-const MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
-const AI_ENABLED = process.env.LINKO_AI_ENABLED !== "false"; // kill switch
+// Provider, model and allowlist come from providers.ts (Groq or Claude, chosen by LINKO_AI_PROVIDER).
+// Kill switch fails closed (Doc08 §10.2): the model is used only when explicitly enabled.
+const AI_ENABLED = process.env.LINKO_AI_ENABLED === "true";
+export const PROMPT_VERSION = "linko-prompt-2026-11-23";
 const MAX_TURNS = Number(process.env.LINKO_MAX_TURNS || 30); // user messages per conversation
 const DAILY_TOKEN_BUDGET = Number(process.env.LINKO_DAILY_TOKEN_BUDGET || 2_000_000);
-const MAX_OUTPUT_TOKENS = 700;
+const MONTHLY_TOKEN_BUDGET = Number(process.env.LINKO_MONTHLY_TOKEN_BUDGET || 30_000_000); // Doc14 §06 per month
+const MAX_INPUT_TOKENS = Number(process.env.LINKO_MAX_INPUT_TOKENS || 6000); // Doc14 LK-AI14-019 preflight
+// Optional metering (Doc14 §06, LK-AI14-025..027): effective price book in USD per million tokens.
+// Cache writes/reads are priced separately and never treated as ordinary input.
+const PRICE_IN_PER_M = Number(process.env.LINKO_PRICE_INPUT_PER_M || 0);
+const PRICE_OUT_PER_M = Number(process.env.LINKO_PRICE_OUTPUT_PER_M || 0);
+const PRICE_CACHE_WRITE_PER_M = Number(process.env.LINKO_PRICE_CACHE_WRITE_PER_M || 0);
+const PRICE_CACHE_READ_PER_M = Number(process.env.LINKO_PRICE_CACHE_READ_PER_M || 0);
 const REQUEST_TIMEOUT_MS = 20_000;
 const MAX_HISTORY = 12;
-const MAX_MESSAGE_CHARS = 2000;
 
 /* ─────────────── In-memory budget + circuit breaker (single server) ─────────
  * For several instances, move these counters to Redis/Upstash.              */
 
+type Budget = { day: string; tokens: number; warned?: boolean; month: string; monthTokens: number; reserved: number };
 const ga = globalThis as unknown as {
-  __linkoBudget?: { day: string; tokens: number };
-  __linkoBreaker?: { failures: number; openUntil: number };
+  __linkoBudget?: Budget;
+  /** latched: AUTH (401/403) or SPEND_HARD_STOP (quota/billing) – no further calls until restart (Doc14 §07). */
+  __linkoBreakerV2?: { failures: number; openUntil: number; latched?: "AUTH" | "SPEND_HARD_STOP" };
 };
-ga.__linkoBudget ??= { day: "", tokens: 0 };
-ga.__linkoBreaker ??= { failures: 0, openUntil: 0 };
+ga.__linkoBudget ??= { day: "", tokens: 0, month: "", monthTokens: 0, reserved: 0 };
+ga.__linkoBudget.month ??= "";
+ga.__linkoBudget.monthTokens ??= 0;
+ga.__linkoBudget.reserved ??= 0;
+ga.__linkoBreakerV2 ??= { failures: 0, openUntil: 0 };
 const budget = ga.__linkoBudget;
-const breaker = ga.__linkoBreaker;
+const breaker = ga.__linkoBreakerV2;
 
 function todayKey() {
   return new Date().toISOString().slice(0, 10);
 }
-function budgetExceeded() {
+function rollBudget() {
   if (budget.day !== todayKey()) {
     budget.day = todayKey();
     budget.tokens = 0;
+    budget.warned = false;
   }
-  return budget.tokens >= DAILY_TOKEN_BUDGET;
+  if (budget.month !== todayKey().slice(0, 7)) {
+    budget.month = todayKey().slice(0, 7);
+    budget.monthTokens = 0;
+  }
+}
+function budgetExceeded(extra = 0) {
+  rollBudget();
+  return (
+    budget.tokens + budget.reserved + extra > DAILY_TOKEN_BUDGET ||
+    budget.monthTokens + budget.reserved + extra > MONTHLY_TOKEN_BUDGET
+  );
+}
+/** ~3.5 characters per token: a conservative pre-flight estimate (Doc14 LK-AI14-019). */
+function estimateTokens(chars: number) {
+  return Math.ceil(chars / 3.5);
 }
 function recordFailure() {
   breaker.failures += 1;
@@ -63,30 +93,9 @@ function recordFailure() {
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
-export function parseMessages(body: unknown): ChatMessage[] | null {
-  if (!body || typeof body !== "object") return null;
-  const raw = (body as { messages?: unknown }).messages;
-  if (!Array.isArray(raw) || raw.length === 0 || raw.length > 200) return null;
-
-  const messages: ChatMessage[] = [];
-  for (const m of raw) {
-    if (
-      !m ||
-      (m.role !== "user" && m.role !== "assistant") ||
-      typeof m.content !== "string" ||
-      !m.content.trim()
-    ) {
-      return null;
-    }
-    messages.push({ role: m.role, content: m.content.slice(0, MAX_MESSAGE_CHARS) });
-  }
-  if (messages[messages.length - 1].role !== "user") return null;
-  return messages;
-}
-
 export function flowAnswer(flow: keyof typeof FLOWS, status: LinkoAnswer["status"], redacted?: string[]): LinkoAnswer {
   const step = FLOWS[flow];
-  return { status, message: step.text, tone: step.tone, actions: step.actions, redacted };
+  return { status, message: step.text, tone: step.tone, actions: step.actions, redacted, flow };
 }
 
 export function degraded(status: LinkoAnswer["status"], message: string = COPY.degraded): LinkoAnswer {
@@ -96,16 +105,44 @@ export function degraded(status: LinkoAnswer["status"], message: string = COPY.d
     message,
     actions: [
       { kind: "command", label: "Try again", command: "retry", primary: true },
-      { kind: "link", label: "Help Centre", href: "/get-help" },
-      { kind: "flow", label: "Speak to our team", flow: "handoff" },
+      { kind: "link", label: "Open Help Centre", href: "/get-help" },
+      { kind: "flow", label: "Speak to a person", flow: "handoff" },
+      { kind: "command", label: "Start over", command: "restart" },
     ],
   };
 }
 
-const PRICE_RE = /£\s?\d|\b\d+(?:\.\d{1,2})?\s?(?:p|pence|GBP)\b|\b\d+(?:\.\d{2})\s?(?:a|per)\s?month\b/i;
+// Unsupported commercial figures: prices, discounts and speed figures (Doc06 01.1 #02).
+export const PRICE_RE =
+  /£\s?\d|\b\d+(?:\.\d{1,2})?\s?(?:pounds?|quid|GBP|p|pence)\b|\b\d+(?:\.\d{1,2})?\s?(?:a|per|\/)\s?(?:month|mo|year|yr)\b|\b\d+(?:\.\d{1,2})?\s?(?:pm|p\/m|monthly)\b|\b\d{1,3}\s?%\s?(?:off|discount)|\b\d+(?:\.\d+)?\s?(?:Mbps|Gbps|Mb\/s|Gb\/s)\b/i;
 
-/** Doc12 "verify" step: schema, route allowlist, no price figures, no leaked secrets. */
-function validateModelOutput(raw: string): LinkoAnswer | null {
+// Doc06 §03 prohibited claims + claimed actions the assistant can't perform (Doc08 §08.1 post-model gate).
+export const PROHIBITED_RE =
+  /\bunlimited\b|\bno (?:data )?caps?\b|\b24\/7\b|\b24 hours a day\b|round[- ]the[- ]clock|\bguarantee(?:d|s)?\b|free installation|no set[- ]?up fee|\bPCI\b|bank[- ]grade|\b(?:will|does|do|always|still|definitely)\s+work\s+(?:in|during)\s+a\s+power\s+cut\b|\bworks\s+(?:in|during)\s+a\s+power\s+cut\b|automatic(?:ally)? compensat|(?:ofcom[- ])?approved (?:our )?speeds|\b\d{1,2}[- ]?months?\b|\bI(?:'ve| have) (?:booked|logged|submitted|cancelled|canceled|arranged|placed|scheduled)\b|\byour (?:order|appointment|engineer(?: visit)?|complaint|cancellation) (?:is|has been) (?:booked|confirmed|scheduled|logged|submitted|placed)\b|\bI(?:'ve| have) (?:escalated|raised|passed|forwarded|sent|reported|requested|transferred)\b|\b(?:an? (?:adviser|agent|engineer)|someone|we) will (?:call|contact|ring) you\b|\bwithin \d+ (?:hours?|minutes?|working days?|days?)\b|\btransferring you\b|\byou are now (?:speaking|connected)\b|\binstant(?:ly)? connect|Communications Ombudsman|CISAS|Ombudsman Services|entitled to (?:a )?(?:refund|compensation|credit)|\bSLA\b|static IP|dedicated (?:line|connectivity)|\b99\.\d+\s?%|one touch switch[^.]{0,40}\b(?:all|every|business)\b|\b(?:do|perform|try|carry out)\s+a\s+factory reset|(?:press|hold)\s+(?:down\s+)?the reset (?:button|pin)|\b(?:arrive|deliver|install|visit|fixed|repaired)\w*\b[^.]{0,30}\b(?:on|by)\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|tomorrow))/i;
+
+// GR-12-075: the model must never echo its instructions (case-sensitive section labels + prompt phrases).
+const LEAK_RE = /\b(?:ROLE|SCOPE|TRUST|EVIDENCE|PRICES|PROHIBITED CLAIMS|PRIVACY|ACTIONS|SAFETY|HUMAN|AUTHORITY|STYLE|OUTPUT)\s*:|ROUTE KEYS|KNOWLEDGE \(each|#\s*\[K\d{2}\]/;
+const LEAK_PHRASE_RE = /\bsystem prompt\b|\bmy (?:instructions|prompt)\b/i;
+// GF-07 / AT-12-003: injection, jailbreak and prompt-leak requests are answered deterministically and logged.
+export const INJECTION_RE =
+  /\b(?:ignore|disregard|forget|override|bypass)\b[^.?!\n]{0,40}\b(?:instructions?|rules|prompt|guardrails?|polic(?:y|ies))\b|\b(?:system|developer|hidden|initial)\s+(?:prompt|message|instructions?)\b|\b(?:reveal|show|print|repeat|output|dump)\b[^.?!\n]{0,30}\b(?:your prompt|instructions|context|configuration|rules|api key)\b|\b(?:developer|debug|admin|god|DAN)\s+mode\b|\bjailbreak\b|\byou are now\b|\bpretend (?:to be|you(?:'re| are))\b|\bsystem\s*:|\byou are (?:an? )?(?:admin|administrator|developer|root|superuser)\b|<\/?\s*system\s*>|\[\s*(?:system|inst)\s*\]|^\s*(?:system|assistant)\s*:/im;
+const RESTART_RE = /\b(?:restart|reboot|reset|unplug|power[- ]?cycle|turn (?:it |the router )?off|switch (?:it |the router )?off)\b/i;
+const SAFE_CLAIM_TOPIC_RE = /power cut|telecare|alarm|999|112|landline|digital (?:voice|phone)/i;
+const MODES = ["public_guidance", "secure_required", "handoff", "abstain"] as const;
+
+/** Extra masking for text sent to the model provider only (Doc06 §12.1, Doc08 §06.3). */
+export function minimiseForModel(text: string) {
+  return text
+    .replace(/[^\s@]+@[^\s@]+\.[^\s@]{2,}/g, "[email removed]")
+    .replace(/(?:\+44\s?|\b0)\d(?:[\s-]?\d){8,10}\b/g, "[phone removed]")
+    .replace(/\b([A-PR-UWYZ][A-HK-Y]?\d[A-Z\d]?)\s?\d[ABD-HJLNP-UW-Z]{2}\b/gi, "$1 [rest of postcode removed]");
+}
+
+export type VerifiedAnswer = LinkoAnswer & { sources: { id: string; title: string; source: string }[]; blocked?: string };
+
+/** Doc12 "verify" step: schema, route allowlist, sources, no price figures, no prohibited claims, no leaked secrets.
+ * Exported for the evaluation harness (scripts/linko-eval.ts). */
+export function validateModelOutput(raw: string, today?: string): VerifiedAnswer | null {
   let obj: unknown;
   try {
     obj = JSON.parse(raw);
@@ -119,12 +156,22 @@ function validateModelOutput(raw: string): LinkoAnswer | null {
     }
   }
   if (!obj || typeof obj !== "object") return null;
-  const o = obj as { mode?: unknown; message?: unknown; actions?: unknown };
+  const o = obj as { mode?: unknown; message?: unknown; actions?: unknown; sources?: unknown };
   if (typeof o.message !== "string" || !o.message.trim()) return null;
 
   let message = redactSensitive(o.message.trim()).text.slice(0, 1500);
-  // Strip any raw URLs: destinations must come through allow-listed actions.
-  message = message.replace(/https?:\/\/\S+/g, "").replace(/[ \t]{2,}/g, " ");
+  // Strip raw URLs and bare look-alike domains: destinations must come through allow-listed actions (AT-12-067).
+  message = message
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/(?<![@\w])(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|co\.uk|org|net|uk|io|info|app|xyz|online|site)\b(?:\/\S*)?/gi, "")
+    .replace(/[ \t]{2,}/g, " ");
+
+  // Never echo the instructions (GR-12-075).
+  if (LEAK_RE.test(message) || LEAK_PHRASE_RE.test(message)) {
+    return { ...degraded("invalid", "I can't share how I'm set up, but I can help with broadband."), sources: [], blocked: "leak" };
+  }
+  // Strict schema (Doc12 §03.3): unknown modes are rejected, not defaulted.
+  if (o.mode !== undefined && !MODES.includes(o.mode as (typeof MODES)[number])) return null;
 
   const actions: LinkoAction[] = [];
   if (Array.isArray(o.actions)) {
@@ -137,55 +184,88 @@ function validateModelOutput(raw: string): LinkoAnswer | null {
     }
   }
 
+  // Citations must resolve to a CURRENT, authorised knowledge item (Doc13 §06.4, L13-FR-026).
+  const sources: VerifiedAnswer["sources"] = [];
+  const current = activeKnowledge(today);
+  if (Array.isArray(o.sources)) {
+    for (const id of o.sources.slice(0, 3)) {
+      const want = typeof id === "string" ? id.replace(/[[\]]/g, "").trim() : "";
+      const k = current.find((x) => x.id === want) ?? null;
+      if (k && !sources.some((x) => x.id === k.id)) sources.push({ id: k.id, title: k.title.replace(/\s*\(.*$/, ""), source: k.source });
+    }
+  }
+
   // Block unsupported commercial figures (AT-12-068).
   if (PRICE_RE.test(message)) {
-    return { ...flowAnswer("plans", "abstained"), message: `${FLOWS.plans.text}` };
+    return { ...flowAnswer("plans", "answered"), sources: [], blocked: "price" };
+  }
+  // Block prohibited claims and claimed actions — show the safe "can't verify" answer instead.
+  // On a safety topic the safe answer is the approved safety step, not a generic error (AT-12-072).
+  if (PROHIBITED_RE.test(message)) {
+    if (SAFE_CLAIM_TOPIC_RE.test(message)) return { ...flowAnswer("safety", "safety"), sources: [], blocked: "claim" };
+    return {
+      ...degraded("invalid", "I can't confirm that from approved information, so I won't guess. Our team can give you an accurate answer."),
+      sources: [],
+      blocked: "claim",
+    };
   }
 
   const mode = typeof o.mode === "string" ? o.mode : "public_guidance";
   const hasHandoff = actions.some((a) => a.kind === "flow" && a.flow === "handoff");
   if ((mode === "handoff" || mode === "abstain") && !hasHandoff && actions.length < 3) {
-    actions.push({ kind: "flow", label: "Speak to our team", flow: "handoff" });
+    actions.push({ kind: "flow", label: "Speak to a person", flow: "handoff" });
   }
   const hasLogin = actions.some((a) => a.kind === "link" && a.href === "/login");
   if (mode === "secure_required" && !hasLogin) {
     actions.unshift({ kind: "link", label: "Sign in securely", href: "/login", primary: true });
   }
 
+  // Doc13 L13-FR-031: public guidance must be grounded in at least one current source, otherwise abstain.
+  if (mode === "public_guidance" && sources.length === 0) {
+    return {
+      ...degraded("abstained", "I can't confirm that from approved information, so I won't guess. Our team can give you an accurate answer."),
+      sources: [],
+      blocked: "ungrounded",
+    };
+  }
+
   return {
     status: mode === "abstain" ? "abstained" : mode === "handoff" ? "handoff" : "answered",
     message,
     actions: actions.slice(0, 4),
+    sources: mode === "abstain" ? [] : sources,
   };
 }
 
-async function callModel(messages: ChatMessage[], signal: AbortSignal) {
-  const res = await fetch(GROQ_URL, {
-    method: "POST",
-    signal,
-    headers: {
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      temperature: 0.2,
-      max_completion_tokens: MAX_OUTPUT_TOKENS,
-      reasoning_effort: "low",
-      include_reasoning: false,
-      response_format: { type: "json_object" },
-      messages: [{ role: "system", content: SYSTEM_PROMPT }, ...messages],
-    }),
-  });
-  return res;
+export interface GenerateOptions {
+  /** Correlation id for structured logs (Doc08 LK-ARCH-H-01). */
+  cid?: string;
+  /** Total user turns in this conversation (history is trimmed, so it can't be counted from it). */
+  userTurns?: number;
+  /** Set once the visitor has disclosed telecare / emergency-line reliance (Doc09 §02.3 safety_flag). */
+  safetyFlag?: boolean;
+  /** Conversation id, for metering rows (Doc05 DM-25). */
+  sessionId?: string;
 }
 
-/** Generates one verified Linko answer for an already-parsed conversation. */
+/** Generates one verified Linko answer for a server-held, redacted conversation. */
 export async function generateAnswer(
   input: ChatMessage[],
   signal: AbortSignal,
-): Promise<{ answer: LinkoAnswer; http: number }> {
+  opts: GenerateOptions = {},
+): Promise<{ answer: LinkoAnswer & { sources?: VerifiedAnswer["sources"] }; http: number }> {
   const started = Date.now();
+  const provider = providerConfig();
+  const logBase = {
+    cid: opts.cid,
+    provider: provider.name,
+    model: provider.model,
+    environment: process.env.LINKO_ENVIRONMENT || process.env.NODE_ENV,
+    prompt_version: PROMPT_VERSION,
+    prompt_hash: contentHash(getSystemPrompt()),
+    kb_version: KB_VERSION,
+    release: process.env.LINKO_RELEASE || LINKO_RELEASE,
+  };
   let messages = input;
 
   // 1. Intake: redact sensitive data before anything else sees it.
@@ -203,12 +283,36 @@ export async function generateAnswer(
   if (routed === "safety") return { answer: flowAnswer("safety", "safety", redacted), http: 200 };
   if (routed === "handoff") return { answer: flowAnswer("handoff", "handoff", redacted), http: 200 };
   if (routed === "complaint") return { answer: flowAnswer("complaint", "complaint", redacted), http: 200 };
+  // Every other deterministic journey runs before the model (Doc09 GATE-15).
+  if (routed === "safetyCheck") return { answer: flowAnswer("safetyCheck", "safety", redacted), http: 200 };
+  if (routed) return { answer: flowAnswer(routed, routed === "accessibility" ? "handoff" : "answered", redacted), http: 200 };
+
+  // Once a telecare / emergency-line risk is disclosed, restart / reset advice is never given (Doc09 CW-07-T02).
+  if (opts.safetyFlag && RESTART_RE.test(latest)) return { answer: flowAnswer("safety", "safety", redacted), http: 200 };
+
+  // Injection / jailbreak / prompt-leak attempts never reach the model (Doc12 GF-07, §10.1 injection alarms).
+  if (INJECTION_RE.test(latest)) {
+    console.warn(JSON.stringify({ event: "linko_injection_suspected", ...logBase }));
+    if (opts.sessionId) persistEvent(opts.sessionId, "SECURITY_INJECTION_SUSPECTED", null, {});
+    return {
+      answer: {
+        status: "answered",
+        flow: "welcome",
+        message: "I can't change how I work or share my internal set-up, but I'm happy to help with broadband, availability, orders or support.",
+        actions: [...welcomeActions("/"), { kind: "flow", label: "Speak to a person", flow: "handoff" }],
+        redacted,
+      },
+      http: 200,
+    };
+  }
 
   // 3. Availability, budget and circuit-breaker checks.
-  if (!AI_ENABLED || !process.env.GROQ_API_KEY || !MODEL_ALLOWLIST.includes(MODEL)) {
+  // Preflight (Doc14 AT14-010/003): an unapproved model or a key from another environment never reaches the provider.
+  // A staff "Activate fallback" override (Doc10 HS-WF-10-24) also disables the model, until it expires or is ended.
+  if (!AI_ENABLED || !provider.keyPresent || !provider.allowlisted || !provider.environmentOk || !kbReady() || breaker.latched || aiOverrideActive()) {
     return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
   }
-  if (messages.filter((m) => m.role === "user").length > MAX_TURNS) {
+  if ((opts.userTurns ?? messages.filter((m) => m.role === "user").length) > MAX_TURNS) {
     return {
       answer: {
         ...degraded(
@@ -217,83 +321,170 @@ export async function generateAnswer(
         ),
         actions: [
           { kind: "command", label: "Start a new enquiry", command: "restart", primary: true },
-          { kind: "flow", label: "Speak to our team", flow: "handoff" },
+          { kind: "flow", label: "Speak to a person", flow: "handoff" },
         ],
         redacted,
       },
       http: 429,
     };
   }
-  if (budgetExceeded() || Date.now() < breaker.openUntil) {
+  if (Date.now() < breaker.openUntil) {
     return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
   }
 
   // 4. Generate (bounded history, timeout, one retry on transient errors).
-  const history = messages.slice(-MAX_HISTORY);
+  // Only minimised text goes to the external model provider.
+  const systemPrompt = getSystemPrompt();
+  const history = messages.slice(-MAX_HISTORY).map((m) => ({ ...m, content: minimiseForModel(m.content) }));
   while (history.length && history[0].role !== "user") history.shift();
-  const timed = AbortSignal.any([signal, AbortSignal.timeout(REQUEST_TIMEOUT_MS)]);
+  // Pre-flight: drop the oldest turns (never the system prompt) until the input fits (Doc14 LK-AI14-019).
+  const inputChars = () => systemPrompt.length + history.reduce((n, m) => n + m.content.length, 0);
+  while (history.length > 1 && estimateTokens(inputChars()) > MAX_INPUT_TOKENS) {
+    history.shift();
+    while (history.length > 1 && history[0].role !== "user") history.shift();
+  }
+  // Count input exactly where the provider supports it (Claude count_tokens, PLAT-08); otherwise estimate.
+  const counted = await countInputTokens(systemPrompt, history, signal);
+  const inputTokens = counted ?? estimateTokens(inputChars());
+  if (inputTokens > MAX_INPUT_TOKENS) {
+    console.warn(JSON.stringify({ event: "linko_preflight_rejected", ...logBase, input_tokens: inputTokens }));
+    return { answer: { ...degraded("budget_limited"), redacted }, http: 503 };
+  }
+  // Reserve the worst case before calling, so concurrent requests can't overspend (Doc14 LK-AI14-022).
+  const reserve = inputTokens + provider.maxOutputTokens;
+  if (budgetExceeded(reserve)) {
+    console.warn(JSON.stringify({ event: "linko_budget_refused", ...logBase }));
+    return { answer: { ...degraded("budget_limited"), redacted }, http: 503 };
+  }
+  budget.reserved += reserve;
+  try {
+    return await callAndVerify();
+  } finally {
+    budget.reserved = Math.max(0, budget.reserved - reserve);
+  }
 
-  let res: Response | null = null;
-  for (let attempt = 0; attempt < 2; attempt++) {
-    let waitMs = 400;
-    try {
-      res = await callModel(history, timed);
-      if (res.ok || (res.status >= 400 && res.status < 500 && res.status !== 429)) break;
-      if (res.status === 429) {
-        // Honour a short retry-after for provider rate limits only (Doc14); never loop.
-        const retryAfter = Number(res.headers.get("retry-after"));
-        if (!Number.isFinite(retryAfter) || retryAfter > 8) break;
-        waitMs = Math.max(retryAfter, 1) * 1000;
-      }
-    } catch (err) {
-      if (signal.aborted) return { answer: degraded("provider_unavailable"), http: 499 };
-      res = null;
-      if (timed.aborted) break;
-      console.error("[linko] model request failed", (err as Error).name);
+  async function callAndVerify(): Promise<{ answer: LinkoAnswer & { sources?: VerifiedAnswer["sources"] }; http: number }> {
+  const out = await callProvider(systemPrompt, history, signal, REQUEST_TIMEOUT_MS);
+  if (!out.ok && out.kind === "aborted") return { answer: degraded("provider_unavailable"), http: 499 };
+
+  if (!out.ok) {
+    // Doc14 §07 error taxonomy.
+    if (out.kind === "auth" || out.kind === "spend") {
+      // 401/403 → security/config incident, fail closed; spend cap → SPEND_HARD_STOP. No retry loop.
+      breaker.latched = out.kind === "spend" ? "SPEND_HARD_STOP" : "AUTH";
+      console.error(
+        JSON.stringify({ event: "linko_provider_auth_failure", severity: "critical", ...logBase, status: out.status, latched: breaker.latched }),
+      );
+      return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
     }
-    if (attempt === 0) await new Promise((r) => setTimeout(r, waitMs));
-  }
-
-  if (res?.status === 429) {
-    console.error(JSON.stringify({ event: "linko_model_rate_limited", model: MODEL }));
-    return {
-      answer: {
-        ...degraded("rate_limited", "Linko is busy right now. Please try again in a minute, or speak to our team."),
-        redacted,
-      },
-      http: 429,
-    };
-  }
-  if (!res || !res.ok) {
+    if (out.kind === "rate") {
+      // A sustained provider rate limit opens the breaker so the next visitors don't hit it again (AT14-037).
+      breaker.openUntil = Date.now() + Math.min(out.retryAfterSec || 30, 300) * 1000;
+      console.error(JSON.stringify({ event: "linko_model_rate_limited", ...logBase, retry_after_s: out.retryAfterSec ?? null }));
+      return {
+        answer: { ...degraded("rate_limited", "Linko is busy right now. Please try again in a minute, or speak to our team."), redacted },
+        http: 429,
+      };
+    }
+    // 5xx / 529 overload / timeout / network → breaker + verified help fallback (AT14-038/039).
     recordFailure();
     console.error(
-      JSON.stringify({ event: "linko_model_error", status: res?.status ?? "network", model: MODEL, latency_ms: Date.now() - started }),
+      JSON.stringify({ event: "linko_model_error", ...logBase, kind: out.kind, status: out.status ?? out.kind, latency_ms: Date.now() - started }),
     );
-    // 400 spend cap / 401 / 403 / 429 are not retried; the visitor gets the safe fallback.
     return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
   }
 
-  const data = (await res.json().catch(() => null)) as {
-    choices?: { message?: { content?: string } }[];
-    usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
-  } | null;
   breaker.failures = 0;
-  budget.tokens += data?.usage?.total_tokens ?? MAX_OUTPUT_TOKENS * 4;
+  const u = out.usage;
+  // Never record a call as free when counts are missing: charge the reservation instead (PLAT-11, AT14-028).
+  const used = u ? (u.input ?? 0) + (u.output ?? 0) + (u.cacheWrite ?? 0) + (u.cacheRead ?? 0) : reserve;
+  budget.tokens += used;
+  budget.monthTokens += used;
+  if (!budget.warned && budget.tokens >= DAILY_TOKEN_BUDGET * 0.8) {
+    budget.warned = true; // Doc08 §08.3 / Doc14 PLAT-12 warn threshold, once per day
+    console.warn(JSON.stringify({ event: "linko_budget_warning", ...logBase, used_pct: Math.round((budget.tokens / DAILY_TOKEN_BUDGET) * 100) }));
+  }
 
   // 5. Verify, then deliver.
-  const answer = validateModelOutput(data?.choices?.[0]?.message?.content ?? "");
+  // A provider refusal is an abstention routed to a person — never a model swap (PLAT-06).
+  const answer = out.refusal
+    ? ({
+        status: "abstained",
+        message: "I can't help with that here, but our team can.",
+        actions: [{ kind: "flow", label: "Speak to a person", flow: "handoff" }],
+        sources: [],
+        blocked: "refusal",
+      } as VerifiedAnswer)
+    : validateModelOutput(out.text);
+  const estCost =
+    PRICE_IN_PER_M || PRICE_OUT_PER_M
+      ? Number(
+          (
+            ((u?.input ?? 0) * PRICE_IN_PER_M +
+              (u?.output ?? 0) * PRICE_OUT_PER_M +
+              (u?.cacheWrite ?? 0) * PRICE_CACHE_WRITE_PER_M +
+              (u?.cacheRead ?? 0) * PRICE_CACHE_READ_PER_M) /
+            1e6
+          ).toFixed(6),
+        )
+      : undefined;
   console.info(
     JSON.stringify({
       event: "linko_model_call",
-      model: MODEL,
-      prompt_tokens: data?.usage?.prompt_tokens,
-      completion_tokens: data?.usage?.completion_tokens,
+      ...logBase,
+      provider_request_id: out.requestId,
+      input_tokens: u?.input,
+      output_tokens: u?.output,
+      cache_write_tokens: u?.cacheWrite,
+      cache_read_tokens: u?.cacheRead,
+      input_tokens_counted: counted !== null,
+      usage_estimated: !u,
+      reserved_tokens: reserve,
+      price_version: process.env.LINKO_PRICE_VERSION,
+      est_cost_usd: estCost,
       latency_ms: Date.now() - started,
-      outcome: answer ? answer.status : "invalid_output",
+      outcome: answer ? (answer.blocked ? `blocked_${answer.blocked}` : answer.status) : "invalid_output",
     }),
   );
+  persistModelInvocation({
+    sessionId: opts.sessionId ?? null,
+    provider: provider.name,
+    model: provider.model,
+    promptVersion: PROMPT_VERSION,
+    requestId: out.requestId,
+    input: u?.input ?? reserve - provider.maxOutputTokens,
+    output: u?.output ?? provider.maxOutputTokens,
+    cacheWrite: u?.cacheWrite ?? 0,
+    cacheRead: u?.cacheRead ?? 0,
+    estimated: !u,
+    costUsd: estCost,
+    outcome: !answer || answer.blocked ? "BLOCKED" : answer.status === "handoff" || answer.status === "abstained" ? "ESCALATED" : "PASSED",
+    latencyMs: Date.now() - started,
+  });
   if (!answer) {
     return { answer: { ...degraded("invalid", "I can't verify that information just now, so I won't guess. You can try again or use the support options."), redacted }, http: 200 };
   }
-  return { answer: { ...answer, redacted }, http: 200 };
+  const { blocked, ...clean } = answer;
+  void blocked;
+  return { answer: { ...clean, redacted }, http: 200 };
+  }
+}
+
+/** Health snapshot for /v1/linko/health — no secrets (Doc08 G-07). */
+export function aiHealth() {
+  rollBudget();
+  return {
+    aiEnabled: (() => {
+      const p = providerConfig();
+      return AI_ENABLED && p.keyPresent && p.allowlisted && p.environmentOk && kbReady() && !breaker.latched && !aiOverrideActive();
+    })(),
+    provider: providerConfig().name,
+    model: providerConfig().model,
+    latched: breaker.latched ?? null,
+    breakerOpen: Date.now() < breaker.openUntil,
+    budgetUsedPct: Math.min(100, Math.round((budget.tokens / DAILY_TOKEN_BUDGET) * 100)),
+    monthBudgetUsedPct: Math.min(100, Math.round((budget.monthTokens / MONTHLY_TOKEN_BUDGET) * 100)),
+    promptVersion: PROMPT_VERSION,
+    kbVersion: KB_VERSION,
+  };
 }

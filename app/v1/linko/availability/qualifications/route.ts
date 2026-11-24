@@ -7,7 +7,9 @@
  */
 import { NextRequest } from "next/server";
 import { apiError, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_ACTIONS } from "@/app/lib/linko-api/http";
-import { lookupAddress, rememberEligibility } from "@/app/lib/linko-api/store";
+import { getConversation, lookupAddress, rememberEligibility } from "@/app/lib/linko-api/store";
+import { persistQualification, persistToolInvocation } from "@/app/lib/linko-db/persist";
+import { sha256 } from "@/app/lib/linko-db/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,12 +22,19 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   const body = await readJson(req);
+  const conversationId = typeof body?.conversationId === "string" ? body.conversationId : "";
+  if (!conversationId || !getConversation(conversationId)) {
+    return apiError(cid, "NOT_FOUND", "This conversation has ended or expired. Please start a new one.", {
+      field: "conversationId",
+      nextAction: "RETRY",
+    });
+  }
   const addressId = typeof body?.addressId === "string" ? body.addressId : "";
   const customerType = body?.customerType === "BUSINESS" ? "BUSINESS" : body?.customerType === "RESIDENTIAL" ? "RESIDENTIAL" : null;
   if (!addressId) return apiError(cid, "VALIDATION_ERROR", "addressId is required.", { field: "addressId" });
   if (!customerType) return apiError(cid, "VALIDATION_ERROR", "customerType must be RESIDENTIAL or BUSINESS.", { field: "customerType" });
 
-  const address = lookupAddress(addressId);
+  const address = lookupAddress(addressId, conversationId);
   if (!address) {
     return apiError(cid, "NOT_FOUND", "That address selection has expired. Please search your postcode again.", {
       nextAction: "CORRECT_INPUT",
@@ -78,7 +87,10 @@ export async function POST(req: NextRequest) {
     ...(/sogea/i.test(ids) ? ["SOGEA"] : []),
   ];
   const checkedAt = nowIso();
-  const elig = rememberEligibility({ addressId, customerType, technologies, offerCount: items.length, checkedAt });
+  const elig = rememberEligibility({ conversationId, addressId, customerType, technologies, offerCount: items.length, checkedAt });
+  // DM-12: coverage is never sale eligibility until a retail quote exists (sale_eligibility UNKNOWN).
+  persistQualification(addressId, "UNKNOWN", elig.ref, elig.expiresAt, technologies.length ? "COVERAGE_INDICATIVE" : "NO_TECHNOLOGY_MATCH");
+  persistToolInvocation(conversationId, "PUB_04", "ALLOW", sha256(`PUB_04|${addressId}|${customerType}`), "SUCCESS");
 
   return envelope(
     cid,

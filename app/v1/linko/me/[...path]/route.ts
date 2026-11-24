@@ -12,15 +12,16 @@ import { apiError, limit, newCorrelationId } from "@/app/lib/linko-api/http";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const KNOWN = [
-  /^orders$/, // PRV-01
-  /^orders\/[^/]+$/, // PRV-02
-  /^orders\/[^/]+\/appointments$/, // PRV-03
-  /^appointments\/[^/]+\/change-requests$/, // PRV-04
-  /^moving\/assessments$/, // PRV-05
-  /^faults$/, // PRV-06
-  /^billing\/summary$/, // PRV-07
-  /^billing\/payment-handoffs$/, // PRV-08
+// Each private route with its registered method (Doc04 §05).
+const KNOWN: [RegExp, "GET" | "POST"][] = [
+  [/^orders$/, "GET"], // PRV-01
+  [/^orders\/[^/]+$/, "GET"], // PRV-02
+  [/^orders\/[^/]+\/appointments$/, "GET"], // PRV-03
+  [/^appointments\/[^/]+\/change-requests$/, "POST"], // PRV-04
+  [/^moving\/assessments$/, "POST"], // PRV-05
+  [/^faults$/, "POST"], // PRV-06
+  [/^billing\/summary$/, "GET"], // PRV-07
+  [/^billing\/payment-handoffs$/, "POST"], // PRV-08
 ];
 
 async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
@@ -29,8 +30,12 @@ async function handle(req: NextRequest, ctx: { params: Promise<{ path: string[] 
   if (limited) return limited;
   const { path } = await ctx.params;
   const joined = (path ?? []).join("/");
-  if (!KNOWN.some((re) => re.test(joined))) {
+  const route = KNOWN.find(([re]) => re.test(joined));
+  if (!route) {
     return apiError(cid, "NOT_FOUND", "Not found.");
+  }
+  if (route[1] !== req.method) {
+    return apiError(cid, "METHOD_NOT_ALLOWED", `Use ${route[1]} for this route.`, { headers: { Allow: route[1] } });
   }
   return apiError(cid, "AUTH_REQUIRED", "Please sign in to MyZoiko to continue securely. I won't ask for your password or one-time code in chat.", {
     nextAction: "SIGN_IN",

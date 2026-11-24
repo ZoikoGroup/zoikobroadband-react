@@ -7,9 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "analyze": "set ANALYZE=true && next build"
+    "analyze": "set ANALYZE=true && next build",
+    "eval:linko": "node scripts/linko-eval.mjs",
+    "linko:staff": "node scripts/linko-staff.mjs",
+    "linko:migrate": "node scripts/linko-migrate.mjs",
+    "linko:backup": "node scripts/linko-db-backup.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.12.0",
     "@next/bundle-analyzer": "^16.1.6",
     "@stripe/react-stripe-js": "^6.3.0",
     "@stripe/stripe-js": "^9.4.0",

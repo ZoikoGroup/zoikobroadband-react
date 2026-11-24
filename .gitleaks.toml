@@ -1,0 +1,9 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Linko evaluation fixtures and traceability notes contain fake, non-functional key patterns on purpose"
+paths = [
+  '''scripts/linko-eval-cases\.json''',
+  '''docs/linko-traceability/.*\.md''',
+]

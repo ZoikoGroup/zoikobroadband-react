@@ -7,7 +7,7 @@ import Header from "./Components/Header/Header";
 import dynamic from "next/dynamic";
 import { Toaster } from "react-hot-toast";
 import { CartProvider } from "./context/CartContext";
-import ChatWidget from "./Components/Chatbot/ChatWidget";
+import LinkoLoader from "./Components/Chatbot/LinkoLoader";
 
 const Footer = dynamic(() => import("./Components/Footer/Footer"), {
   ssr: true,
@@ -37,7 +37,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    // next-themes sets class/color-scheme on <html> before hydration, so its attributes
+    // legitimately differ from the server HTML (one level only – children are still checked).
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col`}
       >
@@ -51,7 +53,7 @@ export default function RootLayout({
           </ThemeProvider>
         </CartProvider>
         <Footer />
-        <ChatWidget />
+        <LinkoLoader />
       </body>
     </html>
   );

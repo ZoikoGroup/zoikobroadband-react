@@ -5,6 +5,8 @@
  */
 import { NextRequest } from "next/server";
 import { apiError, limit, newCorrelationId, readJson, withIdempotency } from "@/app/lib/linko-api/http";
+import { persistToolInvocation } from "@/app/lib/linko-db/persist";
+import { sha256 } from "@/app/lib/linko-db/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +22,7 @@ export async function POST(req: NextRequest) {
   if (typeof body?.termsVersion !== "string" || !body.termsVersion)
     return apiError(cid, "VALIDATION_ERROR", "termsVersion is required.", { field: "termsVersion" });
 
+  persistToolInvocation(null, "PUB_08", "DENY", sha256(`PUB_08|${body.quoteRef}`), "DENIED");
   return withIdempotency(req, cid, "checkout/handoffs", body, async () =>
     apiError(cid, "QUOTE_EXPIRED", "There's no current quote for this address. Please check availability again to see current prices.", {
       nextAction: "CORRECT_INPUT",

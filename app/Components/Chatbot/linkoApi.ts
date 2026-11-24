@@ -45,11 +45,13 @@ export function newKey() {
 
 async function call<T>(
   path: string,
-  init: { method?: "GET" | "POST"; body?: unknown; idempotent?: boolean; signal?: AbortSignal; timeoutMs?: number } = {},
+  init: { method?: "GET" | "POST"; body?: unknown; idempotent?: boolean | string; signal?: AbortSignal; timeoutMs?: number } = {},
 ): Promise<ApiResult<T>> {
   const headers: Record<string, string> = {};
   if (init.body !== undefined) headers["Content-Type"] = "application/json";
-  if (init.idempotent) headers["Idempotency-Key"] = newKey();
+  headers["X-Linko-Client"] = "web";
+  // A caller-held key is reused for every resubmission of the same form (Doc04 §04.1, AC-42).
+  if (init.idempotent) headers["Idempotency-Key"] = typeof init.idempotent === "string" ? init.idempotent : newKey();
   const signals = [AbortSignal.timeout(init.timeoutMs ?? 25_000)];
   if (init.signal) signals.push(init.signal);
   try {
@@ -87,17 +89,17 @@ export const linkoApi = {
   /** PUB-14 */
   close: (conversationId: string) => call<null>(`/conversations/${encodeURIComponent(conversationId)}/close`, { body: {} }),
   /** PUB-03 */
-  searchAddresses: (postcode: string) =>
-    call<{ postcode: string; matches: { addressId: string; label: string }[] }>("/addresses/search", { body: { postcode } }),
+  searchAddresses: (conversationId: string, postcode: string) =>
+    call<{ postcode: string; matches: { addressId: string; label: string }[] }>("/addresses/search", { body: { conversationId, postcode } }),
   /** PUB-04 */
-  qualify: (addressId: string, customerType: "RESIDENTIAL" | "BUSINESS") =>
+  qualify: (conversationId: string, addressId: string, customerType: "RESIDENTIAL" | "BUSINESS") =>
     call<{ eligibilityRef: string; technologies: string[]; offerCount: number; message: string; addressLabel: string }>(
       "/availability/qualifications",
-      { body: { addressId, customerType } },
+      { body: { conversationId, addressId, customerType } },
     ),
   /** PUB-06 */
-  businessLead: (payload: Record<string, unknown>) =>
-    call<{ reference: string }>("/business/leads", { body: payload, idempotent: true }),
+  businessLead: (payload: Record<string, unknown>, idempotencyKey: string) =>
+    call<{ reference: string }>("/business/leads", { body: payload, idempotent: idempotencyKey }),
   /** PUB-09 */
   serviceStatus: (area?: string) =>
     call<{ state: string; message: string; incidents: { summary: string; updatedAt: string | null }[] }>(
@@ -107,8 +109,16 @@ export const linkoApi = {
   triage: (payload: { symptom: string; allDevices?: boolean; digitalVoice?: boolean; telecareOrAlarm?: boolean }) =>
     call<TriageData>("/faults/triage", { body: payload }),
   /** PUB-12 */
-  handoff: (payload: { channel: string; shareSummary: boolean; reason?: string; conversationId?: string | null; topics?: string[] }) =>
-    call<{ summary: string | null; channels: { channel: string; label: string; href: string }[] }>("/human-handoffs", { body: payload }),
+  handoff: (
+    payload: { channel: string; shareSummary: boolean; shareTranscript?: boolean; reason?: string; conversationId?: string | null; topics?: string[] },
+    idempotencyKey: string,
+  ) =>
+    call<{ summary: string | null; handoffRef: string | null; channels: { channel: string; label: string; href: string }[] }>("/human-handoffs", {
+      body: payload,
+      idempotent: idempotencyKey,
+    }),
+  /** HS-T056: withdraw a summary shared earlier. */
+  withdrawHandoff: (handoffRef: string) => call<{ withdrawn: boolean }>("/human-handoffs", { body: { withdraw: true, handoffRef } }),
   /** PRV-01 / PRV-03 / PRV-05 / PRV-07 – fail closed with AUTH_REQUIRED until MyZoiko sign-in is connected */
   private: (which: ApiCall) => {
     const map: Record<ApiCall, { path: string; method: "GET" | "POST" }> = {
@@ -137,11 +147,13 @@ export interface MessageData {
     widget?: string;
     context?: string;
     source: "flow" | "ai";
+    sources?: { id: string; title: string; source: string }[];
   };
 }
 
 export interface TriageData {
   safetyEscalation: boolean;
+  safetyNotice?: string;
   priority: string;
   category: string;
   steps: { id: string; text: string; href?: string; linkLabel?: string }[];

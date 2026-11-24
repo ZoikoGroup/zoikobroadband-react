@@ -6,7 +6,9 @@
 import { NextRequest } from "next/server";
 import { normalisePostcode } from "@/app/lib/chatbot/linko";
 import { apiError, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_ACTIONS } from "@/app/lib/linko-api/http";
-import { rememberAddress } from "@/app/lib/linko-api/store";
+import { forgetEligibility, getConversation, rememberAddress } from "@/app/lib/linko-api/store";
+import { persistCandidate, persistEnquiry, persistToolInvocation } from "@/app/lib/linko-db/persist";
+import { sha256 } from "@/app/lib/linko-db/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,6 +19,13 @@ export async function POST(req: NextRequest) {
   if (limited) return limited;
 
   const body = await readJson(req);
+  const conversationId = typeof body?.conversationId === "string" ? body.conversationId : "";
+  if (!conversationId || !getConversation(conversationId)) {
+    return apiError(cid, "NOT_FOUND", "This conversation has ended or expired. Please start a new one.", {
+      field: "conversationId",
+      nextAction: "RETRY",
+    });
+  }
   const postcode = typeof body?.postcode === "string" ? normalisePostcode(body.postcode) : null;
   if (!postcode) {
     return apiError(cid, "VALIDATION_ERROR", "Enter a full UK postcode, for example SW1A 1AA.", {
@@ -50,18 +59,23 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  forgetEligibility(conversationId); // a new premises search invalidates earlier qualification (AC-08)
+  // DM-10/11: the enquiry and candidates are stored encrypted with a short TTL; raw supplier ids never leave the server.
+  const enquiryId = persistEnquiry(conversationId, postcode, "COMPLETE", cid, 20 * 60_000);
   const matches = (data.addresses ?? [])
     .filter((a) => a.id && a.display)
     .slice(0, 100)
-    .map((a) => ({
-      addressId: rememberAddress({ label: a.display!, supplierId: a.id!, districtCode: a.districtCode || "", postcode }),
-      label: a.display!,
-    }));
+    .map((a) => {
+      const addressId = rememberAddress({ conversationId, label: a.display!, supplierId: a.id!, districtCode: a.districtCode || "", postcode });
+      if (enquiryId) persistCandidate(enquiryId, addressId, a.display!, 20 * 60_000);
+      return { addressId, label: a.display! };
+    });
+  persistToolInvocation(conversationId, "PUB_03", "ALLOW", sha256(`PUB_03|${postcode}`), "SUCCESS");
 
   return envelope(
     cid,
     "CONFIRMED",
-    { postcode, matches, searchToken: `srch_${crypto.randomUUID().slice(0, 12)}` },
+    { postcode, matches },
     {
       sourceEvidence: { source: "address_adapter", checkedAt: nowIso(), status: "VERIFIED" },
       nextActions: matches.length

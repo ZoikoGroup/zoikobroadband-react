@@ -5,6 +5,8 @@
 import { NextRequest } from "next/server";
 import { apiError, envelope, limit, newCorrelationId, nowIso, readJson } from "@/app/lib/linko-api/http";
 import { RULES_VERSION, SYMPTOMS, Symptom, triage } from "@/app/lib/linko-api/rules";
+import { persistEvent, persistToolInvocation } from "@/app/lib/linko-db/persist";
+import { sha256 } from "@/app/lib/linko-db/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,6 +22,13 @@ export async function POST(req: NextRequest) {
     return apiError(cid, "VALIDATION_ERROR", `symptom must be one of ${SYMPTOMS.join(", ")}.`, { field: "symptom" });
   }
 
+  // LK-WF-11 / AC-27: no troubleshooting until both safety answers are known (no unsafe power-cycle assumption).
+  for (const field of ["digitalVoice", "telecareOrAlarm"] as const) {
+    if (typeof body?.[field] !== "boolean") {
+      return apiError(cid, "VALIDATION_ERROR", `${field} must be answered (true or false) before troubleshooting.`, { field });
+    }
+  }
+
   const result = triage({
     symptom: symptom as Symptom,
     allDevices: typeof body?.allDevices === "boolean" ? body.allDevices : null,
@@ -27,6 +36,9 @@ export async function POST(req: NextRequest) {
     telecareOrAlarm: body?.telecareOrAlarm === true,
   });
 
+  const sid = typeof body?.conversationId === "string" ? body.conversationId : null;
+  persistToolInvocation(sid, "PUB_10", "ALLOW", sha256(`PUB_10|${symptom}|${body?.allDevices}`), "SUCCESS");
+  if (sid) persistEvent(sid, `TRIAGE_${result.category.toUpperCase()}`, "LK-WF-11", { safety_route: result.safetyEscalation, steps: result.steps.length });
   return envelope(cid, result.safetyEscalation ? "REQUIRES_ACTION" : "CONFIRMED", result, {
     sourceEvidence: { source: "approved_troubleshooting_kb", version: RULES_VERSION, checkedAt: nowIso(), status: "VERIFIED" },
     nextActions: result.safetyEscalation

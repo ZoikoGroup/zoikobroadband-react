@@ -18,8 +18,13 @@ export interface TriageStep {
   linkLabel?: string;
 }
 
+/** Approved safety wording returned with every escalation (Doc04 LK-WF-15: clear limits, no 999 continuity promise). */
+export const SAFETY_NOTICE =
+  "Digital phone and telecare services may not work in a power cut or broadband outage. In an emergency, call 999 or 112 from a mobile or another working phone, and tell your alarm or telecare provider. Please don't restart or disconnect equipment the line depends on until you've spoken to us.";
+
 export interface TriageResult {
   safetyEscalation: boolean;
+  safetyNotice?: string;
   priority: "URGENT_SAFETY" | "NORMAL";
   /** "connection" = whole line, "wifi" = coverage on some devices. */
   category: "connection" | "wifi" | "voice" | "other";
@@ -36,7 +41,7 @@ const CONNECTION_STEPS: TriageStep[] = [
   },
   {
     id: "restart",
-    text: "Do a normal restart: switch the router off at the wall, wait at least 30 seconds, switch it back on and allow a few minutes to reconnect. Please don't use the reset pinhole — a factory reset removes your settings.",
+    text: "This briefly disconnects your internet and any digital phone. Do a normal restart: switch the router off at the wall, wait at least 30 seconds, switch it back on and allow a few minutes to reconnect. Please don't use the reset pinhole — a factory reset removes your settings.",
   },
   {
     id: "other-device",
@@ -60,8 +65,8 @@ const SLOW_STEPS: TriageStep[] = [
   {
     id: "compare",
     text: "Compare the result with the minimum and expected speeds in your own contract information. If it's consistently below the minimum, report a fault so we can investigate.",
-    href: "/ofcom-speed-commitment",
-    linkLabel: "Speed commitment",
+    href: "/which-speed-do-i-need",
+    linkLabel: "Which speed do I need?",
   },
 ];
 
@@ -90,7 +95,7 @@ export function triage(input: {
 }): TriageResult {
   // Safety takes precedence over every other rule (Doc04 LK-WF-11/15, SEQ-05).
   if (input.telecareOrAlarm || input.digitalVoice || input.symptom === "PHONE_LINE") {
-    return { safetyEscalation: true, priority: "URGENT_SAFETY", category: "voice", steps: [], maxSteps: 0 };
+    return { safetyEscalation: true, safetyNotice: SAFETY_NOTICE, priority: "URGENT_SAFETY", category: "voice", steps: [], maxSteps: 0 };
   }
   if (input.symptom === "NO_CONNECTION") return { safetyEscalation: false, priority: "NORMAL", category: "connection", steps: CONNECTION_STEPS, maxSteps: 3 };
   if (input.symptom === "SLOW_SPEED") return { safetyEscalation: false, priority: "NORMAL", category: "connection", steps: SLOW_STEPS, maxSteps: 3 };

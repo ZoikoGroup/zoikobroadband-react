@@ -10,10 +10,10 @@ const gr = globalThis as unknown as { __linkoRate?: Map<string, number[]> };
 gr.__linkoRate ??= new Map();
 const hits = gr.__linkoRate;
 
-export function checkRateLimit(key: string): boolean {
+export function checkRateLimit(key: string, max: number = MAX_REQUESTS): boolean {
   const now = Date.now();
   const recent = (hits.get(key) ?? []).filter((t) => now - t < WINDOW_MS);
-  if (recent.length >= MAX_REQUESTS) {
+  if (recent.length >= max) {
     hits.set(key, recent);
     return false;
   }

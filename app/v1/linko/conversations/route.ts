@@ -1,6 +1,6 @@
 /** PUB-01 POST /v1/linko/conversations — create a public conversation (Doc04 §05, LK-WF-01). */
 import { NextRequest } from "next/server";
-import { ASSISTANT, COPY, welcomeActions } from "@/app/lib/chatbot/linko";
+import { ASSISTANT, COPY, PRIVACY_NOTICE_VERSION, welcomeActions } from "@/app/lib/chatbot/linko";
 import { apiError, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_ACTIONS } from "@/app/lib/linko-api/http";
 import { createConversation } from "@/app/lib/linko-api/store";
 
@@ -34,11 +34,13 @@ export async function POST(req: NextRequest) {
       // A conversationId grants no account rights (Doc04 LK-WF-01).
       permissions: { trustLevel: "PUBLIC", privateReads: false, actions: "PUBLIC_ONLY" },
       publicActions: welcomeActions(pageKey),
+      privacyNoticeVersion: PRIVACY_NOTICE_VERSION,
     },
     {
       http: 201,
-      sourceEvidence: { source: "approved_flows", version: "doc01-v1.0", checkedAt: nowIso(), status: "VERIFIED" },
-      nextActions: SUPPORT_ACTIONS.filter((a) => a.type === "FLOW"),
+      sourceEvidence: { source: "approved_flows", version: "doc01-v1.0-draft", checkedAt: nowIso(), status: "INDICATIVE" },
+      // AC-02: AI disclosure and the privacy path come with the first response.
+      nextActions: [{ type: "LINK", label: "Privacy notice", href: "/privacy-notice" }, ...SUPPORT_ACTIONS.filter((a) => a.type === "FLOW")],
     },
   );
 }

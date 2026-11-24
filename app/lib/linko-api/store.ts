@@ -37,11 +37,25 @@ export interface Conversation {
   /** Retries for the current failing question (Doc01 WF-19: max 2). */
   retryCount: number;
   topics: string[];
-  replies: Map<string, { at: number; body: string; status: number }>; // requestId replay
-  slots: { preferredMoveDate?: string; customerType?: "RESIDENTIAL" | "BUSINESS" };
+  /** All user turns ever sent (history is trimmed, so the turn cap uses this). */
+  userTurns: number;
+  /** Monotonic message sequence for chat_message (Doc05 DM-04). */
+  msgSeq: number;
+  replies: Map<string, { at: number; body: string; status: number; digest: string }>; // requestId replay
+  slots: {
+    preferredMoveDate?: string;
+    customerType?: "RESIDENTIAL" | "BUSINESS";
+    safetyFlag?: boolean;
+    /** Doc10 §07.1: when dissatisfaction was first expressed — preserved, never reset. */
+    complaintFirstAt?: string;
+  };
 }
 
+import { persistSessionCreated, persistSessionUpdate, purgeSession } from "@/app/lib/linko-db/persist";
+import { PRIVACY_NOTICE_VERSION } from "@/app/lib/chatbot/linko";
+
 const IDLE_TTL_MS = 30 * 60 * 1000; // conversation idle expiry
+const MAX_LIFETIME_MS = 4 * 60 * 60 * 1000; // absolute max life (Doc05 DM-03 / §12.2)
 const MAX_CONVERSATIONS = 5000;
 
 /* One shared instance per server process: route handlers may load this module
@@ -58,9 +72,21 @@ const conversations = g.__linkoStore.conversations;
 
 function sweep() {
   const now = Date.now();
-  for (const [id, c] of conversations) if (now - c.lastSeen > IDLE_TTL_MS) conversations.delete(id);
+  for (const [id, c] of conversations) if (expired(c, now)) purgeConversation(id, "EXPIRE");
   for (const [k, v] of addresses) if (now > v.expiresAt) addresses.delete(k);
   for (const [k, v] of eligibility) if (now > v.expiresAt) eligibility.delete(k);
+}
+
+function expired(c: Conversation, now = Date.now()) {
+  return now - c.lastSeen > IDLE_TTL_MS || now - c.createdAt > MAX_LIFETIME_MS;
+}
+
+/** Removes a conversation and every address / eligibility token issued to it (Doc05 CF-08). */
+function purgeConversation(id: string, reason: "CLOSE" | "EXPIRE") {
+  conversations.delete(id);
+  purgeSession(id, reason);
+  for (const [k, v] of addresses) if (v.conversationId === id) addresses.delete(k);
+  for (const [k, v] of eligibility) if (v.conversationId === id) eligibility.delete(k);
 }
 
 function opaqueId(prefix: string) {
@@ -72,7 +98,7 @@ export function createConversation(pageKey: string): Conversation {
   sweep();
   if (conversations.size >= MAX_CONVERSATIONS) {
     const oldest = [...conversations.values()].sort((a, b) => a.lastSeen - b.lastSeen)[0];
-    if (oldest) conversations.delete(oldest.id);
+    if (oldest) purgeConversation(oldest.id, "EXPIRE");
   }
   const c: Conversation = {
     id: opaqueId("conv"),
@@ -85,18 +111,21 @@ export function createConversation(pageKey: string): Conversation {
     clarifyCount: 0,
     retryCount: 0,
     topics: [],
+    userTurns: 0,
+    msgSeq: 0,
     replies: new Map(),
     slots: {},
   };
   conversations.set(c.id, c);
+  persistSessionCreated(snapshot(c));
   return c;
 }
 
 export function getConversation(id: string): Conversation | null {
   const c = conversations.get(id);
   if (!c) return null;
-  if (Date.now() - c.lastSeen > IDLE_TTL_MS) {
-    conversations.delete(id);
+  if (expired(c)) {
+    purgeConversation(id, "EXPIRE");
     return null;
   }
   c.lastSeen = Date.now();
@@ -105,13 +134,33 @@ export function getConversation(id: string): Conversation | null {
 
 export function closeConversation(id: string): Conversation | null {
   const c = conversations.get(id) ?? null;
-  conversations.delete(id); // purge immediately on close (Doc01 WF-18 "End session → server purge")
+  purgeConversation(id, "CLOSE"); // purge immediately on close (Doc01 WF-18 "End session → server purge")
   return c;
+}
+
+function snapshot(c: Conversation) {
+  return {
+    id: c.id,
+    pageKey: c.pageKey,
+    noticeVersion: PRIVACY_NOTICE_VERSION,
+    state: c.state,
+    intent: c.intent,
+    topics: c.topics,
+    safetyFlag: c.slots.safetyFlag === true,
+    userTurns: c.userTurns,
+  };
+}
+
+/** Writes the conversation's current state to the database (Doc05 DM-03). */
+export function saveConversation(c: Conversation) {
+  persistSessionUpdate(snapshot(c));
 }
 
 /* ───────────── Opaque address tokens (no raw wholesale IDs to the browser) ───────────── */
 
 interface AddressRecord {
+  /** Tokens belong to the conversation that searched for them (Doc05 T-12 / T-52). */
+  conversationId: string;
   label: string;
   supplierId: string;
   districtCode: string;
@@ -129,15 +178,21 @@ export function rememberAddress(rec: Omit<AddressRecord, "expiresAt">): string {
   return id;
 }
 
-export function lookupAddress(id: string): AddressRecord | null {
+export function lookupAddress(id: string, conversationId: string): AddressRecord | null {
   const rec = addresses.get(id);
-  if (!rec || Date.now() > rec.expiresAt) return null;
+  if (!rec || Date.now() > rec.expiresAt || rec.conversationId !== conversationId) return null;
   return rec;
+}
+
+/** A new address search invalidates earlier eligibility for that conversation (Doc04 AC-08). */
+export function forgetEligibility(conversationId: string) {
+  for (const [k, v] of eligibility) if (v.conversationId === conversationId) eligibility.delete(k);
 }
 
 /* ───────────── Eligibility references (opaque, time-limited, not reused across address change) ───────────── */
 
 interface EligibilityRecord {
+  conversationId: string;
   addressId: string;
   customerType: "RESIDENTIAL" | "BUSINESS";
   technologies: string[];
@@ -150,14 +205,16 @@ const ELIGIBILITY_TTL_MS = 15 * 60 * 1000;
 const eligibility = g.__linkoStore.eligibility;
 
 export function rememberEligibility(rec: Omit<EligibilityRecord, "expiresAt">): { ref: string; expiresAt: string } {
+  forgetEligibility(rec.conversationId); // only the latest premises qualification is valid
   const ref = opaqueId("elig");
   const expiresAt = Date.now() + ELIGIBILITY_TTL_MS;
   eligibility.set(ref, { ...rec, expiresAt });
   return { ref, expiresAt: new Date(expiresAt).toISOString() };
 }
 
-export function lookupEligibility(ref: string): EligibilityRecord | null {
+export function lookupEligibility(ref: string, conversationId?: string): EligibilityRecord | null {
   const rec = eligibility.get(ref);
   if (!rec || Date.now() > rec.expiresAt) return null;
+  if (conversationId !== undefined && rec.conversationId !== conversationId) return null;
   return rec;
 }
