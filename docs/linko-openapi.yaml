@@ -1,0 +1,176 @@
+openapi: 3.1.0
+info:
+  title: Linko public API
+  version: "1.0.0"
+  description: >
+    Zoiko Broadband Linko assistant API (Doc04 API & integration contract). Every success response uses the
+    envelope {status, correlationId, data, sourceEvidence?, nextActions}. Every error uses
+    {code, message, correlationId, retryable, nextAction?, field?, nextActions}. Responses carry
+    X-Correlation-Id and Cache-Control: no-store. Side-effecting POSTs require an Idempotency-Key header.
+    Browser POSTs must come from the site's own origin. Private /me routes fail closed (401) until
+    MyZoiko sign-in is connected.
+servers:
+  - url: /v1/linko
+components:
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 8, maxLength: 128 }
+  schemas:
+    BusinessStatus: { type: string, enum: [CONFIRMED, INDICATIVE, PENDING, UNAVAILABLE, REQUIRES_ACTION] }
+    NextAction:
+      type: object
+      required: [type, label]
+      properties:
+        type: { type: string, enum: [LINK, FLOW, SIGN_IN, HUMAN, RETRY, PHONE] }
+        label: { type: string }
+        href: { type: string }
+        flow: { type: string }
+    SourceEvidence:
+      type: object
+      required: [source, checkedAt, status]
+      properties:
+        source: { type: string }
+        version: { type: string }
+        checkedAt: { type: string, format: date-time }
+        expiresAt: { type: string, format: date-time }
+        status: { type: string, enum: [VERIFIED, INDICATIVE, STALE, UNKNOWN] }
+    Envelope:
+      type: object
+      required: [status, correlationId, data, nextActions]
+      properties:
+        status: { $ref: "#/components/schemas/BusinessStatus" }
+        correlationId: { type: string }
+        data: {}
+        sourceEvidence: { $ref: "#/components/schemas/SourceEvidence" }
+        nextActions: { type: array, items: { $ref: "#/components/schemas/NextAction" } }
+    Error:
+      type: object
+      required: [code, message, correlationId, retryable, nextActions]
+      properties:
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, AUTH_REQUIRED, ACCESS_DENIED, NOT_FOUND, QUOTE_EXPIRED, ELIGIBILITY_UNKNOWN, RATE_LIMITED,
+                 PROVIDER_UNAVAILABLE, SOURCE_UNAVAILABLE, TIMEOUT, IDEMPOTENCY_KEY_REQUIRED, REQUEST_IN_PROGRESS, METHOD_NOT_ALLOWED, GONE]
+        message: { type: string }
+        correlationId: { type: string }
+        retryable: { type: boolean }
+        nextAction: { type: string, enum: [HUMAN, SIGN_IN, RETRY, CORRECT_INPUT] }
+        field: { type: string }
+        nextActions: { type: array, items: { $ref: "#/components/schemas/NextAction" } }
+  responses:
+    Ok: { description: Envelope, content: { application/json: { schema: { $ref: "#/components/schemas/Envelope" } } } }
+    Error: { description: Error, content: { application/json: { schema: { $ref: "#/components/schemas/Error" } } } }
+paths:
+  /conversations:
+    post:
+      operationId: PUB_01_createConversation
+      requestBody: { content: { application/json: { schema: { type: object, properties: { locale: { const: en-GB }, channel: { const: website }, pageKey: { type: string } } } } } }
+      responses: { "201": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "429": { $ref: "#/components/responses/Error" } }
+  /conversations/{conversationId}/messages:
+    post:
+      operationId: PUB_02_sendMessage
+      parameters: [{ name: conversationId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, requestId]
+              properties:
+                kind: { type: string, enum: [TEXT, ACTION] }
+                text: { type: string, maxLength: 2000 }
+                actionId: { type: string }
+                label: { type: string, maxLength: 120 }
+                requestId: { type: string, minLength: 8, maxLength: 64, description: Same requestId + same body replays the stored reply }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "429": { $ref: "#/components/responses/Error" } }
+  /conversations/{conversationId}/close:
+    post:
+      operationId: PUB_14_closeConversation
+      parameters: [{ name: conversationId, in: path, required: true, schema: { type: string } }]
+      responses: { "204": { description: Closed and purged } }
+  /addresses/search:
+    post:
+      operationId: PUB_03_searchAddresses
+      requestBody: { content: { application/json: { schema: { type: object, required: [conversationId, postcode], properties: { conversationId: { type: string }, postcode: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "503": { $ref: "#/components/responses/Error" }, "504": { $ref: "#/components/responses/Error" } }
+  /availability/qualifications:
+    post:
+      operationId: PUB_04_qualifyAddress
+      requestBody: { content: { application/json: { schema: { type: object, required: [conversationId, addressId, customerType], properties: { conversationId: { type: string }, addressId: { type: string }, customerType: { type: string, enum: [RESIDENTIAL, BUSINESS] } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "404": { $ref: "#/components/responses/Error" }, "422": { $ref: "#/components/responses/Error" }, "503": { $ref: "#/components/responses/Error" } }
+  /plans:
+    get:
+      operationId: PUB_05_plans
+      parameters: [{ name: qualificationRef, in: query, required: true, schema: { type: string } }]
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "409": { $ref: "#/components/responses/Error" } }
+  /business/leads:
+    post:
+      operationId: PUB_06_businessLead
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      responses: { "202": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "503": { $ref: "#/components/responses/Error" }, "504": { $ref: "#/components/responses/Error" } }
+  /switching/guidance:
+    post:
+      operationId: PUB_07_switchingGuidance
+      requestBody: { content: { application/json: { schema: { type: object, required: [customerType, sameAddress, hasLandlineOrTelecare], properties: { customerType: { type: string, enum: [RESIDENTIAL, BUSINESS] }, sameAddress: { type: boolean }, hasLandlineOrTelecare: { type: boolean }, conversationId: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" } }
+  /checkout/handoffs:
+    post:
+      operationId: PUB_08_checkoutHandoff
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      responses: { "409": { $ref: "#/components/responses/Error" } }
+  /service-status:
+    get:
+      operationId: PUB_09_serviceStatus
+      parameters: [{ name: area, in: query, schema: { type: string, description: Outward postcode only, e.g. SW1A } }]
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" } }
+  /faults/triage:
+    post:
+      operationId: PUB_10_faultTriage
+      requestBody: { content: { application/json: { schema: { type: object, required: [symptom, digitalVoice, telecareOrAlarm], properties: { symptom: { type: string, enum: [NO_CONNECTION, SLOW_SPEED, SLOW_WIFI, WIFI_DROPS, PHONE_LINE, OTHER] }, allDevices: { type: boolean }, digitalVoice: { type: boolean }, telecareOrAlarm: { type: boolean }, conversationId: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" } }
+  /complaints:
+    post:
+      operationId: PUB_11_complaint
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      responses: { "202": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "503": { $ref: "#/components/responses/Error" }, "504": { $ref: "#/components/responses/Error" } }
+  /human-handoffs:
+    post:
+      operationId: PUB_12_humanHandoff
+      parameters: [{ $ref: "#/components/parameters/IdempotencyKey" }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                channel: { type: string, enum: [LIVE_CHAT, CALLBACK, TICKET, ENQUIRY, PHONE, ANY] }
+                reason: { type: string, enum: [USER_REQUEST, SAFETY, VULNERABILITY, COMPLAINT, BUSINESS, FAULT, BILLING, ORDER, UNRESOLVED, OTHER] }
+                shareSummary: { type: boolean }
+                shareTranscript: { type: boolean }
+                topics: { type: array, items: { type: string } }
+                conversationId: { type: string }
+                withdraw: { type: boolean }
+                handoffRef: { type: string }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" } }
+  /privacy/requests:
+    post:
+      operationId: PUB_13_privacyRequest
+      requestBody: { content: { application/json: { schema: { type: object, required: [type], properties: { type: { type: string, enum: [ACCESS, ERASURE, RECTIFICATION, RESTRICTION, TRANSCRIPT_QUESTION, TRANSCRIPT_OPT_OUT] }, conversationId: { type: string } } } } } }
+      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" } }
+  /health:
+    get:
+      operationId: OPS_health
+      description: Public callers get {status, checkedAt}; detail needs the x-linko-health-token header.
+      responses: { "200": { description: Health } }
+  /me/{path}:
+    get:
+      operationId: PRV_read
+      parameters: [{ name: path, in: path, required: true, schema: { type: string } }]
+      responses: { "401": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "405": { $ref: "#/components/responses/Error" } }
+    post:
+      operationId: PRV_write
+      parameters: [{ name: path, in: path, required: true, schema: { type: string } }]
+      responses: { "401": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "405": { $ref: "#/components/responses/Error" } }

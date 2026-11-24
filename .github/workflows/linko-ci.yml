@@ -1,0 +1,42 @@
+name: Linko checks
+
+# Doc08 §10.1 G1/G2, LK-ARCH-I-02/I-03: lint, types, dependency audit, secret scan and the Linko
+# evaluation gate run on every push and pull request. The deploy workflow is unchanged.
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Dependency audit (high and critical)
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: true
+      - name: Lint Linko
+        run: npx eslint app/Components/Chatbot app/lib/chatbot app/lib/linko-api app/lib/linko-db app/lib/linko-staff app/v1 app/staff scripts
+      - name: Type-check
+        run: npx tsc --noEmit -p .
+      - name: Linko evaluation (unit layer, zero-tolerance critical cases)
+        run: npm run eval:linko -- --unit
+        env:
+          LINKO_DB_PATH: /tmp/linko-ci.db
+          LINKO_ALLOW_DRAFT_KB: "true"
+      - name: Secret scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
