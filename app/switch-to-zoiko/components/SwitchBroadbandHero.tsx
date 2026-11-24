@@ -92,7 +92,7 @@ export default function SwitchBroadbandHero() {
               </Link>
 
               <Link
-                href="/broadband-deals"
+                href="/all-broadband-deals"
                 className="inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/30 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors"
               >
                 <span>Compare Broadband Plans</span>
@@ -104,7 +104,7 @@ export default function SwitchBroadbandHero() {
               <User className="w-4 h-4 text-[#F5B82E] shrink-0" />
               <span>Already with Zoiko?</span>
               <Link
-                href="/my-account"
+                href="/dashboard"
                 className="font-bold text-white underline underline-offset-4 hover:text-[#F5B82E] transition-colors"
               >
                 Manage your service

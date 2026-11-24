@@ -18,16 +18,16 @@ const content = {
     "Find out how to request a number transfer for your home or business, what to check first, and how to get help if your line has already been disconnected.",
   primary: {
     label: "Check my transfer path",
-    href: "/switching/transfer-path",
+    href: "#check-my-transfer-path",
   },
-  secondary: { label: "Speak to our team", href: "/contact" },
+  secondary: { label: "Speak to our team", href: "/contact-us" },
   alert: {
     title:
       "Do not cancel your existing service until your transfer plan is confirmed.",
     text: "Cancelling first can mean losing your number.",
     cta: {
       label: "Already cancelled? Get help",
-      href: "/switching/already-cancelled",
+      href: "/get-help",
     },
   },
 } as const;
@@ -61,35 +61,35 @@ const tabs = [
     number: "01",
     title: "Keep Your Phone Number",
     status: "You're here",
-    href: "/switching/keep-your-number",
+    href: "/keep-your-phone-number",
     active: true,
   },
   {
     number: "02",
     title: "Moving to Digital Voice",
     status: "Coming soon",
-    href: "/switching/digital-voice",
+    href: "/digital-lines",
     active: false,
   },
   {
     number: "03",
     title: "Installation & Setup",
     status: "Coming soon",
-    href: "/switching/installation",
+    href: "/installation-routers",
     active: false,
   },
   {
     number: "04",
     title: "Help & Troubleshooting",
     status: "Coming soon",
-    href: "/support",
+    href: "/get-help",
     active: false,
   },
   {
     number: "05",
     title: "Emergency Calling Guidance",
     status: "Coming soon",
-    href: "/switching/emergency-calling",
+    href: "/digital-lines",
     active: false,
   },
 ] as const;

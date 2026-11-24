@@ -93,7 +93,7 @@ export default function InstallationHero() {
               </Link>
 
               <Link
-                href="/track-order"
+                href="/dashboard"
                 className="inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/30 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors"
               >
                 <Clock className="w-4 h-4 mr-2 shrink-0" />

@@ -9,7 +9,7 @@ const SWITCH_RELATED_PAGES = [
   },
   {
     label: "All Broadband Deals",
-    href: "/broadband-deals",
+    href: "/all-broadband-deals",
   },
   {
     label: "Moving Home",
@@ -25,7 +25,7 @@ const SWITCH_RELATED_PAGES = [
   },
   {
     label: "Compare Plans & Speeds",
-    href: "/compare-plans-speeds",
+    href: "/compare-plans",
   },
 ] as const;
 

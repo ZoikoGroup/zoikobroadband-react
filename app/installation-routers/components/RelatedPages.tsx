@@ -9,15 +9,15 @@ const RELATED_PAGES = [
   },
   {
     label: "Full Fibre (FTTP)",
-    href: "/full-fibre-fttp",
+    href: "/full-fibre",
   },
   {
     label: "Part Fibre (SOGEA)",
-    href: "/part-fibre-sogea",
+    href: "/part-fibre",
   },
   {
     label: "Broadband Troubleshooting",
-    href: "/broadband-troubleshooting",
+    href: "/led-light-meanings",
   },
 ] as const;
 

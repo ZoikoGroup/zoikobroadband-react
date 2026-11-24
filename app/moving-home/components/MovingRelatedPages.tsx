@@ -9,11 +9,11 @@ const RELATED_PAGES = [
   },
   {
     label: "All Broadband Deals",
-    href: "/broadband-deals",
+    href: "/all-broadband-deals",
   },
   {
     label: "How Switching Works",
-    href: "/how-switching-works",
+    href: "/switch-to-zoiko",
   },
   {
     label: "Installation & Routers",
@@ -25,7 +25,7 @@ const RELATED_PAGES = [
   },
   {
     label: "Help & Support",
-    href: "/help-support",
+    href: "/get-help",
   },
 ] as const;
 

@@ -100,7 +100,7 @@ export default function PhoneAndEssentialDevices() {
           </Link>
 
           <Link
-            href="/priority-assistance"
+            href="/get-help"
             className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-[#0E2F52] border border-gray-200/90 font-bold text-sm px-5 py-3 rounded-xl transition-colors shadow-2xs"
           >
             <span>Priority assistance &amp; support</span>

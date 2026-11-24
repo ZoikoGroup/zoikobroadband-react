@@ -146,7 +146,7 @@ export default function PreparingForEngineer() {
 
               <div className="space-y-3">
                 <Link
-                  href="/track-order"
+                  href="/dashboard"
                   className="w-full inline-flex items-center justify-center bg-[#F5B82E] hover:bg-amber-400 text-[#0E2F52] font-bold text-sm px-5 py-3.5 rounded-xl transition-colors group"
                 >
                   <span>Track Your Order</span>
@@ -154,7 +154,7 @@ export default function PreparingForEngineer() {
                 </Link>
 
                 <Link
-                  href="/contact-support"
+                  href="/contact-us"
                   className="w-full inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/25 font-semibold text-sm px-5 py-3.5 rounded-xl transition-colors"
                 >
                   Contact support

@@ -229,7 +229,7 @@ export default function SwitchCheckAvailabilityBanner() {
               Checking availability doesn&apos;t create an order or cancel your
               current service.{" "}
               <Link
-                href="/contact-support"
+                href="/contact-us"
                 className="font-bold text-[#F5B82E] hover:underline underline-offset-4"
               >
                 Get switching help
