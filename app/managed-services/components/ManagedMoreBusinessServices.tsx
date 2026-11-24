@@ -15,7 +15,7 @@ const MORE_BUSINESS_SERVICES: readonly MoreBusinessServiceCard[] = [
   {
     id: "installation-and-onboarding",
     title: "Installation & Onboarding",
-    href: "#installation-and-onboarding",
+    href: "/installation-onboarding",
     imageSrc: "/Images/onb/14.png",
     imageAlt:
       "Dual-antenna wireless router in a workspace with a person working in the background",
@@ -23,14 +23,14 @@ const MORE_BUSINESS_SERVICES: readonly MoreBusinessServiceCard[] = [
   {
     id: "business-support-and-slas",
     title: "Business Support & SLAs",
-    href: "#business-support-and-slas",
+    href: "/business-support",
     imageSrc: "/Images/onb/12.png",
     imageAlt: "Support advisor wearing a headset smiling at a computer monitor",
   },
   {
     id: "cyber-security-and-protection",
     title: "Cyber Security & Protection",
-    href: "#cyber-security-and-protection",
+    href: "/cyber-security",
     imageSrc: "/Images/onb/7.png",
     imageAlt:
       "Laptop, tablet, smartphone and wireless headphones displaying vibrant screen graphics",
@@ -38,7 +38,7 @@ const MORE_BUSINESS_SERVICES: readonly MoreBusinessServiceCard[] = [
   {
     id: "request-a-tailored-quote",
     title: "Request a Tailored Quote",
-    href: "#request-a-scope-review",
+    href: "/request-a-tailored-quote",
     imageSrc: "/Images/onb/17.png",
     imageAlt: "City skyline with bridge and glass tower at dusk",
   },

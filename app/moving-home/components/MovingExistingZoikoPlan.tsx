@@ -122,7 +122,7 @@ export default function MovingExistingZoikoPlan() {
 
               <div className="space-y-3">
                 <Link
-                  href="/dashboard"
+                  href="/login"
                   className="w-full inline-flex items-center justify-center bg-[#F5B82E] hover:bg-amber-400 text-[#0E2F52] font-bold text-sm px-5 py-3.5 rounded-xl transition-colors group"
                 >
                   <span>Sign in to My Account</span>

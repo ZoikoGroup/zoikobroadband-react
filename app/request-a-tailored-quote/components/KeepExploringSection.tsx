@@ -19,7 +19,7 @@ const KEEP_EXPLORING_DATA = {
       title: "Business broadband plans",
       description: "Compare connections for your business.",
       actionLabel: "Explore",
-      href: "#business-broadband-plans",
+      href: "/business-broadband-plans",
     },
     {
       id: "business-phone-voice",
@@ -29,7 +29,7 @@ const KEEP_EXPLORING_DATA = {
       title: "Business phone & voice",
       description: "Digital lines and cloud phone options.",
       actionLabel: "Explore",
-      href: "#business-phone-voice",
+      href: "/digital-lines",
     },
     {
       id: "managed-services",
@@ -40,7 +40,7 @@ const KEEP_EXPLORING_DATA = {
       title: "Managed services",
       description: "Let us look after your network and devices.",
       actionLabel: "Explore",
-      href: "#managed-services",
+      href: "/managed-services",
     },
   ],
 } as const;

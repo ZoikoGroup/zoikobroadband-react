@@ -21,7 +21,7 @@ const BUSINESS_RELATED_PAGES = [
   },
   {
     label: "Which Speed Do I Need?",
-    href: "/business-speed-guide",
+    href: "/which-speed-do-i-need",
   },
   {
     label: "Help & Support",

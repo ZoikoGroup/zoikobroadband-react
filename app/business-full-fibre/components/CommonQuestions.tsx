@@ -112,7 +112,7 @@ export default function CommonQuestions() {
 
           <div className="flex flex-wrap items-center gap-3.5 shrink-0">
             <a
-              href="#"
+              href="/check-availability"
               aria-label="Check Availability"
               className="inline-flex items-center justify-center min-w-[172px] h-[44px] px-6 rounded-[8px] bg-[#0B2241] hover:bg-[#143563] text-[#0B2241]/0 select-none text-[13.5px] font-bold transition-colors"
             >
@@ -120,7 +120,7 @@ export default function CommonQuestions() {
             </a>
 
             <a
-              href="#"
+              href="/contact-us"
               className="inline-flex items-center justify-center px-6 h-[44px] rounded-[8px] bg-white hover:bg-[#F8FAFC] border border-[#0B2241] text-[#0B2241] text-[13.5px] font-bold transition-colors"
             >
               Speak to a Business Specialist

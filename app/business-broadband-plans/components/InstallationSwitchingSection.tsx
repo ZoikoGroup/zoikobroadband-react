@@ -46,12 +46,12 @@ const ACTION_BUTTONS: readonly ActionButton[] = [
   {
     id: "installation",
     label: "Installation & Onboarding",
-    href: "#",
+    href: "/installation-onboarding",
   },
   {
     id: "support",
     label: "Business Support & SLAs",
-    href: "#",
+    href: "/business-support",
   },
 ] as const;
 

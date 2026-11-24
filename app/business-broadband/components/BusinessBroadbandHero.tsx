@@ -40,7 +40,7 @@ export default function BusinessBroadbandHero() {
               </Link>
 
               <Link
-                href="/why-zoiko"
+                href="/business-broadband"
                 className="bg-white text-[#10446C] px-6 py-3 rounded-lg font-semibold hover:bg-[#eab530] transition"
               >
                 Learn More

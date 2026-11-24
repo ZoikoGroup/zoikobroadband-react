@@ -31,14 +31,14 @@ export default function WhatIsFttp() {
 
             <div className="flex flex-wrap items-center gap-3.5">
               <a
-                href="#"
+                href="/business-part-fibre"
                 className="inline-flex items-center justify-center px-5 h-[44px] bg-white hover:bg-[#F8FAFC] text-[#0B2241] text-[13.5px] font-bold rounded-[8px] border border-[#0B2241] transition-colors"
               >
                 Part Fibre (SOGEA)
               </a>
 
               <a
-                href="#"
+                href="/business-broadband"
                 className="inline-flex items-center justify-center px-5 h-[44px] bg-white hover:bg-[#F8FAFC] text-[#0B2241] text-[13.5px] font-bold rounded-[8px] border border-[#0B2241] transition-colors"
               >
                 Static IP Options

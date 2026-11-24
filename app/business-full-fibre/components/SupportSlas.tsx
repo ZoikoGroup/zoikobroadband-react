@@ -39,7 +39,7 @@ export default function SupportSlas() {
             </p>
 
             <a
-              href="#"
+              href="/business-support"
               className="inline-flex items-center justify-center px-6 h-[44px] rounded-[8px] bg-[#FFC119] hover:bg-[#F5B60A] text-white text-[13.5px] font-bold transition-colors"
             >
               Business Support &amp; SLAs

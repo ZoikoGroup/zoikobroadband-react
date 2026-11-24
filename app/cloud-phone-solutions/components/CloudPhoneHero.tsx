@@ -10,11 +10,11 @@ const HERO_CONFIG = {
     "Explore business calling options, understand the setup considerations, and speak with a specialist about what fits your team. Features and eligibility are confirmed during your consultation.",
   primaryCta: {
     label: "Discuss your phone setup",
-    href: "#discuss-setup",
+    href: "/contact-us",
   },
   secondaryCta: {
     label: "Explore possible capabilities",
-    href: "#capabilities",
+    href: "#discuss-setup",
   },
   noticeText:
     "Review number-transfer, connectivity and emergency-calling requirements before changing an existing service.",

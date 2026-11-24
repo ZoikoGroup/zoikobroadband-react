@@ -86,13 +86,13 @@ export default function BusinessBroadbandClearHonest() {
             <p className="text-sm text-gray-600 leading-relaxed">
               Our{" "}
               <Link
-                href="/accessibility"
+                href="/accessibility-statement"
                 className="underline hover:text-[#0A3A66]"
               >
                 Accessibility Support
               </Link>{" "}
               and{" "}
-              <Link href="/support" className="underline hover:text-[#0A3A66]">
+              <Link href="/get-help" className="underline hover:text-[#0A3A66]">
                 Help Centre
               </Link>{" "}
               are here before and after your order — you don&apos;t need an

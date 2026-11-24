@@ -16,10 +16,10 @@ import {
 const ACTIONS = [
   {
     label: "Request a managed-services review",
-    href: "/contact",
+    href: "/contact-us",
     primary: true,
   },
-  { label: "Understand managed-service scope", href: "/faqs", primary: false },
+  { label: "Understand managed-service scope", href: "/business-support", primary: false },
 ] as const;
 
 type NodeVariant = "navy" | "router-glow" | "yellow" | "white";
@@ -45,31 +45,31 @@ const TABS = [
   {
     n: "01",
     label: "Installation & Onboarding",
-    href: "/business/installation",
+    href: "/installation-onboarding",
     active: false,
   },
   {
     n: "02",
     label: "Business Support & SLAs",
-    href: "/business/support",
+    href: "/business-support",
     active: false,
   },
   {
     n: "03",
     label: "Cyber Security & Protection",
-    href: "/business/security",
+    href: "/cyber-security",
     active: false,
   },
   {
     n: "04",
     label: "Managed Services",
-    href: "/business/managed-services",
+    href: "/managed-services",
     active: true,
   },
   {
     n: "05",
     label: "Request a Tailored Quote",
-    href: "/contact",
+    href: "/request-a-tailored-quote",
     active: false,
   },
 ] as const;

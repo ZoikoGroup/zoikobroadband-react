@@ -18,7 +18,7 @@ const RELATED_SOLUTIONS = [
     description: "For remote access and hosted systems.",
     imageSrc: "/Images/fttp/8.png",
     imageAlt: "Code on screen representing Static IP Options",
-    href: "#",
+    href: "/business-broadband",
   },
   {
     id: "multi-site-connectivity",
@@ -26,7 +26,7 @@ const RELATED_SOLUTIONS = [
     description: "Coordinate several premises.",
     imageSrc: "/Images/fttp/9.png",
     imageAlt: "Network switch ports for Multi-site Connectivity",
-    href: "#",
+    href: "/multi-site-connectivity",
   },
   {
     id: "business-voip",
@@ -34,7 +34,7 @@ const RELATED_SOLUTIONS = [
     description: "Review voice separately from broadband.",
     imageSrc: "/Images/fttp/10.png",
     imageAlt: "Business VoIP call in office",
-    href: "#",
+    href: "/digital-lines",
   },
   {
     id: "installation-onboarding",
@@ -42,7 +42,7 @@ const RELATED_SOLUTIONS = [
     description: "What to prepare before install.",
     imageSrc: "/Images/fttp/11.png",
     imageAlt: "Configuring wireless router for Installation and Onboarding",
-    href: "#",
+    href: "/installation-onboarding",
   },
 ] as const satisfies readonly SolutionCard[];
 

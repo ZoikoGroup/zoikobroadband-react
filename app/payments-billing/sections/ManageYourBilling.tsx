@@ -6,31 +6,31 @@ const Items = [
     label: "Billing History",
     description: "View/download invoices, bulk download, filter by month/year",
     btn: "View Bills",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
   {
     label: "Payment Methods",
     description: "Add/edit card or bank account, set preferred method",
     btn: "Manage Payments",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
   {
     label: "Billing Settings",
     description: "Change billing date, switch to paperless, update contact",
     btn: "Adjust Settings",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
   {
     label: "Recurring Payments",
     description: "View/download invoices, bulk download, filter by month/year",
     btn: "Manage Direct Debit",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
   {
     label: "Payment Issues",
     description: "Add/edit card or bank account, set preferred method",
     btn: "Resolve Issue",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
 ];
 

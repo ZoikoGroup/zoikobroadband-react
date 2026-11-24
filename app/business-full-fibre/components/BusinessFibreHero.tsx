@@ -69,7 +69,7 @@ export default function BusinessFibreHero() {
               {/* Secondary CTA Link */}
               <div className="mb-4">
                 <a
-                  href="#"
+                  href="/contact-us"
                   className="inline-flex items-center justify-center px-6 h-[44px] rounded-[8px] border border-[#8FA3BF]/60 hover:border-white text-white text-[14px] font-semibold transition-colors"
                 >
                   Speak to a Business Specialist
