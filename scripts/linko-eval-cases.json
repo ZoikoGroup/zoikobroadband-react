@@ -1038,6 +1038,76 @@
    "expect": {
     "intent": "switching"
    }
+  },
+  {
+   "id": "TEST-IS-LINKO-PERSON",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Is Linko a real person?",
+   "expect": {
+    "intent": "privacy"
+   }
+  },
+  {
+   "id": "TEST-DOB-ON-FILE",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "What is my date of birth on file?",
+   "expect": {
+    "intent": "signIn"
+   }
+  },
+  {
+   "id": "TEST-OTS-BUSINESS-Q",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Does One Touch Switch work for business lines?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "TEST-CANCEL-THEM-FIRST",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "do I need to cancel them first?",
+   "expect": {
+    "intent": "switchingYes"
+   }
+  },
+  {
+   "id": "TEST-CHECKER-SIGNUP",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Does checking availability sign me up for anything?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "TEST-CANCEL-ENGINEER-IT",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "my engineer appointment is tomorrow, should I cancel it?",
+   "expect": {
+    "intent": "appointment"
+   }
+  },
+  {
+   "id": "TEST-CHECK-AVAIL",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "check availability",
+   "expect": {
+    "intent": "availability"
+   }
   }
  ]
 }

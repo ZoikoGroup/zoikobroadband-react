@@ -29,6 +29,48 @@ const AI_ENABLED = process.env.LINKO_AI_ENABLED === "true";
 export const PROMPT_VERSION = "linko-prompt-2026-11-23";
 
 const IS_PRODUCTION = (process.env.LINKO_ENVIRONMENT || process.env.NODE_ENV) === "production";
+
+/* ───────────── Verified-answer cache (Doc14 cost control, Doc02 NFR-01 latency) ─────────────
+ * The same opening question ("What is an ONT?") gets the same verified answer for a few hours,
+ * without another model call. Only safe cases are cached:
+ *  - the visitor's FIRST question (no earlier turns that could change the meaning)
+ *  - nothing was redacted and no safety flag is set
+ *  - the answer passed every output gate, cited knowledge, and was "answered"
+ * The key includes the prompt template fingerprint and the exact knowledge text in use, so any
+ * prompt edit, knowledge approval, withdrawal or expiry changes the key and old answers drop out.
+ * The cache is still subject to the kill switch, staff fallback and prompt registry (checked first). */
+const CACHE_TTL_MS = Number(process.env.LINKO_ANSWER_CACHE_TTL_MS || 6 * 60 * 60 * 1000);
+const CACHE_MAX = 500;
+type CachedAnswer = { at: number; answer: LinkoAnswer & { sources?: VerifiedAnswer["sources"] } };
+const answerCache: Map<string, CachedAnswer> =
+  ((globalThis as { __linkoAnswerCache?: Map<string, CachedAnswer> }).__linkoAnswerCache ??= new Map());
+function normaliseQuestion(q: string) {
+  return q
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/[^\p{L}\p{N}' ]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function cacheKey(question: string) {
+  const kb = activeKnowledge()
+    .map((k) => `${k.id}#${contentHash(k.text)}`)
+    .join(",");
+  return contentHash(`${PROMPT_VERSION}|${promptTemplateHash()}|${contentHash(kb)}|${normaliseQuestion(question)}`) + ":" + normaliseQuestion(question).length;
+}
+function cacheGet(key: string) {
+  const hit = answerCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    answerCache.delete(key);
+    return null;
+  }
+  return structuredClone(hit.answer);
+}
+function cachePut(key: string, answer: CachedAnswer["answer"]) {
+  if (answerCache.size >= CACHE_MAX) answerCache.delete(answerCache.keys().next().value!);
+  answerCache.set(key, { at: Date.now(), answer: structuredClone(answer) });
+}
 let warnedPrompt = false;
 /** Doc14 AT14-015: in production an unregistered prompt template never reaches the provider. */
 function promptAllowed(): boolean {
@@ -133,7 +175,7 @@ export const PRICE_RE =
 
 // Doc06 §03 prohibited claims + claimed actions the assistant can't perform (Doc08 §08.1 post-model gate).
 export const PROHIBITED_RE =
-  /\bunlimited\b|\byou can (?:use|bring|connect|keep) your own router\b|\b(?:any|most|all) (?:compatible |third[- ]party )?routers? (?:will|should) work\b|\bno (?:data )?caps?\b|\b24\/7\b|\b24 hours a day\b|round[- ]the[- ]clock|\bguarantee(?:d|s)?\b|free installation|no set[- ]?up fee|\bPCI\b|bank[- ]grade|\b(?:will|does|do|always|still|definitely)\s+work\s+(?:in|during)\s+a\s+power\s+cut\b|\bworks\s+(?:in|during)\s+a\s+power\s+cut\b|automatic(?:ally)? compensat|(?:ofcom[- ])?approved (?:our )?speeds|\b\d{1,2}[- ]?months?\b|\bI(?:'ve| have) (?:booked|logged|submitted|cancelled|canceled|arranged|placed|scheduled)\b|\byour (?:order|appointment|engineer(?: visit)?|complaint|cancellation) (?:is|has been) (?:booked|confirmed|scheduled|logged|submitted|placed)\b|\bI(?:'ve| have) (?:escalated|raised|passed|forwarded|sent|reported|requested|transferred)\b|\b(?:an? (?:adviser|agent|engineer)|someone|we) will (?:call|contact|ring) you\b|\bwithin \d+ (?:hours?|minutes?|working days?|days?)\b|\btransferring you\b|\byou are now (?:speaking|connected)\b|\binstant(?:ly)? connect|Communications Ombudsman|CISAS|Ombudsman Services|entitled to (?:a )?(?:refund|compensation|credit)|\bSLA\b|static IP|dedicated (?:line|connectivity)|\b99\.\d+\s?%|one touch switch[^.]{0,40}\b(?:all|every|business)\b|\b(?:do|perform|try|carry out)\s+a\s+factory reset|(?:press|hold)\s+(?:down\s+)?the reset (?:button|pin)|\b(?:arrive|deliver|install|visit|fixed|repaired)\w*\b[^.]{0,30}\b(?:on|by)\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|tomorrow))/i;
+  /\bunlimited\b|\byou can (?:use|bring|connect|keep) your own router\b|\b(?:any|most|all) (?:compatible |third[- ]party )?routers? (?:will|should) work\b|\bno (?:data )?caps?\b|\b24\/7\b|\b24 hours a day\b|round[- ]the[- ]clock|\bguarantee(?:d|s)?\b|free installation|no set[- ]?up fee|\bPCI\b|bank[- ]grade|\b(?:will|does|do|always|still|definitely)\s+work\s+(?:in|during)\s+a\s+power\s+cut\b|\bworks\s+(?:in|during)\s+a\s+power\s+cut\b|automatic(?:ally)? compensat|(?:ofcom[- ])?approved (?:our )?speeds|\b\d{1,2}[- ]?months?\b|\bI(?:'ve| have) (?:booked|logged|submitted|cancelled|canceled|arranged|placed|scheduled)\b|\byour (?:order|appointment|engineer(?: visit)?|complaint|cancellation) (?:is|has been) (?:booked|confirmed|scheduled|logged|submitted|placed)\b|\bI(?:'ve| have) (?:escalated|raised|passed|forwarded|sent|reported|requested|transferred)\b|\b(?:an? (?:adviser|agent|engineer)|someone|we) will (?:call|contact|ring) you\b|\bwithin \d+ (?:hours?|minutes?|working days?|days?)\b|\btransferring you\b|\byou are now (?:speaking|connected)\b|\binstant(?:ly)? connect|Communications Ombudsman|CISAS|Ombudsman Services|entitled to (?:a )?(?:refund|compensation|credit)|\bSLA\b|static IP|dedicated (?:line|connectivity)|\b99\.\d+\s?%|one touch switch[^.]{0,40}\b(?:works?|applies|covers?|available) (?:for |to |with |on )?(?:all|every|any)\b|\b(?:do|perform|try|carry out)\s+a\s+factory reset|(?:press|hold)\s+(?:down\s+)?the reset (?:button|pin)|\b(?:arrive|deliver|install|visit|fixed|repaired)\w*\b[^.]{0,30}\b(?:on|by)\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|tomorrow))/i;
 
 // GR-12-075: the model must never echo its instructions (case-sensitive section labels + prompt phrases).
 const LEAK_RE = /\b(?:ROLE|SCOPE|TRUST|EVIDENCE|PRICES|PROHIBITED CLAIMS|PRIVACY|ACTIONS|SAFETY|HUMAN|AUTHORITY|STYLE|OUTPUT)\s*:|ROUTE KEYS|KNOWLEDGE \(each|#\s*\[K\d{2}\]/;
@@ -358,6 +400,18 @@ export async function generateAnswer(
   if (!AI_ENABLED || !provider.keyPresent || !provider.allowlisted || !provider.environmentOk || !promptAllowed() || !kbReady() || breaker.latched || aiOverrideActive()) {
     return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
   }
+
+  // A verified answer to the same first question is reused — also while the provider is rate-limiting us.
+  const cacheable = messages.filter((m) => m.role === "user").length === 1 && redacted.length === 0 && !opts.safetyFlag;
+  const key = cacheable ? cacheKey(latest) : null;
+  if (key) {
+    const hit = cacheGet(key);
+    if (hit) {
+      console.info(JSON.stringify({ event: "linko_answer_cache_hit", ...logBase }));
+      if (opts.sessionId) persistEvent(opts.sessionId, "ANSWER_CACHE_HIT", null, {});
+      return { answer: { ...hit, redacted }, http: 200 };
+    }
+  }
   if ((opts.userTurns ?? messages.filter((m) => m.role === "user").length) > MAX_TURNS) {
     return {
       answer: {
@@ -404,7 +458,11 @@ export async function generateAnswer(
   }
   budget.reserved += reserve;
   try {
-    return await callAndVerify();
+    const result = await callAndVerify();
+    if (key && result.http === 200 && result.answer.status === "answered" && !result.answer.flow && (result.answer.sources?.length ?? 0) > 0) {
+      cachePut(key, result.answer);
+    }
+    return result;
   } finally {
     budget.reserved = Math.max(0, budget.reserved - reserve);
   }

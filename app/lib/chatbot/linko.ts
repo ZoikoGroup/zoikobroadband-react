@@ -750,7 +750,7 @@ const CASE_RE =
 const APPT_RE =
   /\b(?:engineer (?:visit|appointment|booking)|installation (?:date|visit|appointment)|appointment|reschedule|rebook|(?:when|what time) (?:is|will|does) (?:my |the |an )?engineer|(?:my|the) engineer (?:is |was )?(?:coming|late|arriving|didn'?t|hasn'?t|never|not)|(?:cancel|change|move|book|arrange) (?:my |the |an )?engineer|engineer (?:didn'?t|hasn'?t|never) (?:turn|show|come|arrive)\w*)\b/i;
 const PRIVATE_RE =
-  /\b(?:show|give|tell|send|what(?:'s| is)|check|see|view)\b[^.?!]{0,30}\bmy\s+(?:last |latest |current |next )?(?:bill|invoice|balance|statement|payment|direct debit|account(?: details| number)?|contract end date)\b|\bhow much do (?:i|we) owe\b|\bsigned in (?:with|via|using) (?:google|facebook|apple)\b/i;
+  /\b(?:show|give|tell|send|what(?:'s| is)|check|see|view)\b[^.?!]{0,30}\bmy\s+(?:last |latest |current |next )?(?:bill|invoice|balance|statement|payment|direct debit|account(?: details| number)?|contract end date|date of birth|dob|address on file|personal details)\b|\bhow much do (?:i|we) owe\b|\bsigned in (?:with|via|using) (?:google|facebook|apple)\b/i;
 const LOGIN_RE = /\b(?:forgot(?:ten)?|reset|change)\b[^.?!]{0,20}\bpassword\b|\b(?:can'?t|cannot|unable to) (?:log|sign) ?in\b|\blocked out\b/i;
 const ACCESS_RE =
   /\b(?:deaf|hard of hearing|blind|partially sighted|BSL|Relay UK|textphone|large print|braille|easy read|accessible format|on behalf of|power of attorney|i'?m (?:a|their|his|her) carer)\b/i;
@@ -766,10 +766,14 @@ const PRICE_Q_RE = /\b(?:how much (?:is|are|does|do)|price|prices|cost|costs|che
 // General questions answered from approved knowledge by the model, not a journey (probe findings, Nov 2026):
 // price-rise rules (K05), cooling-off (K05), the Black Friday sale (K15), refer a friend (K16), and "what is One Touch Switch" (K06).
 const PRICE_RISE_RE = /\bprices?\b[^.?!]{0,25}\b(?:go(?:es|ing)? up|ris(?:e|es|ing)|increase[sd]?|change)\b|\b(?:mid-?contract|in-?contract) (?:price|rise|increase)|\binflation\b/i;
+const SWITCH_CANCEL_Q_RE =
+  /\b(?:do|should|must|will) i (?:need to |have to |still )?cancel (?:them|it|my (?:old|current|existing|previous) (?:provider|broadband|contract|service|supplier)|(?:the|my) other (?:provider|one))(?: first| before)?\b|\bcancel (?:them|it) first\b/i;
+// "Does checking availability sign me up / cost anything?" is a question about the checker, answered from K03.
+const CHECKER_Q_RE = /\b(?:does|will|is|would)\b[^?.!]{0,25}\b(?:checking|check|availability check(?:er)?)\b[^?.!]{0,35}\b(?:sign|commit|order|contract|cost|charge|credit|obligat)/i;
 const COOLING_OFF_RE = /\bcooling[- ]off\b|\b(?:within|in) (?:the )?(?:first )?14 days\b|\b14[- ]day\b|\bchange(?:d)? my mind\b/i;
 const PROMO_RE = /\b(?:black friday|cyber monday|refer(?:ral|-a-friend| a friend)|referral scheme)\b/i;
 const EXPLAIN_SWITCH_RE =
-  /\b(?:what(?:'s| is| does)|how does|explain)\b[^?.!]{0,12}\bone touch switch\b|\bwhat happens to my (?:old|current|existing|previous) (?:broadband |phone )?(?:service|broadband|provider|contract|line)\b/i;
+  /\b(?:what(?:'s| is| does)|how does|explain)\b[^?.!]{0,12}\bone touch switch\b|\b(?:does|do|is|can|will|would)\s+(?:the\s+)?one touch switch\b|\bwhat happens to my (?:old|current|existing|previous) (?:broadband |phone )?(?:service|broadband|provider|contract|line)\b/i;
 const PRIVACY_RE = /\b(?:delete my data|my (?:personal )?data|gdpr|data protection|are you (?:a )?(?:bot|robot|real|human|person)|is this (?:a )?(?:bot|ai))\b/i;
 // Doc01 CF-06 A1: a landline fault alone first asks the telecare question; stronger signals go straight to safety.
 const STRONG_SAFETY_RE = /\b(?:telecare|tele-care|care ?line|careline|lifeline|alarm|lift line|power|999|112|emergency|vulnerable)\b/i;
@@ -804,6 +808,8 @@ export function routeIntent(text: string): RoutedIntent {
   // "Cancel my old broadband" is a switching question (Doc09 §05.4); "cancel the engineer" is an appointment one.
   if (CANCEL_RE.test(text) && OLD_PROVIDER_RE.test(text)) return "switchingYes";
   if (CANCEL_RE.test(text) && APPT_RE.test(text)) return "appointment";
+  // "Do I need to cancel them first?" while switching is the One Touch Switch question, not a complaint.
+  if (SWITCH_CANCEL_Q_RE.test(text)) return "switchingYes";
   // Progress on an existing case is a lookup, not a new complaint (Doc10 HS-WF-10-13).
   if (CASE_RE.test(text)) return "caseStatus";
   // Doc01 CF-07 A1: a billing dispute offers "question about my bill" vs "formal complaint".
@@ -814,7 +820,7 @@ export function routeIntent(text: string): RoutedIntent {
   // A refund request still goes to the team (QA-068).
   if (CANCEL_RE.test(text) && (!COOLING_OFF_RE.test(text) || /\brefund\w*\b/i.test(text))) return "complaint";
   // "Are you a real person?" is answered with the AI disclosure (Doc11/Doc12), which also offers a person.
-  if (/\bare you (?:a |an )?(?:bot|robot|real|human|person|ai)\b|\bis this (?:a )?(?:bot|ai|real person)\b/i.test(text)) return "privacy";
+  if (/\bare you (?:a |an )?(?:bot|robot|real|human|person|ai)\b|\bis (?:this|linko|it) (?:a |an )?(?:bot|robot|ai|real person|human|person)\b/i.test(text)) return "privacy";
   if (HUMAN_RE.test(text)) return "handoff";
   if (ACCESS_RE.test(text)) return "accessibility";
   if (ORDER_RE.test(text)) return "track";
@@ -822,7 +828,7 @@ export function routeIntent(text: string): RoutedIntent {
   if (APPT_RE.test(text)) return "appointment";
   if (FAULT_RE.test(text)) return "fault";
   if (MOVE_RE.test(text)) return "moving";
-  if (EXPLAIN_SWITCH_RE.test(text) || COOLING_OFF_RE.test(text) || PROMO_RE.test(text) || PRICE_RISE_RE.test(text)) return null;
+  if (EXPLAIN_SWITCH_RE.test(text) || CHECKER_Q_RE.test(text) || COOLING_OFF_RE.test(text) || PROMO_RE.test(text) || PRICE_RISE_RE.test(text)) return null;
   if (SWITCH_RE.test(text)) return "switching";
   if (BILL_RE.test(text) || PAY_RE.test(text)) return "billing";
   if (PRIVACY_RE.test(text)) return "privacy";
@@ -1079,7 +1085,12 @@ export interface LinkoAnswer {
 
 /** Converts a model-proposed {label, route} into a safe UI action, or null. */
 export function actionFromRoute(route: string, label?: string): LinkoAction | null {
-  const cleanLabel = (label ?? "").replace(/[<>[\]()*_`#]/g, "").trim().slice(0, 40);
+  const cleanLabel = (label ?? "")
+    .replace(/[<>[\]()*_`#]/g, "")
+    // Model-written labels get the same brand fix as message text ("Switch to Zozo" → "Switch to Zoiko").
+    .replace(/\b(?:Zozo|Zoika|Zioko|Zoko|Zoikko|Zokio|Ziko|Zoico)\b/g, "Zoiko")
+    .trim()
+    .slice(0, 40);
   if (route in FLOW_ROUTES) {
     const flow = FLOW_ROUTES[route as keyof typeof FLOW_ROUTES];
     const fallback: Record<string, string> = {

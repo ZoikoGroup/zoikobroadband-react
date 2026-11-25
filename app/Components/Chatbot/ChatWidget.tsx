@@ -278,7 +278,7 @@ type PickerState =
   | { step: "done"; ok: boolean };
 
 export type AddressOutcome =
-  | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string; expiresAt?: string }
+  | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string; expiresAt?: string; source?: string }
   | { kind: "unverified"; label: string } // address chosen, but exact-premises check unavailable
   | { kind: "failed" }
   | { kind: "expired" } // the selection token expired (AVL-03)
@@ -374,6 +374,7 @@ function AddressPicker({
             message: q.body.data.message,
             checkedAt: q.body.sourceEvidence?.checkedAt,
             expiresAt: q.body.sourceEvidence?.expiresAt,
+            source: q.body.sourceEvidence?.source,
           },
           true,
         );
@@ -2227,7 +2228,8 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
             ["Services found", o.technologies.length ? o.technologies.map((t) => TECH[t] ?? t).join(", ") : "None confirmed yet"],
             ["Prices and speeds", "Confirmed in checkout"],
           ],
-          source: "Network availability check",
+          // Development test supplier results are always labelled as test data.
+          source: o.source === "test_supplier" ? "Test data (BT not connected)" : "Network availability check",
           checkedAt: o.checkedAt,
           expiresAt: o.expiresAt,
         },

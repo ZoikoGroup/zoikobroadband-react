@@ -28,6 +28,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
 
   const body = await readJson(req);
   if (!body) return apiError(cid, "VALIDATION_ERROR", "Request body must be JSON.");
+  // Doc03 §10.2 tool-argument injection: unexpected keys are rejected, not ignored.
+  const extra = Object.keys(body).filter((k) => !["rating", "reason", "answer", "sourceIds"].includes(k));
+  if (extra.length) return apiError(cid, "VALIDATION_ERROR", `Unexpected field: ${extra[0].slice(0, 40)}.`, { field: extra[0].slice(0, 40) });
   const rating = body.rating;
   if (rating !== "UP" && rating !== "DOWN") return apiError(cid, "VALIDATION_ERROR", "rating must be UP or DOWN.", { field: "rating" });
   let reason: Reason | null = null;

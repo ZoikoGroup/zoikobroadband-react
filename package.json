@@ -9,6 +9,7 @@
     "lint": "eslint",
     "analyze": "set ANALYZE=true && next build",
     "eval:linko": "node scripts/linko-eval.mjs",
+    "test:linko-live": "node scripts/linko-battery.mjs",
     "linko:staff": "node scripts/linko-staff.mjs",
     "linko:migrate": "node scripts/linko-migrate.mjs",
     "linko:backup": "node scripts/linko-db-backup.mjs"

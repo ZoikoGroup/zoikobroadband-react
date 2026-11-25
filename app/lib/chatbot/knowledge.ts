@@ -100,7 +100,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     sourceId: "S06",
     reviewDue: "2027-02-23",
     text: `- Phone: ${COMPANY.phone}
-- Email: ${COMPANY.supportEmail} (general enquiries: ${COMPANY.infoEmail})
+- Email: ${COMPANY.supportEmail}
 - Published opening hours (Contact us page): ${COMPANY.hours}. Check the Get help page for any changes; Linko can't see queue or wait times.
 - Live chat with an adviser and callback requests: Get help page.
 - Report a fault: Report a fault page.`,
@@ -146,7 +146,9 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     source: "Ofcom – Switching broadband provider",
     sourceId: "S12",
     reviewDue: "2027-02-23",
-    text: `- One Touch Switch is the Ofcom process for switching home broadband and landline services between providers on certain networks. For eligible residential (home) fixed broadband switches, the new provider manages the change. Customers should not cancel their current service themselves.
+    text: `- One Touch Switch is the Ofcom process (live since 12 September 2024) for switching home broadband and landline services between providers, including across different networks such as Openreach, full-fibre networks and Virgin Media. The new provider manages the change, so customers should not cancel their current service themselves.
+- One Touch Switch is for residential (home) customers. Business lines and pay-TV services follow a different route.
+- If the switch can't be matched automatically, our team helps complete it.
 - The current provider can explain any early-exit charges.
 - Keeping a phone number can't be promised in chat; the switching team checks it.
 - Business switches and home moves follow a different route and go to a specialist.`,
@@ -196,6 +198,8 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     sourceId: "S16",
     reviewDue: "2027-02-23",
     text: `- Full Fibre and SOGEA don't include a traditional analogue landline. Digital phone services run over broadband and can stop working in a power cut without suitable backup.
+- The UK's old analogue phone network is being switched off, with a deadline of 31 January 2027, so landline calls are moving to digital.
+- Ofcom expects providers to offer a free backup solution (at least one hour) to customers who rely on their landline, such as telecare users or people without a mobile signal. Customers should tell us before switching if they rely on their line or use telecare.
 - Anyone who relies on a landline for emergency calls or uses telecare, a care alarm, security alarm or lift line should speak to our team before any change, and check with the equipment provider. Don't assume a telecare alarm will work after a digital voice change.
 - Immediate emergency: use 999 or 112 from a working connection or another person's phone.
 - Guidance: Digital lines and Landline pages, and Ofcom's guidance on the future of landline calls.`,
@@ -217,7 +221,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     sourceId: "S13",
     reviewDue: "2027-02-23",
     text: `- Customers can make a complaint without signing in, using the contact page or by phone.
-- Eligible complaints that aren't resolved within six weeks, or where a deadlock letter is issued, may be referred to an independent ADR scheme (rule for complaints raised from 8 April 2026). Linko doesn't decide eligibility or name a scheme.
+- Eligible complaints first raised on or after 8 April 2026 that aren't resolved within six weeks, or where a deadlock letter is issued, may be referred to an independent ADR scheme. Complaints raised before 8 April 2026 follow the earlier eight-week rule. Linko doesn't decide eligibility or name a scheme; our complaints code explains it.
 - Compensation depends on the service, contract and rules that apply; our team reviews each case. Linko doesn't promise payments.`,
   },
   {
@@ -246,7 +250,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     sourceId: "S02",
     reviewDue: "2027-02-23",
     effectiveTo: "2026-12-01",
-    text: `- A Black Friday to Cyber Monday sale runs on selected fibre packages. Eligible packages, discounts and terms are shown on the Black Friday page and in the approved quote; Linko doesn't quote them.`,
+    text: `- A Black Friday to Cyber Monday sale runs from 20 November to 30 November 2026 on selected fibre packages. Eligible packages, discounts and terms are shown on the Black Friday page and in the approved quote; Linko doesn't quote them.`,
   },
   {
     id: "K16",

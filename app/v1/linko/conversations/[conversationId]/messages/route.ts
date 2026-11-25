@@ -225,6 +225,9 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
 
   const body = await readJson(req);
   if (!body) return apiError(cid, "VALIDATION_ERROR", "Request body must be JSON.");
+  // Doc03 §10.2 tool-argument injection: unexpected keys are rejected, not ignored.
+  const extra = Object.keys(body).filter((k) => !["kind", "text", "actionId", "label", "requestId"].includes(k));
+  if (extra.length) return apiError(cid, "VALIDATION_ERROR", `Unexpected field: ${extra[0].slice(0, 40)}.`, { field: extra[0].slice(0, 40) });
   const { kind, text, actionId, requestId, label } = body as Record<string, unknown>;
   // Per-IP and per-conversation limits; button clicks use a larger bucket than typed messages.
   const limited =
@@ -266,7 +269,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
     conv.retryCount = 0;
     conv.userTurns += 1;
     result = await answerText(conv, req.signal, cid);
-    intentId = result.answer.source === "flow" ? result.answer.status : "free_text";
+    // The routed journey (e.g. "track", "complaint", "safety"), not the answer status — "free_text" when the model answered.
+    intentId = result.answer.source === "flow" ? (result.answer.flow ?? result.answer.status) : "free_text";
   } else if (kind === "ACTION") {
     if (typeof actionId !== "string") {
       return apiError(cid, "VALIDATION_ERROR", "actionId is required.", { field: "actionId" });
