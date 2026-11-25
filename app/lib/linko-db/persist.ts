@@ -118,6 +118,28 @@ export function persistSwitchGuidance(sessionId: string | null, journey: "RESIDE
   });
 }
 
+/** Answer feedback for staff review (Doc03 §11.2). The answer text is redacted and encrypted. */
+export function persistFeedback(f: {
+  sessionId: string;
+  rating: "UP" | "DOWN";
+  reason: "WRONG" | "NOT_ANSWERED" | "UNCLEAR" | "OTHER" | null;
+  redactedAnswer: string;
+  knowledgeIds: string[];
+  kbVersion: string;
+}): string | null {
+  let id: string | null = null;
+  safely("feedback", () => {
+    const fid = uuid();
+    db()
+      .prepare(
+        "INSERT INTO answer_feedback (tenant_id, feedback_id, session_id, rating, reason_code, answer_ciphertext, knowledge_ids, kb_version, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
+      )
+      .run(tenantId(), fid, f.sessionId, f.rating, f.reason, seal(f.redactedAnswer), f.knowledgeIds.join(","), f.kbVersion, nowIso());
+    id = fid;
+  });
+  return id;
+}
+
 /** DM-24: which approved knowledge version an AI answer cited. */
 export function persistCitations(sessionId: string, seq: number, cites: { id: string; versionHash: string }[]) {
   safely("citation", () => {
@@ -265,7 +287,11 @@ export function persistModelInvocation(m: {
   safely("model_invocation", () => {
     // UNIQUE(provider_request_id) deduplicates metering on retries (Doc14 AT14-027).
     db()
-      .prepare("INSERT OR IGNORE INTO model_invocation VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+      .prepare(
+        `INSERT OR IGNORE INTO model_invocation (tenant_id, invocation_id, session_id, provider_code, model_ref, prompt_policy_version, provider_request_id,
+          input_token_count, output_token_count, cache_write_token_count, cache_read_token_count, usage_estimated, est_cost_micro_usd, safety_outcome,
+          latency_ms, created_at, cost_currency) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'USD')`,
+      )
       .run(
         tenantId(),
         uuid(),

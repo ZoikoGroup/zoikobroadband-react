@@ -177,7 +177,22 @@ export type MessageWidget =
   | "specialistForm"
   | "wifiSteps"
   | "moveDate"
-  | "handoffSummary";
+  | "handoffSummary"
+  | "resultCard";
+
+/**
+ * Doc02 §07.1 #4/#5, Doc03 §05.1 RESULT, Doc01 LK-WF-03: a tool result shown as a card with its
+ * status, a plain source label, when it was checked and when it stops being valid.
+ */
+export interface ResultCardData {
+  title: string;
+  status: "CONFIRMED" | "INDICATIVE" | "UNAVAILABLE";
+  rows: [string, string][];
+  /** Plain-language source label (never an internal adapter name). */
+  source: string;
+  checkedAt?: string;
+  expiresAt?: string;
+}
 
 /** Which journey an address check belongs to (Doc01 WF-03 / WF-05 / WF-10). */
 export type AddressContext = "residential" | "business" | "moving";
@@ -295,8 +310,8 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     actions: [
       { kind: "flow", label: "Check availability", flow: "availability", primary: true },
       { kind: "link", label: "Compare these plans", href: PAGES.comparePlans },
-      { kind: "link", label: "View full plan details", href: PAGES.allPlans },
-      { kind: "link", label: "Continue to secure checkout", href: PAGES.checkAvailability, disabledReason: NEEDS_QUOTE },
+      { kind: "link", label: "View full details", href: PAGES.allPlans },
+      { kind: "link", label: "Continue securely", href: PAGES.checkAvailability, disabledReason: NEEDS_QUOTE },
       speakToPerson,
     ],
   },
@@ -356,7 +371,8 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     screen: "One Touch Switch guidance",
     text: "For most home broadband switches, your new provider manages the switch through One Touch Switch. I'll explain what happens before you confirm.\n- Check your new connection at your exact address.\n- Choose your plan and review the contract information in secure checkout.\n- Zoiko arranges the switch with your current provider — please don't cancel your current service yourself.\n- Your current provider can tell you about any early-exit charges. Some cases (business lines, home moves, some bundles) need our team instead.\n\nI can't promise you'll keep your phone number until our team checks. Do you also have a landline, alarm or telecare device using your current service?",
     actions: [
-      { kind: "flow", label: "Check my new connection", flow: "availability", primary: true },
+      { kind: "flow", label: "Start switching", flow: "availability", primary: true },
+      { kind: "ask", label: "What happens to my old service?", text: "What happens to my old broadband service when I switch to Zoiko?" },
       { kind: "link", label: "Understand switching", href: PAGES.switching },
       { kind: "link", label: "Continue to secure order", href: PAGES.checkAvailability, disabledReason: NEEDS_QUOTE },
       { kind: "flow", label: "Yes — landline, alarm or telecare", flow: "safety" },
@@ -389,7 +405,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     actions: [
       { kind: "api", label: "View appointment", call: "appointmentRead", primary: true },
       { kind: "link", label: "Prepare for installation", href: PAGES.installationGuide },
-      { kind: "link", label: "Request a change", href: PAGES.login },
+      { kind: "link", label: "Request a different slot", href: PAGES.login },
       speakToSupport,
     ],
   },
@@ -402,7 +418,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     actions: [
       { kind: "link", label: "Sign in securely", href: PAGES.login, primary: true },
       { kind: "link", label: "Create an account", href: PAGES.login },
-      { kind: "flow", label: "Continue without signing in", flow: "welcome" },
+      { kind: "flow", label: "Continue as guest", flow: "welcome" },
       speakToSupport,
     ],
   },
@@ -413,9 +429,9 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     topic: "Moving home",
     text: "I can check the options at your new address and help you understand the next steps. Moving your existing service may require a new order.\n\nDo you have a landline, alarm or telecare using your current service? Please speak to our team before any change, and I can't promise you'll keep the same number until they check.",
     actions: [
-      { kind: "flow", label: "Check new address", flow: "movingAddress", primary: true },
+      { kind: "flow", label: "Check my new address", flow: "movingAddress", primary: true },
       { kind: "flow", label: "Yes — landline, alarm or telecare", flow: "safety" },
-      { kind: "api", label: "Start a move request", call: "moveRequest" },
+      { kind: "api", label: "Plan my move", call: "moveRequest" },
       { kind: "link", label: "Find moving help", href: PAGES.movingHome },
       speakToPerson,
     ],
@@ -444,7 +460,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     screen: "Service status and fault triage",
     text: "Let's first check whether there's a reported issue in your area.",
     actions: [
-      { kind: "api", label: "Check service status", call: "serviceStatus", primary: true },
+      { kind: "api", label: "Check network status", call: "serviceStatus", primary: true },
       { kind: "flow", label: "Troubleshoot connection", flow: "faultType" },
       { kind: "link", label: "Report a fault", href: PAGES.reportFault },
       speakToSupport,
@@ -469,9 +485,9 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     topic: "Billing",
     text: "I can explain charges, or help you open your bill securely. For your protection, please don't enter payment-card details here.",
     actions: [
-      { kind: "link", label: "Sign in to view bill", href: PAGES.login, primary: true },
-      { kind: "link", label: "Update payment securely", href: PAGES.login },
-      { kind: "ask", label: "Explain a charge", text: "Can you explain the charges on my bill?" },
+      { kind: "link", label: "View my bill", href: PAGES.login, primary: true },
+      { kind: "link", label: "Pay securely", href: PAGES.login },
+      { kind: "ask", label: "Query a charge", text: "Can you explain the charges on my bill?" },
       { kind: "flow", label: "Raise a billing query", flow: "handoff" },
       speakToSupport,
     ],
@@ -485,7 +501,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     actions: [
       { kind: "link", label: "Make a complaint", href: PAGES.contactUs, primary: true },
       { kind: "link", label: "Understand cancellation", href: EXTERNAL_LINKS.ofcomContracts },
-      { kind: "link", label: "View complaints rules (Ofcom)", href: EXTERNAL_LINKS.ofcomComplaints },
+      { kind: "link", label: "View complaints procedure", href: EXTERNAL_LINKS.ofcomComplaints },
       { kind: "flow", label: "Request cancellation help", flow: "handoff" },
       { kind: "link", label: `Call ${COMPANY.phone}`, href: COMPANY.phoneHref },
       { kind: "flow", label: "Request an accessible format", flow: "accessibility" },
@@ -524,7 +540,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
   handoff: {
     screen: "Human escalation and callback",
     topic: "Speaking to our team",
-    text: "I can help you contact our team. Would you like a short summary to pass on, so you don't have to repeat yourself?",
+    text: "I can connect you to the right team. Would you like me to pass on a short summary, so you don't have to repeat yourself?",
     actions: [
       { kind: "flow", label: "Yes, prepare a summary", flow: "handoffShare", primary: true },
       { kind: "flow", label: "Continue without sharing this chat", flow: "handoffChannels" },
@@ -552,6 +568,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
       { kind: "link", label: "Request a callback", href: PAGES.getHelp },
       { kind: "link", label: "Send an enquiry", href: PAGES.contactUs },
       { kind: "link", label: `Call ${COMPANY.phone}`, href: COMPANY.phoneHref },
+      { kind: "link", label: "Email support", href: COMPANY.supportEmailHref },
       { kind: "flow", label: "Back to Linko", flow: "welcome" },
     ],
   },
@@ -625,8 +642,8 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     text: `I'm an AI assistant. I'll use only the information needed to answer your question. I can't pass this chat to an adviser automatically — I can prepare a short summary for you to share. Please don't share passwords or payment-card numbers.\n\n${TRANSCRIPT_NOTICE} For data-rights requests, use our privacy notice.`,
     actions: [
       { kind: "link", label: "Read privacy notice", href: PAGES.privacy, primary: true },
-      { kind: "link", label: "Request data help", href: PAGES.contactUs },
-      { kind: "link", label: "Manage cookie preferences", href: PAGES.cookies },
+      { kind: "link", label: "Request my data", href: PAGES.contactUs },
+      { kind: "link", label: "Manage preferences", href: PAGES.cookies },
       speakToPerson,
       { kind: "command", label: "End chat", command: "endChat" },
     ],
@@ -639,7 +656,7 @@ export const FLOWS: Record<FlowId, FlowStep> = {
     widget: "summary",
     actions: [
       { kind: "command", label: "Continue to next step", command: "nextStep", primary: true },
-      { kind: "command", label: "Start another question", command: "restart" },
+      { kind: "command", label: "Start a new chat", command: "restart" },
       { kind: "command", label: "Copy summary", command: "copySummary" },
       speakToSupport,
       { kind: "command", label: "End chat", command: "endChat" },
@@ -726,10 +743,12 @@ const COMPLAINT_EXTRA_RE =
 const CANCEL_RE = /\b(?:cancel(?:l?ing|l?ation)?|terminate|end my contract|leave zoiko)\b/i;
 const OLD_PROVIDER_RE = /\b(?:old|current|previous|other|existing) (?:provider|broadband|line|supplier)\b|\b(?:BT|Sky|Virgin|TalkTalk|Plusnet|Vodafone|EE|Shell)\b/;
 const ORDER_RE =
-  /\b(?:where(?:'s| is) my (?:order|router|installation)|order (?:status|update|progress)|status of (?:my |the |an |this )?order|track(?:ing)? (?:my |an |the )?order|has my order)\b/i;
+  /\b(?:where(?:'s| is) my (?:order|router|installation)|order (?:status|update|progress)|status of (?:my |the |an |this )?order|track(?:ing)? (?:my |an |the )?order|has my order|check (?:on )?(?:my |the |an )?order|when (?:will|does|should) my (?:order|router|equipment|kit|hub) (?:arrive|come|be delivered|turn up)|my (?:router|order|equipment) (?:hasn'?t|has not|still hasn'?t|didn'?t) (?:arrived|come|turned up))\b/i;
 const CASE_RE =
   /\b(?:(?:my|the) (?:complaint|case|ticket|fault|callback) (?:ref(?:erence)?|number|update|status|progress)|update on my (?:complaint|case|fault|ticket))\b/i;
-const APPT_RE = /\b(?:engineer(?: visit)?|installation (?:date|visit|appointment)|appointment|reschedule|rebook)\b/i;
+// An existing engineer booking, not a general "do I need an engineer?" question (answered from K08).
+const APPT_RE =
+  /\b(?:engineer (?:visit|appointment|booking)|installation (?:date|visit|appointment)|appointment|reschedule|rebook|(?:when|what time) (?:is|will|does) (?:my |the |an )?engineer|(?:my|the) engineer (?:is |was )?(?:coming|late|arriving|didn'?t|hasn'?t|never|not)|(?:cancel|change|move|book|arrange) (?:my |the |an )?engineer|engineer (?:didn'?t|hasn'?t|never) (?:turn|show|come|arrive)\w*)\b/i;
 const PRIVATE_RE =
   /\b(?:show|give|tell|send|what(?:'s| is)|check|see|view)\b[^.?!]{0,30}\bmy\s+(?:last |latest |current |next )?(?:bill|invoice|balance|statement|payment|direct debit|account(?: details| number)?|contract end date)\b|\bhow much do (?:i|we) owe\b|\bsigned in (?:with|via|using) (?:google|facebook|apple)\b/i;
 const LOGIN_RE = /\b(?:forgot(?:ten)?|reset|change)\b[^.?!]{0,20}\bpassword\b|\b(?:can'?t|cannot|unable to) (?:log|sign) ?in\b|\blocked out\b/i;
@@ -744,6 +763,13 @@ const PAY_RE = /\b(?:pay (?:my |a |the )?bill|make a payment|payment (?:failed|d
 const AVAIL_RE = /\b(?:is (?:full )?fibre available|availability|available (?:at|in|for) my|can i get (?:full )?fibre|check (?:my )?(?:postcode|address))\b/i;
 const BUSINESS_RE = /\b(?:business broadband|leased line|multi-?site|office (?:connection|broadband)|static ip|\bsla\b|for my (?:business|company|office))\b/i;
 const PRICE_Q_RE = /\b(?:how much (?:is|are|does|do)|price|prices|cost|costs|cheapest|deal|deals|tariff)\b/i;
+// General questions answered from approved knowledge by the model, not a journey (probe findings, Nov 2026):
+// price-rise rules (K05), cooling-off (K05), the Black Friday sale (K15), refer a friend (K16), and "what is One Touch Switch" (K06).
+const PRICE_RISE_RE = /\bprices?\b[^.?!]{0,25}\b(?:go(?:es|ing)? up|ris(?:e|es|ing)|increase[sd]?|change)\b|\b(?:mid-?contract|in-?contract) (?:price|rise|increase)|\binflation\b/i;
+const COOLING_OFF_RE = /\bcooling[- ]off\b|\b(?:within|in) (?:the )?(?:first )?14 days\b|\b14[- ]day\b|\bchange(?:d)? my mind\b/i;
+const PROMO_RE = /\b(?:black friday|cyber monday|refer(?:ral|-a-friend| a friend)|referral scheme)\b/i;
+const EXPLAIN_SWITCH_RE =
+  /\b(?:what(?:'s| is| does)|how does|explain)\b[^?.!]{0,12}\bone touch switch\b|\bwhat happens to my (?:old|current|existing|previous) (?:broadband |phone )?(?:service|broadband|provider|contract|line)\b/i;
 const PRIVACY_RE = /\b(?:delete my data|my (?:personal )?data|gdpr|data protection|are you (?:a )?(?:bot|robot|real|human|person)|is this (?:a )?(?:bot|ai))\b/i;
 // Doc01 CF-06 A1: a landline fault alone first asks the telecare question; stronger signals go straight to safety.
 const STRONG_SAFETY_RE = /\b(?:telecare|tele-care|care ?line|careline|lifeline|alarm|lift line|power|999|112|emergency|vulnerable)\b/i;
@@ -783,7 +809,12 @@ export function routeIntent(text: string): RoutedIntent {
   // Doc01 CF-07 A1: a billing dispute offers "question about my bill" vs "formal complaint".
   if (BILL_RE.test(text) && (COMPLAINT_RE.test(text) || COMPLAINT_EXTRA_RE.test(text))) return "billingComplaint";
   // A complaint wins over the distress branch of a person request (Doc10 HS-T033).
-  if (COMPLAINT_RE.test(text) || COMPLAINT_EXTRA_RE.test(text) || CANCEL_RE.test(text)) return "complaint";
+  if (COMPLAINT_RE.test(text) || COMPLAINT_EXTRA_RE.test(text)) return "complaint";
+  // "Can I cancel within 14 days?" asks about the cooling-off rule (K05) — a general answer, not a complaint.
+  // A refund request still goes to the team (QA-068).
+  if (CANCEL_RE.test(text) && (!COOLING_OFF_RE.test(text) || /\brefund\w*\b/i.test(text))) return "complaint";
+  // "Are you a real person?" is answered with the AI disclosure (Doc11/Doc12), which also offers a person.
+  if (/\bare you (?:a |an )?(?:bot|robot|real|human|person|ai)\b|\bis this (?:a )?(?:bot|ai|real person)\b/i.test(text)) return "privacy";
   if (HUMAN_RE.test(text)) return "handoff";
   if (ACCESS_RE.test(text)) return "accessibility";
   if (ORDER_RE.test(text)) return "track";
@@ -791,6 +822,7 @@ export function routeIntent(text: string): RoutedIntent {
   if (APPT_RE.test(text)) return "appointment";
   if (FAULT_RE.test(text)) return "fault";
   if (MOVE_RE.test(text)) return "moving";
+  if (EXPLAIN_SWITCH_RE.test(text) || COOLING_OFF_RE.test(text) || PROMO_RE.test(text) || PRICE_RISE_RE.test(text)) return null;
   if (SWITCH_RE.test(text)) return "switching";
   if (BILL_RE.test(text) || PAY_RE.test(text)) return "billing";
   if (PRIVACY_RE.test(text)) return "privacy";
@@ -982,7 +1014,16 @@ export type LinkoEvent =
   | "linko_fault_safety_triaged"
   | "linko_diagnostics_completed"
   | "linko_switch_route_selected"
-  | "linko_complaint_recognised";
+  | "linko_complaint_recognised"
+  | "linko_welcome_viewed"
+  | "linko_task_resolved"
+  | "linko_status_checked"
+  | "linko_fault_handoff"
+  | "linko_privacy_opened"
+  | "linko_dsr_redirect"
+  | "linko_cancellation_help"
+  | "linko_intent_unsupported"
+  | "linko_response_time";
 
 export const LINKO_RELEASE = "linko-2026-11-23";
 
@@ -1044,7 +1085,7 @@ export function actionFromRoute(route: string, label?: string): LinkoAction | nu
     const fallback: Record<string, string> = {
       availability: "Check my address",
       handoff: "Speak to a person",
-      fault: "Report a problem",
+      fault: "Report a fault",
       safety: "Telecare & safety help",
       privacy: "Privacy and AI",
     };

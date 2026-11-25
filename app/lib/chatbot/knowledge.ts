@@ -39,6 +39,49 @@ export interface KnowledgeItem {
   text: string;
 }
 
+/**
+ * Doc01 LK-C11 / Doc07 C15: the Zoiko page a customer can open to read the source of an AI answer.
+ * Kept apart from the items so links can change without changing the approved text (or its hash).
+ */
+export const KNOWLEDGE_HREF: Record<string, string> = {
+  K01: "/about-us",
+  K02: "/contact-us",
+  K03: "/check-availability",
+  K04: "/which-speed-do-i-need",
+  K05: "/terms-conditions",
+  K06: "/switch-to-zoiko",
+  K07: "/moving-home",
+  K08: "/setup-installation",
+  K09: "/report-a-fault",
+  K10: "/digital-lines",
+  K11: "/payments-billing",
+  K12: "/contact-us",
+  K13: "/business-broadband",
+  K14: "/privacy-notice",
+  K15: "/black-friday",
+  K16: "/bundles",
+};
+
+/** Date the current knowledge snapshot was written (from KB_VERSION, e.g. kb-2026-11-23-draft). */
+export function knowledgeUpdatedOn(k?: KnowledgeItem): string {
+  return k?.effectiveFrom ?? (/(\d{4}-\d{2}-\d{2})/.exec(KB_VERSION)?.[1] ?? "");
+}
+
+/** What a customer sees about a source: link, version, date and whether it is approved or still draft (Doc07 C15 variants). */
+export function sourceInfo(k: KnowledgeItem) {
+  const state = approvalState(k);
+  return {
+    id: k.id,
+    title: k.title.replace(/\s*\(.*$/, ""),
+    source: k.source,
+    href: KNOWLEDGE_HREF[k.id] ?? null,
+    version: k.version ?? "v1",
+    updated: knowledgeUpdatedOn(k),
+    status: (k.approvedAt || state === "APPROVED" ? "APPROVED" : "DRAFT") as "APPROVED" | "DRAFT",
+  };
+}
+export type SourceInfo = ReturnType<typeof sourceInfo>;
+
 export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
   {
     id: "K01",
@@ -47,24 +90,26 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     sourceId: "S01",
     reviewDue: "2027-02-23",
     text: `- Zoiko Broadband offers UK residential and business broadband services: Full Fibre (FTTP) and Part Fibre (SOGEA), digital phone lines, bundles and multi-site business connectivity.
+- Broadband and digital phone lines are separate: a phone line is optional and can be added, or taken as part of a bundle. Don't say that a broadband package includes a phone line unless the customer's quote says so.
 - Linko is Zoiko Broadband's AI assistant. It can explain information and guide people to secure services or a human adviser. It is not a person and not an emergency service.`,
   },
   {
     id: "K02",
     title: 'Contact routes (no hours or response times are promised in chat)',
     source: "Zoiko website – Get help / Contact us",
-    sourceId: "S02",
+    sourceId: "S06",
     reviewDue: "2027-02-23",
     text: `- Phone: ${COMPANY.phone}
 - Email: ${COMPANY.supportEmail} (general enquiries: ${COMPANY.infoEmail})
-- Live chat with an adviser, callback requests and current opening hours: Get help page.
+- Published opening hours (Contact us page): ${COMPANY.hours}. Check the Get help page for any changes; Linko can't see queue or wait times.
+- Live chat with an adviser and callback requests: Get help page.
 - Report a fault: Report a fault page.`,
   },
   {
     id: "K03",
     title: 'Availability, plans and prices',
     source: "Zoiko website – Check availability",
-    sourceId: "S03",
+    sourceId: "S07",
     reviewDue: "2027-02-23",
     text: `- Availability depends on the exact address, not just the postcode. A postcode can cover several premises with different connections. Customers enter a postcode, then select their exact address in the availability checker.
 - Eligible plans, monthly prices, set-up or installation charges, contract term, VAT basis and any scheduled price changes are shown in the approved quote for that address, before checkout. Linko never quotes prices, speeds, fees or discounts.
@@ -76,18 +121,19 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K04",
     title: 'Broadband types (plain-language glossary)',
     source: "Zoiko website – Full Fibre / Part Fibre",
-    sourceId: "S04",
+    sourceId: "S03",
     reviewDue: "2027-02-23",
     text: `- Full Fibre (FTTP, Fibre to the Premises): fibre runs all the way into the property. Availability and achievable speed depend on the specific address.
 - Part Fibre (SOGEA, Single Order Generic Ethernet Access): fibre to the street cabinet, copper for the last stretch. It doesn't need a traditional analogue phone line. Speeds depend on the line from the cabinet.
 - Download speed = receiving data (browsing, streaming). Upload speed = sending data (video calls, backups, large files).
-- Speeds depend on the address and package. Customers should use the minimum and expected speeds in their own contract information. Wi-Fi can be slower than the line because of walls, distance, interference and number of devices; a wired (Ethernet) test gives the truest reading.`,
+- Speeds depend on the address and package. Customers should use the minimum and expected speeds in their own contract information. Wi-Fi can be slower than the line because of walls, distance, interference and number of devices; a wired (Ethernet) test gives the truest reading.
+- Choosing a speed: the need grows with the number of people and devices online at once, 4K/HD streaming, online gaming and large downloads. Working from home and video calls also depend on upload speed, and a wired connection helps. Linko doesn't recommend a speed figure; the "Which speed do I need?" page gives guidance, and the speeds available at an address are shown after an availability check.`,
   },
   {
     id: "K05",
     title: 'Contracts and consumer rights (general information, not a decision for a specific case)',
     source: "Ofcom – Contracts and price rises",
-    sourceId: "S12",
+    sourceId: "S11",
     reviewDue: "2027-02-23",
     text: `- Before a consumer (or qualifying small business) is bound, they must receive pre-contract information and a contract summary.
 - For new consumer contracts since 17 January 2025, any in-contract price rises must be shown in pounds and pence with dates, not linked to inflation or percentages.
@@ -98,9 +144,9 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K06",
     title: 'Switching to Zoiko',
     source: "Ofcom – Switching broadband provider",
-    sourceId: "S11",
+    sourceId: "S12",
     reviewDue: "2027-02-23",
-    text: `- For eligible residential (home) fixed broadband switches, the new provider manages the change through One Touch Switch. Customers should not cancel their current service themselves.
+    text: `- One Touch Switch is the Ofcom process for switching home broadband and landline services between providers on certain networks. For eligible residential (home) fixed broadband switches, the new provider manages the change. Customers should not cancel their current service themselves.
 - The current provider can explain any early-exit charges.
 - Keeping a phone number can't be promised in chat; the switching team checks it.
 - Business switches and home moves follow a different route and go to a specialist.`,
@@ -109,7 +155,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K07",
     title: 'Moving home',
     source: "Zoiko website – Moving home",
-    sourceId: "S05",
+    sourceId: "S01",
     reviewDue: "2027-02-23",
     text: `- Check availability at the new address as early as possible. Moving may need a new order, and options for the current service are shown after secure sign-in.
 - Keeping the same number can't be promised until our service team checks.
@@ -124,7 +170,9 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     text: `- Whether an engineer visit or self-install applies is confirmed in the order. Linko cannot book, confirm or change engineer appointments; appointment details are shown after sign-in.
 - ONT (Optical Network Terminal): a small powered box where the fibre enters the property; it connects to the router.
 - Router placement: central, open, raised and ventilated; away from thick walls, metal objects and other electronics.
+- How long installation takes, and whether anyone needs to be at home, depends on the address and the order; the order confirmation explains what will happen. Linko doesn't estimate installation times.
 - The exact router and any equipment charges are shown in the customer's own approved offer.
+- Using your own router: Linko can't say whether a customer-owned router can be used, will work or will be supported on Zoiko's service — never say "you can use your own router". Our team can answer this before ordering; the router supplied with the order is the one Zoiko supports.
 - Router light meanings: Router LED light meanings page.
 - Guides: Setup and installation, Installation and routers, Installation guide pages.`,
   },
@@ -132,10 +180,10 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K09",
     title: 'Troubleshooting (safe steps, one at a time)',
     source: "Zoiko website – Report a fault / router guides",
-    sourceId: "S07",
+    sourceId: "S08",
     reviewDue: "2027-02-23",
     text: `- First ask whether anyone relies on the line for a landline, emergency calls or a telecare alarm. If yes or unsure: do not suggest restarting or disconnecting equipment; send them to urgent human support.
-- No connection: check whether there is a known issue, check cables are secure, then try a normal router restart (switch off, wait at least 30 seconds, switch on, allow a few minutes). Test with another device.
+- No connection: check whether there is a known issue, check cables are secure, then try a normal router restart (switch off, wait at least 30 seconds, switch on, allow a few minutes). Say first that a restart briefly disconnects the internet and any digital phone. Test with another device.
 - Slow speed: test on a wired connection, close heavy apps and downloads, and compare with the contract speed. Wi-Fi tips: router placement, changing Wi-Fi channel.
 - Wi-Fi drops: ask whether it affects all devices or one device.
 - A factory reset removes personalised settings: try a normal restart first and only factory-reset when the approved guide or a support adviser says so.
@@ -145,7 +193,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K10",
     title: 'Digital voice, landlines and telecare (safety first)',
     source: "Ofcom – Future of landline calls",
-    sourceId: "S13",
+    sourceId: "S16",
     reviewDue: "2027-02-23",
     text: `- Full Fibre and SOGEA don't include a traditional analogue landline. Digital phone services run over broadband and can stop working in a power cut without suitable backup.
 - Anyone who relies on a landline for emergency calls or uses telecare, a care alarm, security alarm or lift line should speak to our team before any change, and check with the equipment provider. Don't assume a telecare alarm will work after a digital voice change.
@@ -156,7 +204,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K11",
     title: 'Billing and account',
     source: "Zoiko website – Payments & billing",
-    sourceId: "S08",
+    sourceId: "S05",
     reviewDue: "2027-02-23",
     text: `- Account-specific figures (bills, balances, payments, refunds) are only shown after secure sign-in to the Zoiko account. Linko never asks for card or bank details; payments happen on secure pages only.
 - Bills can be viewed and downloaded in the account's Billing & Payments area. Payment details are updated there too.
@@ -166,7 +214,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K12",
     title: 'Complaints',
     source: "Ofcom – Complaints rules",
-    sourceId: "S14",
+    sourceId: "S13",
     reviewDue: "2027-02-23",
     text: `- Customers can make a complaint without signing in, using the contact page or by phone.
 - Eligible complaints that aren't resolved within six weeks, or where a deadlock letter is issued, may be referred to an independent ADR scheme (rule for complaints raised from 8 April 2026). Linko doesn't decide eligibility or name a scheme.
@@ -176,7 +224,7 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K13",
     title: 'Business broadband',
     source: "Zoiko website – Business broadband",
-    sourceId: "S09",
+    sourceId: "S01",
     reviewDue: "2027-02-23",
     text: `- Availability depends on the exact business premises. Static IP, support levels, response targets and any SLA are confirmed for the selected service, not in chat.
 - Multiple sites: a specialist reviews each site and prepares a tailored quote.`,
@@ -185,20 +233,40 @@ export const KNOWLEDGE_ITEMS: KnowledgeItem[] = [
     id: "K14",
     title: 'Privacy',
     source: "Zoiko privacy notice",
-    sourceId: "S10",
+    sourceId: "S17",
     reviewDue: "2027-02-23",
-    text: `- While a chat is open, a copy with sensitive details removed is held briefly on Zoiko's servers (deleted when the chat ends or after 30 minutes without activity) and processed by an AI service provider to answer the question.
-- Chats are only kept in the visitor's own browser if they turn on "Save chat history" in the Linko menu (kept for up to 30 days, deletable at any time). Linko can't pass a chat to an adviser automatically.
+    text: `- While a chat is open, a copy with sensitive details removed is held briefly on Zoiko's servers (deleted when the chat ends or after a short period without activity) and processed by an AI service provider to answer the question.
+- Chats are only kept in the visitor's own browser if they turn on "Save chat history" in the Linko menu (kept for a limited time, deletable at any time). The privacy notice explains how long information is kept. Linko can't pass a chat to an adviser automatically, but the visitor can choose to share a short summary.
 - Data requests and privacy questions: privacy notice and contact page. Linko can't promise immediate deletion of records held for legal reasons.`,
   },
   {
     id: "K15",
     title: 'Black Friday',
     source: "Zoiko website – Black Friday",
-    sourceId: "S15",
+    sourceId: "S02",
     reviewDue: "2027-02-23",
     effectiveTo: "2026-12-01",
     text: `- A Black Friday to Cyber Monday sale runs on selected fibre packages. Eligible packages, discounts and terms are shown on the Black Friday page and in the approved quote; Linko doesn't quote them.`,
+  },
+  {
+    id: "K16",
+    title: 'Bundles and refer a friend',
+    source: "Zoiko website – Bundles / Refer a friend",
+    sourceId: "S02",
+    reviewDue: "2027-02-23",
+    text: `- Bundles combine fibre broadband with digital phone lines. Bundle options, terms and prices are shown on the Bundles page and in the approved quote for the address; Linko doesn't quote them.
+- Zoiko runs a refer-a-friend scheme. Eligibility, the reward and when it is paid are set out on the Refer a friend page; Linko doesn't state amounts or promise a reward.`,
+  },
+  {
+    id: "K17",
+    title: 'What Linko can help with',
+    source: "Linko scope (Doc02 product requirements)",
+    sourceId: "S01",
+    reviewDue: "2027-02-23",
+    text: `- Linko helps with Zoiko Broadband's broadband (Full Fibre and Part Fibre), digital phone lines, bundles, business connectivity, availability checks, orders, installation, faults, billing questions, moving home, switching, complaints and contacting the team.
+- For anything else (for example TV packages, mobile phones or SIM cards, other companies' services, or general topics such as the weather), Linko says it can't help with that here and offers what it can help with. It doesn't say whether Zoiko offers a product unless the knowledge above says so.
+- A visitor who mentions their current provider (for example "I'm with Sky" or "I'm with BT") is a possible switcher asking about Zoiko: answer the Zoiko question normally and mention that switching is handled for them. Never refuse just because another company is named.
+- Accounts and sign-in: forgotten passwords are reset on the secure sign-in page; Linko never asks for or resets passwords in chat.`,
   }
 ];
 

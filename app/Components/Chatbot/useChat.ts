@@ -20,12 +20,13 @@ import {
   LinkoAction,
   MessageTone,
   MessageWidget,
+  type ResultCardData,
   redactSensitive,
   routeIntent,
   track,
   welcomeActions,
 } from "@/app/lib/chatbot/linko";
-import { linkoApi, MessageData, newKey } from "./linkoApi";
+import { linkoApi, MessageData, newKey, type AnswerSource, type FeedbackReason } from "./linkoApi";
 
 export type ChatRole = "user" | "assistant";
 
@@ -44,10 +45,14 @@ export interface ChatMessage {
   screen?: string;
   topic?: string;
   feedback?: "up" | "down";
+  /** Coded reason given after "Not useful" (Doc03 §11.2). */
+  feedbackReason?: FeedbackReason;
   /** Time the message was added (ms) – shown as HH:mm (Doc07 C04). */
   at?: number;
   /** Knowledge sections an AI answer was based on (Doc06 evidence label). */
-  sources?: { id: string; title: string; source: string }[];
+  sources?: AnswerSource[];
+  /** Data for widget "resultCard" (verified tool result). */
+  result?: ResultCardData;
 }
 
 const STORAGE_KEY = "linko-chat-v1";
@@ -175,6 +180,13 @@ function analyticsFor(flow: FlowId) {
   if (flow === "switchingYes") track("linko_ots_guidance_shown");
   if (flow === "plans") track("linko_plans_viewed");
   if (flow === "clarify") track("linko_intent_clarified");
+  if (flow === "privacy") track("linko_privacy_opened");
+  if (flow === "faultStatus" || flow === "faultType") track("linko_intent_selected", { intent_id: "diagnostic_started" });
+}
+
+/** Doc02 §04 / Doc03 NFR-02: coarse response-time buckets (no content), so p95 can be watched in analytics. */
+function latencyBucket(ms: number) {
+  return ms < 500 ? "lt_0_5s" : ms < 1500 ? "lt_1_5s" : ms < 3000 ? "lt_3s" : ms < 5000 ? "lt_5s" : ms < 10000 ? "lt_10s" : "ge_10s";
 }
 
 export function useChat(pathname: string) {
@@ -320,10 +332,15 @@ export function useChat(pathname: string) {
       setIsLoading(true);
       const controller = new AbortController();
       abortRef.current = controller;
+      const started = performance.now();
       try {
         const r = await sendToServer(body, controller.signal);
+        const ms = Math.round(performance.now() - started);
+        track("linko_response_time", { elapsed_ms: ms, bucket: latencyBucket(ms), kind: "answer", ok: Boolean(r?.ok) });
         if (r?.ok) {
           const a = r.body.data.answer;
+          // Doc01 §8.1 intent_unsupported: the question couldn't be answered from approved information.
+          if (a.status === "abstained") track("linko_intent_unsupported", { reason: a.source === "ai" ? "no_grounded_answer" : "clarify" });
           if (a.status === "provider_unavailable" || a.status === "invalid") {
             track("linko_error", { error_class: a.status, component_id: "C04" });
           }
@@ -374,10 +391,16 @@ export function useChat(pathname: string) {
       lastQuestion.current = content;
 
       // Safety / human / complaint show instantly (no wait); the server applies the same rule.
+      const routeStart = performance.now();
       const routed = routeIntent(content);
       if (routed) {
         push(userMsg, ...extra, flowMessage(routed, pathname));
-        track("linko_intent_selected", { intent_id: routed });
+        // Doc01 §8.1 Intent: time_to_route + confidence_bucket (deterministic rules are "rule", the model is "model").
+        track("linko_intent_selected", {
+          intent_id: routed,
+          time_to_route_ms: Math.round(performance.now() - routeStart),
+          confidence_bucket: "rule",
+        });
         if (routed === "complaint") track("linko_complaint_recognised", { trigger: "wording" });
         analyticsFor(routed);
         void sendToServer({ kind: "TEXT", text: content }).catch(() => undefined);
@@ -450,11 +473,28 @@ export function useChat(pathname: string) {
     [reset],
   );
 
-  const setFeedback = useCallback((id: string, value: "up" | "down") => {
-    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, feedback: value } : m)));
-    track("linko_feedback", { value });
-    if (value === "down") track("linko_answer_disputed");
-  }, []);
+  /**
+   * "Useful" is recorded straight away; "Not useful" is recorded once the visitor picks a reason
+   * (or skips), and goes to the staff review queue with the redacted answer (Doc03 §11.2 — never used to self-train).
+   */
+  const setFeedback = useCallback(
+    (id: string, value: "up" | "down", reason?: FeedbackReason) => {
+      const msg = messages.find((m) => m.id === id);
+      setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, feedback: value, feedbackReason: reason } : m)));
+      track("linko_feedback", { value, ...(reason ? { reason } : {}) });
+      if (value === "up") track("linko_task_resolved", { via: "answer_feedback" });
+      if (value === "down") track("linko_answer_disputed", reason ? { reason } : {});
+      const conv = serverId.current;
+      if (conv && msg)
+        void linkoApi.feedback(conv, {
+          rating: value === "up" ? "UP" : "DOWN",
+          reason: value === "down" ? (reason ?? "OTHER") : undefined,
+          answer: msg.content.slice(0, 600),
+          sourceIds: (msg.sources ?? []).map((s) => s.id),
+        });
+    },
+    [messages],
+  );
 
   /** Adds a message produced by a widget (e.g. the address checker). */
   const addAssistant = useCallback(

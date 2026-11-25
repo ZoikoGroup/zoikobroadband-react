@@ -47,7 +47,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ChatMessage, HISTORY_TTL_DAYS, SavedChat, readHistory, useChat } from "./useChat";
-import { linkoApi, newKey, toActions, TriageData } from "./linkoApi";
+import { FEEDBACK_REASONS, linkoApi, newKey, toActions, TriageData, type AnswerSource, type FeedbackReason } from "./linkoApi";
 import {
   AddressContext,
   ApiCall,
@@ -62,6 +62,7 @@ import {
   normalisePostcode,
   redactSensitive,
   track,
+  type ResultCardData,
 } from "@/app/lib/chatbot/linko";
 
 const ENABLED = process.env.NEXT_PUBLIC_LINKO_ENABLED !== "false";
@@ -200,6 +201,10 @@ function ActionButton({
         track("linko_handoff", { handoff_type: href.startsWith("tel:") ? "phone" : "live_chat" });
       else if (href === "/get-help") track("linko_handoff", { handoff_type: "callback" });
       else if (href === "/contact-us") track("linko_handoff", { handoff_type: "enquiry" });
+      // Doc01 LK-WF-11/14/18 journey events (labels only — no personal data).
+      if (href === "/report-a-fault") track("linko_fault_handoff", { route: "report_page" });
+      if (/^(?:Request data help|Request my data)$/i.test(action.label)) track("linko_dsr_redirect");
+      if (/cancellation/i.test(action.label)) track("linko_cancellation_help", { route: "terms" });
       track("linko_flow_exit", { reason_code: "link" });
     };
     if (href.startsWith("/")) {
@@ -273,7 +278,7 @@ type PickerState =
   | { step: "done"; ok: boolean };
 
 export type AddressOutcome =
-  | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string }
+  | { kind: "qualified"; label: string; technologies: string[]; message: string; checkedAt?: string; expiresAt?: string }
   | { kind: "unverified"; label: string } // address chosen, but exact-premises check unavailable
   | { kind: "failed" }
   | { kind: "expired" } // the selection token expired (AVL-03)
@@ -368,6 +373,7 @@ function AddressPicker({
             technologies: q.body.data.technologies,
             message: q.body.data.message,
             checkedAt: q.body.sourceEvidence?.checkedAt,
+            expiresAt: q.body.sourceEvidence?.expiresAt,
           },
           true,
         );
@@ -1148,6 +1154,32 @@ function DetailRows({ rows }: { rows: readonly (readonly [string, string])[] }) 
   );
 }
 
+const RESULT_STATUS: Record<ResultCardData["status"], { label: string; cls: string }> = {
+  CONFIRMED: { label: "Confirmed", cls: "bg-emerald-50 text-emerald-900 border-emerald-300 linko-dark:bg-emerald-950 linko-dark:text-emerald-100 linko-dark:border-emerald-700" },
+  INDICATIVE: { label: "Indicative – not yet confirmed", cls: "bg-[#F8EEDD] text-[#6B4E16] border-[#D9B56A] linko-dark:bg-amber-950 linko-dark:text-amber-100 linko-dark:border-amber-600" },
+  UNAVAILABLE: { label: "Not confirmed", cls: "bg-slate-100 text-slate-800 border-slate-300 linko-dark:bg-slate-800 linko-dark:text-slate-100 linko-dark:border-slate-600" },
+};
+
+/** C-card for verified tool results: status, facts, source label, checked-at and valid-until (Doc02 §07.1 #4/#5). */
+function ResultCard({ data }: { data: ResultCardData }) {
+  const st = RESULT_STATUS[data.status];
+  const fmt = (iso?: string) => (iso ? DATE_TIME_FMT.format(new Date(iso)) : null);
+  return (
+    <article className={`mt-4 rounded-xl p-4 ${T.row}`} aria-label={data.title}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className={`text-[15px] font-bold ${T.text}`}>{data.title}</h3>
+        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${st.cls}`}>{st.label}</span>
+      </div>
+      <DetailRows rows={data.rows} />
+      <p className={`mt-1 text-xs ${T.muted}`}>
+        Source: {data.source}
+        {fmt(data.checkedAt) ? ` · Checked ${fmt(data.checkedAt)}` : " · Check time not available"}
+        {fmt(data.expiresAt) ? ` · Valid until ${fmt(data.expiresAt)}` : ""}
+      </p>
+    </article>
+  );
+}
+
 function PlanCard() {
   return (
     <article className={`mt-4 rounded-xl p-4 ${T.row}`} aria-label={PLAN_CARD.title}>
@@ -1288,7 +1320,7 @@ function Message({
   busy: boolean;
   topics: string[];
   onAction: (a: LinkoAction) => void;
-  onFeedback: (id: string, v: "up" | "down") => void;
+  onFeedback: (id: string, v: "up" | "down", reason?: FeedbackReason) => void;
   w: WidgetHandlers;
 }) {
   const time = msg.at ? TIME_FMT.format(new Date(msg.at)) : null;
@@ -1345,6 +1377,7 @@ function Message({
         {msg.widget === "moveDate" && <MoveDate active={isLatest} onSaved={w.onMoveDate} />}
       </div>
 
+      {msg.widget === "resultCard" && msg.result && <ResultCard data={msg.result} />}
       {msg.widget === "planCard" && <PlanCard />}
       {msg.widget === "secureCard" && <SecureCard />}
       {msg.widget === "summary" && <SummaryCard topics={topics} receipts={w.receipts} onFeedback={w.onSummaryFeedback} />}
@@ -1353,56 +1386,103 @@ function Message({
 
       {showActions && <ActionGroup actions={msg.actions!} onAction={onAction} disabled={busy} />}
 
-      {msg.source === "ai" && (
-        // Doc06 evidence label / Doc07 C15 KBSource: AI answers say what they're based on and that they're AI-generated.
-        // With no verified source there is no source label at all (never an invented one).
-        <p className={`mt-2 text-[14px] ${T.muted}`}>
-          {msg.sources?.length ? `Based on: ${msg.sources.map((s) => s.source).join("; ")} · ` : ""}AI-generated, may need checking
-        </p>
-      )}
+      {msg.source === "ai" && <AnswerSources sources={msg.sources} />}
       {time && (
         <time aria-hidden className={`mt-1 block text-[12px] ${T.muted}`}>
           {time}
         </time>
       )}
 
-      {msg.source === "ai" && (
-        <div className={`mt-2 flex flex-wrap items-center gap-2 text-sm ${T.muted}`}>
-          {msg.feedback ? (
-            <span role="status">
-              {COPY.feedbackThanks}{" "}
-              {msg.feedback === "down" && (
-                <Link href="/contact-us" className={`font-semibold underline ${T.link}`}>
-                  Report an issue
+      {msg.source === "ai" && <AnswerFeedback msg={msg} onFeedback={onFeedback} />}
+    </div>
+  );
+}
+
+/**
+ * Doc06 evidence label / Doc07 C15 KBSource / Doc01 LK-C11: AI answers say what they're based on —
+ * a clickable Zoiko page with its version and date, marked when the content is still awaiting approval —
+ * and that they're AI-generated. With no verified source there is no source label at all (never an invented one).
+ */
+function AnswerSources({ sources }: { sources?: AnswerSource[] }) {
+  const fmt = (d?: string) => (d ? new Date(`${d}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "");
+  return (
+    <div className={`mt-2 text-[14px] ${T.muted}`}>
+      {sources?.length ? (
+        <p>
+          Based on:{" "}
+          {sources.map((s, i) => (
+            <span key={s.id}>
+              {i > 0 && "; "}
+              {s.href ? (
+                <Link href={s.href} className={`font-semibold underline ${T.link}`}>
+                  {s.title}
                 </Link>
+              ) : (
+                <span className="font-semibold">{s.title}</span>
+              )}
+              {(s.version || s.updated) && (
+                <span>
+                  {" "}
+                  ({[s.version, s.updated && `updated ${fmt(s.updated)}`].filter(Boolean).join(", ")}
+                  {s.status === "DRAFT" ? ", awaiting approval" : ""})
+                </span>
               )}
             </span>
-          ) : (
-            <>
-              <span>Was this helpful?</span>
-              <button
-                type="button"
-                onClick={() => onFeedback(msg.id, "up")}
-                className={`flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
-              >
-                <ThumbsUp size={14} aria-hidden /> Useful
-              </button>
-              <button
-                type="button"
-                onClick={() => onFeedback(msg.id, "down")}
-                className={`flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`}
-              >
-                <ThumbsDown size={14} aria-hidden /> Not useful
-              </button>
-            </>
-          )}
+          ))}
+        </p>
+      ) : null}
+      <p>AI-generated, may need checking</p>
+    </div>
+  );
+}
+
+/** "Was this helpful?" — "Not useful" asks for a coded reason that goes to the staff review queue (Doc03 §11.2). */
+function AnswerFeedback({ msg, onFeedback }: { msg: ChatMessage; onFeedback: (id: string, v: "up" | "down", reason?: FeedbackReason) => void }) {
+  const [askReason, setAskReason] = useState(false);
+  const btn = `flex min-h-11 items-center gap-1 rounded-md px-2 hover:bg-[#EEF2F8] linko-dark:hover:bg-slate-800 ${T.focus}`;
+  if (msg.feedback) {
+    return (
+      <p role="status" className={`mt-2 text-sm ${T.muted}`}>
+        {COPY.feedbackThanks}
+        {msg.feedback === "down" && " Our team reviews answers marked not useful."}{" "}
+        {msg.feedback === "down" && (
+          <Link href="/contact-us" className={`font-semibold underline ${T.link}`}>
+            Contact us
+          </Link>
+        )}
+      </p>
+    );
+  }
+  if (askReason) {
+    return (
+      <fieldset className={`mt-2 text-sm ${T.muted}`}>
+        <legend className="mb-1">What was wrong with this answer?</legend>
+        <div className="flex flex-wrap gap-2">
+          {FEEDBACK_REASONS.map((r) => (
+            <button key={r.code} type="button" onClick={() => onFeedback(msg.id, "down", r.code)} className={`${btn} border border-[#D5DCE6] linko-dark:border-slate-600`}>
+              {r.label}
+            </button>
+          ))}
         </div>
-      )}
+      </fieldset>
+    );
+  }
+  return (
+    <div className={`mt-2 flex flex-wrap items-center gap-2 text-sm ${T.muted}`}>
+      <span>Was this helpful?</span>
+      <button type="button" onClick={() => onFeedback(msg.id, "up")} className={btn}>
+        <ThumbsUp size={14} aria-hidden /> Useful
+      </button>
+      <button type="button" onClick={() => setAskReason(true)} className={btn}>
+        <ThumbsDown size={14} aria-hidden /> Not useful
+      </button>
     </div>
   );
 }
 
 /* ───────────────────── LK-WF-01 welcome (desktop + mobile) ──────────────── */
+
+const WELCOMES_SEEN = new Set<string>();
 
 function Welcome({
   msg,
@@ -1413,6 +1493,12 @@ function Welcome({
   isLatest: boolean;
   onAction: (a: LinkoAction) => void;
 }) {
+  // Doc01 LK-WF-01 events: welcome_viewed, once per welcome message shown.
+  useEffect(() => {
+    if (WELCOMES_SEEN.has(msg.id)) return; // effects run twice in development; count each welcome once
+    WELCOMES_SEEN.add(msg.id);
+    track("linko_welcome_viewed", { device_class: window.innerWidth < 768 ? "mobile" : "desktop" });
+  }, [msg.id]);
   return (
     <div>
       {/* Mobile reference shows an "Ask Linko" heading above the welcome card. */}
@@ -1797,6 +1883,25 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
   const chat = useChat(pathname);
   const { messages, isLoading } = chat;
 
+  // Doc01 LK-C01 badge state: replies that arrived while the panel was minimised.
+  const seenCount = useRef(messages.length);
+  const firstId = useRef(messages[0]?.id);
+  const [unread, setUnread] = useState(0);
+  useEffect(() => {
+    // A restored or restarted conversation replaces the list: what's already there isn't "new".
+    if (messages[0]?.id !== firstId.current) {
+      firstId.current = messages[0]?.id;
+      seenCount.current = messages.length;
+    }
+    if (open) {
+      seenCount.current = messages.length;
+      setUnread(0);
+      return;
+    }
+    const fresh = messages.slice(seenCount.current).filter((m) => m.role === "assistant").length;
+    setUnread(fresh);
+  }, [messages, open]);
+
   const panelRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const launcherRef = useRef<HTMLButtonElement>(null);
@@ -1948,7 +2053,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
       ? next
       : [
           { kind: "command", label: "Try again", command: "retry", primary: true, retryApi: { call, label } } as LinkoAction,
-          { kind: "link", label: "Open Help Centre", href: "/get-help" },
+          { kind: "link", label: "View Help Centre", href: "/get-help" },
           { kind: "flow", label: "Speak to a person", flow: "handoff" },
         ];
 
@@ -1967,16 +2072,33 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
     if (call === "serviceStatus") {
       const s = await linkoApi.serviceStatus(); // PUB-09 (public – no private call first)
       if (s.ok) {
-        const checked = s.body.sourceEvidence?.checkedAt
-          ? ` (checked ${DATE_TIME_FMT.format(new Date(s.body.sourceEvidence.checkedAt))})`
-          : "";
-        const incidents = (s.body.data.incidents ?? [])
-          .map((i) => `- ${i.summary}${i.updatedAt ? ` (updated ${TIME_FMT.format(new Date(i.updatedAt))})` : ""}`)
-          .join("\n");
+        const incidents = s.body.data.incidents ?? [];
+        const ev = s.body.sourceEvidence;
+        // Doc01 LK-WF-11 events: status_checked (state only — never an address or postcode).
+        track("linko_status_checked", { state: s.body.data.state ?? "UNKNOWN", business_status: s.body.status });
+        const STATE_LABEL: Record<string, string> = {
+          INCIDENT_REPORTED: "Known issue reported",
+          NO_KNOWN_INCIDENT: "No known issue reported",
+        };
         chat.addAssistant({
           source: "flow",
           screen: "Service status and fault triage",
-          content: `${s.body.data.message}${checked}${incidents ? `\n\n${incidents}` : ""}`,
+          content: s.body.data.message,
+          widget: "resultCard",
+          result: {
+            title: "Network status",
+            status: s.body.status === "CONFIRMED" ? "CONFIRMED" : s.body.status === "INDICATIVE" ? "INDICATIVE" : "UNAVAILABLE",
+            rows: [
+              ["Status", STATE_LABEL[s.body.data.state] ?? "Not confirmed"],
+              // An incident without an update time is shown as "time not confirmed", never as current (Doc02 §13.1).
+              ...incidents.map(
+                (i, n): [string, string] => [`Issue ${n + 1}`, `${i.summary}${i.updatedAt ? ` (updated ${TIME_FMT.format(new Date(i.updatedAt))})` : " (update time not confirmed)"}`],
+              ),
+            ],
+            source: "Zoiko network status",
+            checkedAt: ev?.checkedAt,
+            expiresAt: ev?.expiresAt,
+          },
           actions: toActions(s.body.nextActions).length
             ? toActions(s.body.nextActions)
             : [
@@ -2002,7 +2124,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
         widget: "secureCard",
         actions: [
           { kind: "link", label: "Sign in securely", href: "/login", primary: true },
-          { kind: "flow", label: "Continue without signing in", flow: "welcome" },
+          { kind: "flow", label: "Continue as guest", flow: "welcome" },
           { kind: "flow", label: "Speak to support", flow: "handoff" },
         ],
       });
@@ -2091,15 +2213,24 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
     if (o.kind === "qualified") {
       // FRS-A06: plain-language technology names.
       const TECH: Record<string, string> = { FTTP: "Full Fibre (FTTP)", SOGEA: "Part Fibre (SOGEA)" };
-      const tech = o.technologies.length ? ` Services returned: ${o.technologies.map((t) => TECH[t] ?? t).join(", ")}.` : "";
-      const when = o.checkedAt
-        ? ` Checked ${DATE_TIME_FMT.format(new Date(o.checkedAt))}.`
-        : "";
       chat.addAssistant({
         source: "flow",
         screen,
         topic: ctx === "moving" ? "Moving home" : "Checking availability",
-        content: `${o.message}${tech}${when}\n\nContinue securely to review contract information and payment details. Prices and speeds will be confirmed in checkout.`,
+        content: `${o.message}\n\nContinue securely to review contract information and payment details. Prices and speeds will be confirmed in checkout.`,
+        widget: "resultCard",
+        result: {
+          title: "Availability at this address",
+          status: "INDICATIVE",
+          rows: [
+            ["Address", o.label],
+            ["Services found", o.technologies.length ? o.technologies.map((t) => TECH[t] ?? t).join(", ") : "None confirmed yet"],
+            ["Prices and speeds", "Confirmed in checkout"],
+          ],
+          source: "Network availability check",
+          checkedAt: o.checkedAt,
+          expiresAt: o.expiresAt,
+        },
         actions:
           ctx === "business"
             ? [
@@ -2158,7 +2289,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
       content: COPY.degraded,
       actions: [
         { kind: "flow", label: "Try again", flow: ctx === "moving" ? "movingAddress" : ctx === "business" ? "businessAvailability" : "availability", primary: true },
-        { kind: "link", label: "Open Help Centre", href: "/get-help" },
+        { kind: "link", label: "View Help Centre", href: "/get-help" },
         { kind: "flow", label: "Speak to a person", flow: "handoff" },
       ],
     });
@@ -2204,7 +2335,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
         screen: "Moving home",
         content: `${pretty ? `Thanks — I've noted ${pretty} as your preferred date. It's a preference only until a move is confirmed.` : "That's fine — you can choose a date later."}\n\nExisting customers can start a move request after signing in. I won't cancel or transfer your current service from chat, and I can't promise the same price or speed at your new address.`,
         actions: [
-          { kind: "api", label: "Start a move request", call: "moveRequest", primary: true },
+          { kind: "api", label: "Plan my move", call: "moveRequest", primary: true },
           { kind: "link", label: "Find moving help", href: "/moving-home" },
           { kind: "flow", label: "Speak to a person", flow: "handoff" },
         ],
@@ -2220,7 +2351,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
               topic: "Business specialist enquiry",
               // §08.3: received and being checked – no promise of contact time.
               content: `Your request has been received and is being checked. Reference: ${reference}.`,
-              actions: [{ kind: "flow", label: "Start another question", flow: "welcome" }],
+              actions: [{ kind: "flow", label: "Start a new chat", flow: "welcome" }],
             }
           : result === "uncertain"
             ? {
@@ -2616,12 +2747,24 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
           type="button"
           onClick={open ? closePanel : openPanel}
           // WCAG 2.5.3: the accessible name starts with the visible label "Ask Linko".
-          aria-label={open ? "Ask Linko – minimise the Zoiko Broadband AI assistant" : "Ask Linko – Zoiko Broadband AI assistant"}
+          aria-label={
+            open
+              ? "Ask Linko – minimise the Zoiko Broadband AI assistant"
+              : `Ask Linko – Zoiko Broadband AI assistant${unread ? ` (${unread} new ${unread === 1 ? "reply" : "replies"})` : ""}`
+          }
           aria-expanded={open}
           title={open ? "Minimise Linko" : "Ask Linko"}
           className={`fixed bottom-[max(1.25rem,env(safe-area-inset-bottom))] right-5 z-[70] ${open ? "hidden md:flex" : "flex"} h-[76px] w-[76px] items-center justify-center rounded-full ${T.header} text-white shadow-[0_8px_24px_rgba(21,33,61,0.3)] transition hover:bg-[#1B3A63] ${T.focus}`}
         >
           <LinkoMark size={54} />
+          {!open && unread > 0 && (
+            <span
+              aria-hidden
+              className="absolute -right-0.5 -top-0.5 flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-[#C0392B] px-1 text-xs font-bold leading-none text-white"
+            >
+              {unread > 9 ? "9+" : unread}
+            </span>
+          )}
         </button>
       )}
     </>

@@ -30,9 +30,31 @@ const securityHeaders = [
     : []),
 ];
 
+// Enforced CSP where no third-party scripts are needed (Doc02 NFR-06, Doc13 L13-FR-056): the staff
+// console and the Linko JSON API. The public site keeps the report-only policy above until it is tuned.
+const dev = process.env.NODE_ENV !== "production";
+const staffCsp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""}`,
+  `connect-src 'self'${dev ? " ws: wss:" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data:",
+  "font-src 'self' data:",
+  "object-src 'none'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+const apiCsp = "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'";
+
 module.exports = withBundleAnalyzer({
   reactStrictMode: true,
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      { source: "/staff/:path*", headers: [{ key: "Content-Security-Policy", value: staffCsp }, { key: "X-Frame-Options", value: "DENY" }] },
+      { source: "/staff", headers: [{ key: "Content-Security-Policy", value: staffCsp }, { key: "X-Frame-Options", value: "DENY" }] },
+      { source: "/v1/linko/:path*", headers: [{ key: "Content-Security-Policy", value: apiCsp }] },
+    ];
   },
 });

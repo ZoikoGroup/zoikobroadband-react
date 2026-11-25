@@ -107,6 +107,53 @@ function businessStatus(answer: ReplyAnswer): BusinessStatus {
   return answer.source === "flow" ? "CONFIRMED" : "INDICATIVE"; // model wording is never an authoritative fact
 }
 
+/**
+ * Doc03 §08.1 actionability: what the client may do next with this answer.
+ * none = nothing to act on · info_only = information · can_transfer = a person/safety route is offered ·
+ * requires_auth = secure sign-in needed · requires_confirmed_mutation = never produced by chat (no changes from Linko).
+ */
+type Actionability = "none" | "info_only" | "can_transfer" | "requires_auth" | "requires_confirmed_mutation";
+function actionabilityFor(answer: ReplyAnswer): Actionability {
+  if (answer.status === "provider_unavailable" || answer.status === "invalid" || answer.status === "budget_limited") return "can_transfer";
+  if (answer.status === "safety" || answer.status === "handoff" || answer.status === "complaint") return "can_transfer";
+  if (answer.actions.some((a) => a.kind === "link" && a.href === "/login")) return "requires_auth";
+  if (answer.status === "abstained") return "none";
+  return "info_only";
+}
+
+/** Doc03 §07 FRS families by Doc01 screen (LK-WF id) — used in the response trace. */
+const FRS_FOR: Record<string, string> = {
+  "LK-WF-01": "FRS-E",
+  "LK-WF-02": "FRS-E",
+  "LK-WF-03": "FRS-A",
+  "LK-WF-04": "FRS-A",
+  "LK-WF-05": "FRS-B",
+  "LK-WF-06": "FRS-S",
+  "LK-WF-08": "FRS-O",
+  "LK-WF-09": "FRS-O",
+  "LK-WF-10": "FRS-M",
+  "LK-WF-11": "FRS-F",
+  "LK-WF-12": "FRS-W",
+  "LK-WF-13": "FRS-P",
+  "LK-WF-14": "FRS-Q",
+  "LK-WF-15": "FRS-V",
+  "LK-WF-16": "FRS-U",
+  "LK-WF-17": "FRS-H",
+  "LK-WF-18": "FRS-D",
+  "LK-WF-20": "FRS-E",
+};
+// Feature-flag snapshot that shaped this answer (Doc03 §08.1 featureFlagVersion) — no secrets, just on/off.
+const FLAG_VERSION = [
+  "linko-flags-2026-11-25",
+  `ai=${process.env.LINKO_AI_ENABLED === "true" ? 1 : 0}`,
+  `draftkb=${process.env.LINKO_ALLOW_DRAFT_KB === "true" ? 1 : 0}`,
+  `provider=${process.env.LINKO_AI_PROVIDER || "groq"}`,
+].join(";");
+function traceFor(answer: ReplyAnswer, pageKey: string) {
+  const screen = screenRef(answer.screen) ?? (answer.source === "ai" ? "LK-WF-02" : null);
+  return { prd: "LINKO-PRD-1.0", frs: screen ? (FRS_FOR[screen] ?? null) : null, screen, pageKey, featureFlagVersion: FLAG_VERSION };
+}
+
 async function digest(text: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
@@ -150,7 +197,7 @@ async function answerText(conv: Conversation, signal: AbortSignal, cid: string):
         message: COPY.clarifyFallback,
         actions: [
           { kind: "flow", label: "Speak to a person", flow: "handoff", primary: true },
-          { kind: "link", label: "Open Help Centre", href: "/get-help" },
+          { kind: "link", label: "View Help Centre", href: "/get-help" },
           { kind: "flow", label: "Browse topics", flow: "clarify" },
         ],
         screen: FLOWS.clarify.screen,
@@ -235,7 +282,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
             message: COPY.retryLimit,
             actions: [
               { kind: "flow", label: "Speak to a person", flow: "handoff", primary: true },
-              { kind: "link", label: "Open Help Centre", href: "/get-help" },
+              { kind: "link", label: "View Help Centre", href: "/get-help" },
             ],
             source: "flow",
           },
@@ -297,6 +344,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
       state: conv.state,
       answer: result.answer,
       redacted,
+      actionability: actionabilityFor(result.answer),
+      trace: traceFor(result.answer, conv.pageKey),
     },
     {
       // All flow and knowledge copy is still DRAFT_NOT_APPROVED (Doc06), so evidence is INDICATIVE until sign-off.
@@ -335,6 +384,8 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ conversati
       redaction_kinds: redacted,
       kb_version: KB_VERSION,
       sources: (result.answer.sources ?? []).map((s) => evidenceRef(s.id)),
+      actionability: actionabilityFor(result.answer),
+      trace: traceFor(result.answer, conv.pageKey),
     }),
   );
   if (conv.replies.size > 50) conv.replies.delete(conv.replies.keys().next().value!);

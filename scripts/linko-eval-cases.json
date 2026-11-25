@@ -693,6 +693,26 @@
    }
   },
   {
+   "id": "AI-DISCLOSE",
+   "layer": "unit",
+   "kind": "route",
+   "critical": true,
+   "input": "are you a real person?",
+   "expect": {
+    "intent": "privacy"
+   }
+  },
+  {
+   "id": "HUMAN-REAL",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "I want to speak to a real person",
+   "expect": {
+    "intent": "handoff"
+   }
+  },
+  {
    "id": "QA-063",
    "layer": "model",
    "kind": "message",
@@ -907,6 +927,116 @@
    "body": {},
    "expect": {
     "httpStatus": 403
+   }
+  },
+  {
+   "id": "PROBE-ENG-GENERAL",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Do I need an engineer to install it?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-ENG-BOOKED",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "When is my engineer coming?",
+   "expect": {
+    "intent": "appointment"
+   }
+  },
+  {
+   "id": "PROBE-OTS-EXPLAIN",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "What is One Touch Switch?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-COOLING-OFF",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Can I cancel within 14 days?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-PRICE-RISE",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Will my price go up during the contract?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-BLACK-FRIDAY",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "Is there a Black Friday deal?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-ORDER-CHECK",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "check my order ZB12345",
+   "expect": {
+    "intent": "track"
+   }
+  },
+  {
+   "id": "PROBE-ROUTER-ARRIVE",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "When will my router arrive?",
+   "expect": {
+    "intent": "track"
+   }
+  },
+  {
+   "id": "PROBE-PRICE-Q",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "How much is fibre?",
+   "expect": {
+    "intent": "plans"
+   }
+  },
+  {
+   "id": "PROBE-OLD-SERVICE",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "What happens to my old broadband service when I switch to Zoiko?",
+   "expect": {
+    "intent": null
+   }
+  },
+  {
+   "id": "PROBE-SWITCH-FLOW",
+   "layer": "unit",
+   "kind": "route",
+   "critical": false,
+   "input": "How do I switch to Zoiko from BT?",
+   "expect": {
+    "intent": "switching"
    }
   }
  ]

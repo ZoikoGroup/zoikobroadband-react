@@ -85,7 +85,33 @@ paths:
                 actionId: { type: string }
                 label: { type: string, maxLength: 120 }
                 requestId: { type: string, minLength: 8, maxLength: 64, description: Same requestId + same body replays the stored reply }
-      responses: { "200": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "429": { $ref: "#/components/responses/Error" } }
+      responses:
+        "200":
+          description: >-
+            Envelope. data = { intent, state, answer, redacted, actionability, trace }.
+            actionability (Doc03 §08.1) is one of none | info_only | can_transfer | requires_auth | requires_confirmed_mutation.
+            trace = { prd, frs, screen, pageKey, featureFlagVersion }. AI answers carry answer.sources[] = { id, title, source, href, version, updated, status APPROVED|DRAFT }.
+          content: { application/json: { schema: { $ref: "#/components/schemas/Envelope" } } }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /conversations/{conversationId}/feedback:
+    post:
+      operationId: PUB_15_answerFeedback
+      description: Useful / Not useful on an AI answer (Doc03 §11.2). DOWN goes to the staff review queue with a coded reason; never used to self-train.
+      parameters: [{ name: conversationId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rating]
+              properties:
+                rating: { type: string, enum: [UP, DOWN] }
+                reason: { type: string, enum: [WRONG, NOT_ANSWERED, UNCLEAR, OTHER] }
+                answer: { type: string, maxLength: 600, description: The answer text; redacted again and encrypted on the server }
+                sourceIds: { type: array, maxItems: 3, items: { type: string, pattern: "^K\\d{2}$" } }
+      responses: { "201": { $ref: "#/components/responses/Ok" }, "400": { $ref: "#/components/responses/Error" }, "404": { $ref: "#/components/responses/Error" }, "429": { $ref: "#/components/responses/Error" } }
   /conversations/{conversationId}/close:
     post:
       operationId: PUB_14_closeConversation

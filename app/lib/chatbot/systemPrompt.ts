@@ -1,4 +1,4 @@
-import { activeKnowledge } from "./knowledge";
+import { activeKnowledge, contentHash } from "./knowledge";
 import { FLOW_ROUTES, PAGES } from "./linko";
 
 // ofcomSpeed is withheld: Zoiko's speed-code membership is unverified (Doc06 C07 / LK-KBT-028).
@@ -61,4 +61,9 @@ export function getSystemPrompt(): string {
     cache = { key, prompt: buildPrompt(knowledge) };
   }
   return cache.prompt;
+}
+
+/** Fingerprint of the prompt template without knowledge (Doc14 AT14-015 prompt signature, Doc02 §11.2 registry). */
+export function promptTemplateHash(): string {
+  return contentHash(buildPrompt(""));
 }

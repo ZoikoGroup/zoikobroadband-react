@@ -86,6 +86,11 @@ export const linkoApi = {
     body: { kind: "TEXT"; text: string; requestId: string } | { kind: "ACTION"; actionId: string; requestId: string; label?: string },
     signal?: AbortSignal,
   ) => call<MessageData>(`/conversations/${encodeURIComponent(conversationId)}/messages`, { body, signal }),
+  /** Answer feedback → staff review queue (Doc03 §11.2). The answer text is redacted again on the server. */
+  feedback: (
+    conversationId: string,
+    body: { rating: "UP" | "DOWN"; reason?: FeedbackReason; answer: string; sourceIds: string[] },
+  ) => call<{ feedbackId: string }>(`/conversations/${encodeURIComponent(conversationId)}/feedback`, { body }),
   /** PUB-14 */
   close: (conversationId: string) => call<null>(`/conversations/${encodeURIComponent(conversationId)}/close`, { body: {} }),
   /** PUB-03 */
@@ -147,9 +152,29 @@ export interface MessageData {
     widget?: string;
     context?: string;
     source: "flow" | "ai";
-    sources?: { id: string; title: string; source: string }[];
+    sources?: AnswerSource[];
   };
 }
+
+/** Doc07 C15: what an AI answer was based on — a Zoiko page, its version/date and approval state. */
+export interface AnswerSource {
+  id: string;
+  title: string;
+  source: string;
+  href?: string | null;
+  version?: string;
+  updated?: string;
+  status?: "APPROVED" | "DRAFT";
+}
+
+/** Doc03 §11.2 / Doc02 §14: coded reasons a visitor can give for "Not useful". */
+export const FEEDBACK_REASONS = [
+  { code: "WRONG", label: "Wrong or out of date" },
+  { code: "NOT_ANSWERED", label: "Didn't answer my question" },
+  { code: "UNCLEAR", label: "Hard to understand" },
+  { code: "OTHER", label: "Something else" },
+] as const;
+export type FeedbackReason = (typeof FEEDBACK_REASONS)[number]["code"];
 
 export interface TriageData {
   safetyEscalation: boolean;

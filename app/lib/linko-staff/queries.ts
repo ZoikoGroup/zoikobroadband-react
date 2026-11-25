@@ -178,6 +178,33 @@ export function qaSample(limit = 10) {
     .all(t(), limit) as { handover_id: string; session_id: string; priority: string; reason_code: string }[];
 }
 
+/** Doc03 §11.2: "Not useful" answers waiting for review, with the coded reason and the redacted answer. */
+export function feedbackQueue(limit = 50) {
+  const rows = db()
+    .prepare(
+      `SELECT feedback_id, reason_code, answer_ciphertext, knowledge_ids, kb_version, created_at FROM answer_feedback
+       WHERE tenant_id = ? AND rating = 'DOWN' AND review_state = 'NEW' ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(t(), limit) as Record<string, unknown>[];
+  return rows.map((r) => ({
+    id: String(r.feedback_id),
+    reason: String(r.reason_code ?? "OTHER"),
+    answer: unseal(r.answer_ciphertext as Uint8Array) ?? "(answer text unavailable)",
+    knowledge: String(r.knowledge_ids || "none"),
+    kbVersion: String(r.kb_version),
+    at: String(r.created_at),
+  }));
+}
+
+export function feedbackStats() {
+  return db()
+    .prepare(
+      `SELECT sum(rating = 'UP') AS up, sum(rating = 'DOWN') AS down, sum(rating = 'DOWN' AND review_state = 'NEW') AS open
+       FROM answer_feedback WHERE tenant_id = ? AND created_at >= ?`,
+    )
+    .get(t(), new Date(Date.now() - 30 * 86_400_000).toISOString()) as { up: number | null; down: number | null; open: number | null };
+}
+
 export function rightsRequests() {
   return db()
     .prepare(

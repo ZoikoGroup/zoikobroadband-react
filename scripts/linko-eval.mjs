@@ -41,6 +41,8 @@ const API_RUNS = 3;
 const linko = jiti(path.join(ROOT, "app/lib/chatbot/linko.ts"));
 const knowledge = jiti(path.join(ROOT, "app/lib/chatbot/knowledge.ts"));
 const assistant = jiti(path.join(ROOT, "app/lib/linko-api/assistant.ts"));
+const promptRegistry = jiti(path.join(ROOT, "app/lib/chatbot/promptRegistry.ts"));
+const systemPrompt = jiti(path.join(ROOT, "app/lib/chatbot/systemPrompt.ts"));
 
 const { cases } = JSON.parse(readFileSync(path.join(ROOT, "scripts/linko-eval-cases.json"), "utf8"));
 
@@ -109,7 +111,7 @@ async function runCase(c) {
       break;
     case "route": {
       const got = linko.routeIntent(c.input);
-      if (e.intent) check(got === e.intent, `routed to ${got} ≠ ${e.intent}`);
+      if (e.intent !== undefined) check(got === e.intent, `routed to ${got} ≠ ${e.intent}`);
       if (e.notIntent) check(got !== e.notIntent, `routed to ${got}`);
       break;
     }
@@ -184,6 +186,13 @@ async function runCase(c) {
 
 const selected = cases.filter((c) => (c.layer === "model" ? WITH_MODEL : UNIT_ONLY ? c.layer === "unit" : true));
 const results = [];
+// Doc14 AT14-015 / Doc02 §11.2: the running prompt template must be registered (production blocks it otherwise).
+{
+  const pc = promptRegistry.checkPrompt(assistant.PROMPT_VERSION, systemPrompt.promptTemplateHash());
+  const pass = pc.registered;
+  results.push({ id: "AT14-015-PROMPT-REGISTERED", layer: "unit", critical: true, pass, failures: pass ? [] : [`prompt ${assistant.PROMPT_VERSION} fingerprint ${pc.actual} ≠ registered ${pc.expected}`] });
+  console.log(`${pass ? "PASS" : "FAIL"} [critical] AT14-015-PROMPT-REGISTERED${pass ? "" : ` — current fingerprint ${pc.actual}; register it in app/lib/chatbot/promptRegistry.ts after review`}`);
+}
 for (const c of selected) {
   // Space out model cases so free-tier provider rate limits (tokens per minute) aren't the thing being tested.
   if (c.layer === "model") await new Promise((r) => setTimeout(r, Number(process.env.LINKO_EVAL_MODEL_GAP_MS || 30000)));

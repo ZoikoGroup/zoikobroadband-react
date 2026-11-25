@@ -525,10 +525,32 @@ ALTER TABLE staff_user_v3 RENAME TO staff_user;
 ALTER TABLE audit_event ADD COLUMN correlation_id TEXT;
 `;
 
+/* Version 4 (Doc03 §11.2, Doc02 §14): answer feedback with a coded reason, reviewed by staff.
+ * Feedback is a review signal only — it never trains or changes the assistant by itself. */
+const DDL_V4 = `
+CREATE TABLE IF NOT EXISTS answer_feedback (
+  tenant_id TEXT NOT NULL,
+  feedback_id TEXT NOT NULL,
+  session_id TEXT,
+  rating TEXT NOT NULL CHECK(rating IN ('UP','DOWN')),
+  reason_code TEXT CHECK(reason_code IN ('WRONG','NOT_ANSWERED','UNCLEAR','OTHER')),
+  answer_ciphertext BLOB,
+  knowledge_ids TEXT NOT NULL DEFAULT '',
+  kb_version TEXT NOT NULL,
+  review_state TEXT NOT NULL DEFAULT 'NEW' CHECK(review_state IN ('NEW','REVIEWED','ACTIONED')),
+  reviewed_by TEXT,
+  reviewed_at TEXT,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (tenant_id, feedback_id)
+);
+CREATE INDEX IF NOT EXISTS ix_feedback_queue ON answer_feedback(tenant_id, review_state, created_at);
+`;
+
 const MIGRATIONS: { version: number; sql: string }[] = [
   { version: 1, sql: DDL },
   { version: 2, sql: DDL_V2 },
   { version: 3, sql: DDL_V3 },
+  { version: 4, sql: DDL_V4 },
 ];
 
 /** Applies pending migrations. Run by `npm run linko:migrate`; the web process also runs it unless LINKO_DB_AUTO_MIGRATE=false. */
@@ -609,6 +631,7 @@ function seed(d: DatabaseSync) {
     ["TOOL_INVOCATION", "LAST_ACTION", 90, "ANONYMISE"],
     ["SWITCH_GUIDANCE", "LAST_ACTION", 90, "ERASE"],
     ["DATA_RIGHTS", "APPROVAL_END", 2190, "REVIEW"],
+    ["ANSWER_FEEDBACK", "LAST_ACTION", 90, "ERASE"],
   ];
   const ins = d.prepare(
     "INSERT OR IGNORE INTO retention_rule VALUES (?, ?, ?, ?, ?, ?, 'retention-proposal-2026-11-23', NULL, ?)",
@@ -731,6 +754,7 @@ export function sweep() {
   d.prepare("DELETE FROM human_handover WHERE tenant_id = ? AND created_at <= ? AND case_status = 'CLOSED' AND priority <> 'REGULATORY'").run(t, age("HANDOVER"));
   d.prepare("DELETE FROM switch_guidance_ref WHERE tenant_id = ? AND recorded_at <= ?").run(t, age("SWITCH_GUIDANCE"));
   d.prepare("DELETE FROM business_lead_ref WHERE tenant_id = ? AND recorded_at <= ?").run(t, age("LEAD_REF"));
+  d.prepare("DELETE FROM answer_feedback WHERE tenant_id = ? AND created_at <= ?").run(t, age("ANSWER_FEEDBACK"));
 }
 
 /* ───────────────────────────────── Audit ───────────────────────────────── */
