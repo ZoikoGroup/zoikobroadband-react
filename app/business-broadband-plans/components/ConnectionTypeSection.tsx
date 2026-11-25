@@ -16,7 +16,7 @@ const CONNECTION_OPTIONS: readonly ConnectionOption[] = [
     title: "Full Fibre (FTTP)",
     description: "Fibre runs all the way to your premises.",
     ctaLabel: "Explore Business Full Fibre",
-    href: "#",
+    href: "/business-full-fibre",
   },
   {
     id: "sogea",
@@ -24,7 +24,7 @@ const CONNECTION_OPTIONS: readonly ConnectionOption[] = [
     description:
       "Fibre to the cabinet, with a data-only line to your premises.",
     ctaLabel: "Explore Part Fibre",
-    href: "#",
+    href: "/business-part-fibre",
   },
 ] as const;
 

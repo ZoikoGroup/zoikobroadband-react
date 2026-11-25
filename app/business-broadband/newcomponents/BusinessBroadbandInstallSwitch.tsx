@@ -9,7 +9,7 @@ const INSTALL_SWITCH_CARDS = [
     description:
       "Pre-order readiness, access and consent checks, equipment and continuity planning for your premises.",
     linkLabel: "Installation & Onboarding",
-    linkHref: "/business-installation",
+    linkHref: "/installation-onboarding",
   },
   {
     icon: LogOut,
@@ -17,7 +17,7 @@ const INSTALL_SWITCH_CARDS = [
     description:
       "Switching depends on your current provider, contract and connection. Check charges first and don’t cancel until it’s confirmed.",
     linkLabel: "How switching works",
-    linkHref: "/business-switching",
+    linkHref: "/switch-to-zoiko",
   },
   {
     icon: Building,
@@ -25,7 +25,7 @@ const INSTALL_SWITCH_CARDS = [
     description:
       "Connecting several locations consistently? A tailored quote is often the best route.",
     linkLabel: "Request a tailored quote",
-    linkHref: "/business-quote",
+    linkHref: "/request-a-tailored-quote",
   },
 ] as const;
 

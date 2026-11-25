@@ -115,7 +115,7 @@ export default function PaymentBillingHero() {
             {/* RIGHT CTA */}
             <div className="lg:w-1/3 w-full flex justify-center lg:justify-end">
               <Link
-              href={"/dashboard"}
+              href={"/login"}
                 className="bg-[#F5C241] text-[#10446C] text-sm font-semibold
           px-6 py-2.5 rounded-lg
           hover:bg-[#e0ad2f] transition"

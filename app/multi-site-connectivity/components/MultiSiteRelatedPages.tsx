@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 const MULTI_SITE_RELATED_PAGES = [
   {
     label: "Business Broadband Plans",
-    href: "/business",
+    href: "/business-broadband-plans",
   },
   {
     label: "Business Full Fibre",
@@ -13,19 +13,19 @@ const MULTI_SITE_RELATED_PAGES = [
   },
   {
     label: "Static IP Options",
-    href: "/business-static-ip",
+    href: "/business-broadband",
   },
   {
     label: "Business VoIP",
-    href: "/business-voip",
+    href: "/digital-lines",
   },
   {
     label: "Business Support & SLAs",
-    href: "/business-support-slas",
+    href: "/business-support",
   },
   {
     label: "Request a Tailored Quote",
-    href: "/business-quote",
+    href: "/request-a-tailored-quote",
   },
 ] as const;
 

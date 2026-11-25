@@ -98,7 +98,7 @@ export default function SwitchPhoneAndDevicesSection() {
         {/* Centered CTA Button */}
         <div className="flex justify-center">
           <Link
-            href="/contact-support"
+            href="/contact-us"
             className="inline-flex items-center justify-center bg-[#0A3A66] hover:bg-[#0E2F52] text-white font-bold text-sm px-6 py-3.5 rounded-xl transition-colors shadow-xs group"
           >
             <span>Talk to our team about phone or device needs</span>

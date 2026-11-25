@@ -83,7 +83,7 @@ export default function SwitchPlansAvailableSection() {
           </Link>
 
           <Link
-            href="/broadband-deals"
+            href="/compare-plans"
             className="inline-flex items-center justify-center bg-white hover:bg-slate-50 text-[#0E2F52] border border-gray-200/90 font-bold text-sm px-6 py-3.5 rounded-xl transition-colors shadow-2xs"
           >
             <span>Compare Plans &amp; Speeds</span>

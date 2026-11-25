@@ -116,7 +116,7 @@ export default function AddressOptions() {
           </div>
 
           <a
-            href="#"
+            href="/check-availability"
             className="inline-flex items-center justify-center bg-[#0B2241] hover:bg-[#143563] text-white text-[12.5px] font-bold px-5 h-[38px] rounded-[7px] transition-colors shrink-0 self-start lg:self-auto"
           >
             Check Availability
@@ -196,7 +196,7 @@ export default function AddressOptions() {
 
                 {/* Action Button */}
                 <a
-                  href="#"
+                  href="/check-availability"
                   className={`mt-2 w-full h-[44px] rounded-[8px] text-[13.5px] font-bold inline-flex items-center justify-center transition-colors ${
                     plan.buttonVariant === "amber"
                       ? "bg-[#FFC119] hover:bg-[#F5B60A] text-[#0B2241]"
@@ -234,7 +234,7 @@ export default function AddressOptions() {
             </div>
 
             <a
-              href="#"
+              href="/contact-us"
               className="w-full h-[44px] rounded-[8px] border border-[#0B2241] bg-white hover:bg-[#F8FAFC] text-[#0B2241] text-[13.5px] font-bold inline-flex items-center justify-center transition-colors"
             >
               Speak to a Business Specialist

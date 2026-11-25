@@ -104,7 +104,7 @@ export default function InstallationFAQs() {
                 for dates and equipment.
               </p>
               <Link
-                href="/help-centre"
+                href="/get-help"
                 className="relative z-10 inline-flex items-center justify-center bg-[#F5B82E] hover:bg-amber-400 text-[#0E2F52] font-bold text-sm px-5 py-3 rounded-xl transition-colors group"
               >
                 <span>Visit the Help Centre</span>

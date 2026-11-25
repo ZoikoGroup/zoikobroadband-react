@@ -15,7 +15,7 @@ const complianceItems = [
     label: "Manage My Account",
     description: "Change your details, passwords, and preferences",
     btn: "Go to My Account",
-    btnlink: "/dashboard",
+    btnlink: "/login",
   },
   {
     src: "/Images/Gethelp/sec1-icon3.png",

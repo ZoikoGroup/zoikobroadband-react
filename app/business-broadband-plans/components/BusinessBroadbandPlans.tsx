@@ -29,7 +29,7 @@ const groups = [
         upload: "400Kbps",
         devices: "1–4",
         contract: "12 months",
-        href: "/business/broadband/sonic-lite",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "400Kbps",
@@ -39,7 +39,7 @@ const groups = [
         upload: "400Kbps",
         devices: "1–4",
         contract: "12 months",
-        href: "/business/broadband/zippy-essential",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "38Mbps",
@@ -49,7 +49,7 @@ const groups = [
         upload: "9.5Mbps",
         devices: "1–4",
         contract: "12 months",
-        href: "/business/broadband/blitz-core",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "38Mbps",
@@ -59,7 +59,7 @@ const groups = [
         upload: "9.5Mbps",
         devices: "1–4",
         contract: "12 months",
-        href: "/business/broadband/turbo-stream",
+        href: "/request-a-tailored-quote",
       },
     ],
   },
@@ -75,7 +75,7 @@ const groups = [
         upload: "19Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/streamer-pro",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "76Mbps",
@@ -85,7 +85,7 @@ const groups = [
         upload: "19Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/hyper-plus",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "109Mbps",
@@ -95,7 +95,7 @@ const groups = [
         upload: "19Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/quantum-boost",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "152Mbps",
@@ -105,7 +105,7 @@ const groups = [
         upload: "28Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/ultra-boost",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "209Mbps",
@@ -115,7 +115,7 @@ const groups = [
         upload: "28Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/rocket-pro",
+        href: "/request-a-tailored-quote",
         featured: true,
       },
     ],
@@ -132,7 +132,7 @@ const groups = [
         upload: "47Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/xplosion-max",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "522Mbps",
@@ -142,7 +142,7 @@ const groups = [
         upload: "71Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/elite-ultra",
+        href: "/request-a-tailored-quote",
       },
       {
         speed: "950Mbps",
@@ -152,7 +152,7 @@ const groups = [
         upload: "109Mbps",
         devices: "5–8",
         contract: "12 months",
-        href: "/business/broadband/supersonic-infinity",
+        href: "/request-a-tailored-quote",
       },
     ],
   },

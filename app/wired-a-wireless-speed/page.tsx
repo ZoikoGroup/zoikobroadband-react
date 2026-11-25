@@ -184,7 +184,7 @@ const nextStepsCards = [
     iconAlt: "Warning",
     borderColor: "border-[#F0B12D]",
     buttonText: "Wi-Fi Guide",
-    buttonLink: "/change-wifi-channel",
+    buttonLink: "/change-wi-fi-channel",
     description:
       'Your Wi-Fi needs optimizing. Try our "Change Wi-Fi Channel" guide or move your BT Hub to a more central location.',
   },

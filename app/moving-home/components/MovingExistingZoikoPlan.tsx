@@ -122,7 +122,7 @@ export default function MovingExistingZoikoPlan() {
 
               <div className="space-y-3">
                 <Link
-                  href="/my-account"
+                  href="/login"
                   className="w-full inline-flex items-center justify-center bg-[#F5B82E] hover:bg-amber-400 text-[#0E2F52] font-bold text-sm px-5 py-3.5 rounded-xl transition-colors group"
                 >
                   <span>Sign in to My Account</span>
@@ -130,7 +130,7 @@ export default function MovingExistingZoikoPlan() {
                 </Link>
 
                 <Link
-                  href="/contact-support"
+                  href="/contact-us"
                   className="w-full inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/25 font-semibold text-sm px-5 py-3.5 rounded-xl transition-colors"
                 >
                   Contact support

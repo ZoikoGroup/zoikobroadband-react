@@ -25,7 +25,7 @@ const OTHER_SITUATIONS_CARDS = [
     description:
       "Manage your plan or account, or contact support if you need a hand with a change.",
     linkLabel: "Manage My Account",
-    href: "/my-account",
+    href: "/dashboard",
   },
   {
     icon: Wifi,
@@ -33,7 +33,7 @@ const OTHER_SITUATIONS_CARDS = [
     description:
       "Need extra help, or have accessibility or complex voice needs? We can switch with you, step by step.",
     linkLabel: "Get switching help",
-    href: "/contact-support",
+    href: "/contact-us",
   },
 ] as const;
 

@@ -181,7 +181,7 @@ export default function SpecialistForm() {
 
               <p className="text-[#64748B] text-[11.5px] mb-4">
                 See our{" "}
-                <a href="#" className="underline hover:text-[#0B2241]">
+                <a href="/privacy-notice" className="underline hover:text-[#0B2241]">
                   privacy notice
                 </a>{" "}
                 before you submit. Marketing opt-in is never pre-ticked.

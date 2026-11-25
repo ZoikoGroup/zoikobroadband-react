@@ -11,11 +11,11 @@ const SPECIALIST_CTA_DATA = {
   subheadingLine2: "and prepare a written quote.",
   primaryCta: {
     label: "Start your consultation",
-    href: "#discuss-setup",
+    href: "/contact-us",
   },
   secondaryCta: {
     label: "Accessible contact options",
-    href: "#accessible-contact",
+    href: "/accessibility-statement",
   },
   salesContactPrefix:
     "Business sales: [Approved business sales number] · Text relay available ",
@@ -40,7 +40,7 @@ const SPECIALIST_CTA_DATA = {
       description: "Replace old copper lines with digital ones.",
       actionText: "Explore digital lines",
       hasArrow: true,
-      href: "#business-voip-digital-lines",
+      href: "/digital-lines",
     },
     {
       id: "keep-your-number",
@@ -48,7 +48,7 @@ const SPECIALIST_CTA_DATA = {
       description: "How number transfers work.",
       actionText: "Coming soon",
       hasArrow: false,
-      href: "#keep-your-number",
+      href: "/keep-your-phone-number",
     },
     {
       id: "call-features-addons",
@@ -56,7 +56,7 @@ const SPECIALIST_CTA_DATA = {
       description: "Extra calling features for your team.",
       actionText: "Coming soon",
       hasArrow: false,
-      href: "#call-features-addons",
+      href: "/digital-lines",
     },
   ],
 } as const;

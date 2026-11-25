@@ -49,7 +49,7 @@ export default function MultiSiteCTA() {
               </Link>
 
               <Link
-                href="/business-specialist"
+                href="/contact-us"
                 className="inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/30 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors"
               >
                 <span>Speak to a business specialist</span>

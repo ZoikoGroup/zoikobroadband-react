@@ -58,7 +58,7 @@ const cardData = {
       label: "Manage Account",
       description: "View bills and update account information.",
       btn: "My Account",
-      btnlink: "/dashboard",
+      btnlink: "/login",
     },
   ],
 

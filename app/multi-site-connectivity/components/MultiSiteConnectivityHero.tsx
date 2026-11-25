@@ -77,7 +77,7 @@ export default function MultiSiteConnectivityHero() {
               </Link>
 
               <Link
-                href="/business-specialist"
+                href="/contact-us"
                 className="inline-flex items-center justify-center bg-transparent hover:bg-white/10 text-white border border-white/30 font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors"
               >
                 <span>Speak to a business specialist</span>
@@ -92,7 +92,7 @@ export default function MultiSiteConnectivityHero() {
               </span>
               
               <Link
-                href="/business"
+                href="/business-broadband-plans"
                 className="text-[#F5B82E] font-semibold hover:underline shrink-0"
               >
                 Explore Business Broadband Plans

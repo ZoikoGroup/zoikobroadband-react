@@ -21,7 +21,7 @@ const SUPPORT_SLAS_CARDS = [
     description:
       "See the full detail on channels, severity levels and any response commitments on the dedicated page.",
     linkLabel: "View Support & SLAs",
-    linkHref: "/business-support-slas",
+    linkHref: "/business-support",
   },
 ] as const;
 

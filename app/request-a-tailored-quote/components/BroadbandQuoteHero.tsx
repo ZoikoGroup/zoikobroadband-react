@@ -15,14 +15,14 @@ const BROADBAND_HERO_DATA = {
   },
   secondaryCta: {
     label: "Explore business broadband plans",
-    href: "#business-broadband-plans",
+    href: "/business-broadband-plans",
   },
   noticeText:
     "Sending a request isn't placing an order, and it isn't a price guarantee.",
   privacyPrefix:
     "We use your information to respond to your enquiry, as described in our ",
   privacyLinkLabel: "Privacy Notice",
-  privacyHref: "#privacy-notice",
+  privacyHref: "/privacy-notice",
   image: {
     src: "/Images/req/1.png",
     alt: "Three business colleagues collaborating around a laptop in a modern office",
