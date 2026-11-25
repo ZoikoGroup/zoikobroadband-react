@@ -237,6 +237,21 @@ export async function reviewOverrideAction(_: FormState, f: FormData): Promise<F
   }, ["/staff/incident"]);
 }
 
+/** Doc03 §11.2: a QA analyst marks disputed-answer feedback as reviewed (or actioned, e.g. knowledge sent for change). */
+export async function reviewFeedbackAction(_: FormState, f: FormData): Promise<FormState> {
+  const id = str(f, "feedbackId", 64);
+  const outcome = str(f, "outcome", 16) === "ACTIONED" ? "ACTIONED" : "REVIEWED";
+  return guarded((s) => {
+    authorise(s, "QA_SAMPLE");
+    audit({ action: `FEEDBACK_${outcome}`, subjectType: "answer_feedback", subjectRef: id, actor: s.staffId, decision: "EXECUTED", purpose: "QUALITY_REVIEW" });
+    const r = db()
+      .prepare("UPDATE answer_feedback SET review_state = ?, reviewed_by = ?, reviewed_at = ? WHERE tenant_id = ? AND feedback_id = ? AND review_state = 'NEW'")
+      .run(outcome, s.staffId, nowIso(), tenantId(), id);
+    if (!r.changes) throw new Error("That feedback was already reviewed.");
+    return outcome === "ACTIONED" ? "Marked as actioned." : "Marked as reviewed.";
+  }, ["/staff/qa"]);
+}
+
 export async function declareIncidentAction(_: FormState, f: FormData): Promise<FormState> {
   const title = str(f, "title", 120);
   const severity = str(f, "severity", 4);

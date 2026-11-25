@@ -10,6 +10,7 @@ import { apiError, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_
 import { getConversation, lookupAddress, rememberEligibility } from "@/app/lib/linko-api/store";
 import { persistQualification, persistToolInvocation } from "@/app/lib/linko-db/persist";
 import { sha256 } from "@/app/lib/linko-db/db";
+import { TEST_NOTICE, TEST_SOURCE, testQualification, testSupplierEnabled } from "@/app/lib/linko-api/testSupplier";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -39,6 +40,26 @@ export async function POST(req: NextRequest) {
     return apiError(cid, "NOT_FOUND", "That address selection has expired. Please search your postcode again.", {
       nextAction: "CORRECT_INPUT",
     });
+  }
+
+  // Development test premises (see testSupplier.ts) — never in production, always labelled as test data.
+  const testTech = testSupplierEnabled() ? testQualification(address.supplierId) : null;
+  if (testTech) {
+    if (!testTech.length) {
+      return apiError(cid, "ELIGIBILITY_UNKNOWN", `We couldn't confirm services for this exact address. (${TEST_NOTICE})`, {
+        nextAction: "HUMAN",
+        nextActions: SUPPORT_ACTIONS,
+      });
+    }
+    const checkedAt = nowIso();
+    const elig = rememberEligibility({ conversationId, addressId, customerType, technologies: testTech, offerCount: testTech.length, checkedAt });
+    persistToolInvocation(conversationId, "PUB_04", "ALLOW", sha256(`PUB_04|test|${addressId}`), "SUCCESS");
+    return envelope(
+      cid,
+      "INDICATIVE",
+      { eligibilityRef: elig.ref, addressLabel: address.label, technologies: testTech, offerCount: testTech.length, saleEligible: null, message: TEST_NOTICE },
+      { sourceEvidence: { source: TEST_SOURCE, checkedAt, expiresAt: elig.expiresAt, status: "INDICATIVE" }, nextActions: [CHECKER] },
+    );
   }
 
   if (process.env.LINKO_QUALIFICATION_ADAPTER !== "bt") {

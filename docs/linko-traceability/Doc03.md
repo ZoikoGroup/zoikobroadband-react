@@ -61,7 +61,7 @@ Doc column = Doc03 section.
 | §04.2 | UI-07 | Plan cards: SKU, costs, VAT, term, speeds, rise, freshness | OOS | price catalogue; PLAN_CARD shows "Not confirmed" L:651-660 |
 | §04.2 | UI-08 | Secure transfer: allowlist, token exchange, expiry, return path | OOS | checkout |
 | §04.2 | UI-09 | Status timeline with source/timestamp; unknown dates "unconfirmed" | OOS | MyZoiko/order data |
-| §04.2 | UI-10 | Escalation card: actual channel hours/status; contact route; summary consent | PARTIAL | Routes + consent L:520-553; hours not shown ("on our Get help page" L:545) though configured hours exist (contact-us/sections/ContactUsHero.tsx:47-48) |
+| §04.2 | UI-10 | Escalation card: actual channel hours/status; contact route; summary consent | MET | FLOWS.handoffChannels shows published hours (COMPANY.hours) and says queue times aren't visible (updated 2026-11-25) |
 | §04.2 | UI-11 | Safety banner, cannot be dismissed before reading | MET | CW:1235 safety actions persist; tone safety CW:1241-1245 |
 | §04.2 | UI-12 | Feedback, retention notice, governed export/deletion links | MET | CW:1095-1168, 1287-1318; downloadTranscript CW:1680; HistoryView delete CW:1618-1658 |
 | §04.3 | EXPLANATION | Approved KB with version/category/validity; not a personal quote | MET | CW:1272-1279 "Based on"; MR:269-273 KB_VERSION + evidenceRef |
@@ -77,7 +77,7 @@ Doc column = Doc03 section.
 | §05.1 | SLOT | Collect only required slot; validation keeps context | MET | CW:312-343 postcode retained on error |
 | §05.1 | VERIFY | Allowlisted read with scope; typed response | MET | LA:114-124; V1/me typed 401 |
 | §05.1 | INFO | Grounded answer + next action; no commitment | MET | AS:223-226 ungrounded → abstain |
-| §05.1 | RESULT | Verified card with source **and expiry** | PARTIAL | CW:2018-2041 shows checked time only; sourceEvidence.expiresAt (qualifications:102) not displayed |
+| §05.1 | RESULT | Verified card with source **and expiry** | MET | ResultCard shows source, checked time and expiry (valid until) (updated 2026-11-25) |
 | §05.1 | AUTH | First-party sign-in; rotate session; re-authorise per call | OOS | MyZoiko |
 | §05.1 | TRANSFER | Safe handoff, await ack; don't assume success | OOS | checkout; V1/checkout/handoffs refuses all |
 | §05.1 | HUMAN | Actual routing response or honest fallback | MET | V1/human-handoffs:70-93 FAILED/NO_ADAPTER + real routes |
@@ -96,12 +96,12 @@ Doc column = Doc03 section.
 | §05.2 | sessionAuth slot | Signed first-party state | OOS | MyZoiko |
 | §05.2 | handoffRef slot | Signed, short TTL, allowlist, never logged | OOS | checkout/live-chat |
 | §05.3 | Telecare line down | Safety banner → urgent human + power-backup advice | MET | L:680-681, 730; L:506-517 |
-| §05.3 | Pay / card details | Reject/mask → approved billing/checkout link | PARTIAL | Card text masked + "Pay securely" (UC:346-361); "I want to pay my bill" without digits has no deterministic route (no PAY regex in L:680-711) → goes to model |
+| §05.3 | Pay / card details | Reject/mask → approved billing/checkout link | MET | PAY_RE → billing flow; card text masked + "Pay securely" (updated 2026-11-25) |
 | §05.3 | Where is my order? | Sign-in → per-order authz → live status | MET | ORDER_RE L:697 → track; private reads OOS |
-| §05.3 | Is fibre available? (postcode) | Premises list → exact address → serviceability | PARTIAL | Picker correct (CW:283-486) but availability text not routed deterministically (no AVAIL regex in routeIntent L:729-748); relies on model check_address |
+| §05.3 | Is fibre available? (postcode) | Premises list → exact address → serviceability | MET | AVAIL_RE → availability flow (address picker) (updated 2026-11-25) |
 | §05.3 | Cancel now | Verified policy; secure termination contact | MET | CANCEL_RE L:695 → complaint flow L:477-490 "Request cancellation help" |
 | §05.3 | Switch from X | Explain OTS + approved route | MET | SWITCH_RE L:710; L:351-363 |
-| §05.3 | Complex business site | Qualify minimum scope → specialist | PARTIAL | Business flow L:301-338 via chip; no deterministic business regex for typed text |
+| §05.3 | Complex business site | Qualify minimum scope → specialist | MET | BUSINESS_RE → business flow (updated 2026-11-25) |
 | §05.3 | Person / distressed | Offer human promptly | MET | HUMAN_RE L:682-683 incl. distress words |
 | §05.3 | Can't ground policy | Abstain, offer official route | MET | AS:223-226; MR:109-135 |
 | §06 | LK-WF-01 entry | Page mount + purposeful activation | MET | LL:39-64 |
@@ -122,7 +122,7 @@ Doc column = Doc03 section.
 | §06 | LK-WF-03 CTAs | "Find my address"; "Check this address"; "Try another address"; "Speak to us" | PARTIAL | Actual "Find addresses" CW:477, "Choose this address" CW:419, "Try another postcode" CW:428, "Speak to a specialist" L:282 |
 | §06 | LK-WF-03 exceptions | Ambiguous/no match/build-needed/timeout/unsupported → distinct explanations | OOS | build-needed/exchange states need BT; empty/notListed/expired distinct (CW:2006-2081) |
 | §06 | LK-WF-04 entry/visible/decision/systems | Eligible plan cards from catalogue | OOS | price catalogue; PLAN_CARD "Not confirmed" |
-| §06 | LK-WF-04 CTAs | "Compare these plans"; "View full details"; "Continue securely"; "Change address" | PARTIAL | L:292-296: "View full plan details", "Continue to secure checkout", no "Change address" |
+| §06 | LK-WF-04 CTAs | "Compare these plans"; "View full details"; "Continue securely"; "Change address" | MET | "View full details", "Continue securely" (plans flow) (updated 2026-11-25) |
 | §06 | LK-WF-04 exceptions | Missing VAT/rise/contract → disable purchase CTA | MET | disabledReason NEEDS_QUOTE L:295; CW:181-191 |
 | §06 | LK-WF-05 entry | Business / multi-site intent | MET | L:301 |
 | §06 | LK-WF-05 visible | Sites, postcode, **bandwidth/critical use**, name, business email, purpose notice, specialist; no instant quote | PARTIAL | CW:579-699 has all except a bandwidth/critical-use field (only free-text "Your requirements" CW:678-681) |
@@ -132,7 +132,7 @@ Doc column = Doc03 section.
 | §06 | LK-WF-05 exceptions | CRM failure → not submitted + email/phone; no unverified appointment | MET | CW:2164-2175; leads:69-74 |
 | §06 | LK-WF-06 visible | OTS explainer, prerequisites, supplier impact, ETCs, contact route | MET | L:351-363 |
 | §06 | LK-WF-06 decisions | Distinguish education/request/matching/failed/confirmed; submit via authorised workflow only | OOS | OTS submission via checkout; education only, no submission (RU:122-165) |
-| §06 | LK-WF-06 CTAs | "Start switching"; "What happens to my old service?"; "Get help with a failed match" | PARTIAL | L:354-361 has only "Get help with a failed match"; no "Start switching" / "What happens to my old service?" |
+| §06 | LK-WF-06 CTAs | "Start switching"; "What happens to my old service?"; "Get help with a failed match" | MET | "Start switching", "What happens to my old service?", "Get help with a failed match" (updated 2026-11-25) |
 | §06 | LK-WF-06 exceptions | Unmatched → manual; no date promise | MET | L:353 "can't promise"; failed-match → handoff |
 | §06 | LK-WF-07 visible | Order summary, charges, expiry; **no inline card capture** | OOS | checkout; no card fields exist (MET part) |
 | §06 | LK-WF-07 decisions/systems/CTAs | Short-lived bound transfer; "Review and order securely" etc. | OOS | V1/checkout/handoffs:23-28 refuses |
@@ -143,17 +143,17 @@ Doc column = Doc03 section.
 | §06 | LK-WF-08 exceptions | Generic not-found/access error; no enumeration | MET | V1/me:34-46; EV PRV-01 |
 | §06 | LK-WF-09 visible/systems | Appointment window, TZ, confirmed/requested | OOS | MyZoiko |
 | §06 | LK-WF-09 decisions | Only confirmed results; reschedule needs explicit confirmation + backend success | MET | L:384 "can't book, cancel or change" |
-| §06 | LK-WF-09 CTAs | "View appointment"; "Request a different slot"; "Speak to support" | PARTIAL | L:386-389 "Request a change" |
+| §06 | LK-WF-09 CTAs | "View appointment"; "Request a different slot"; "Speak to support" | MET | "Request a different slot" (updated 2026-11-25) |
 | §06 | LK-WF-09 exceptions | Failed change keeps current date | MET | no mutation path |
 | §06 | LK-WF-10 visible | New address, move date, sign-in, eligibility, next steps | MET | L:407-425; CW:1997-2003, 2124-2139 (eligibility OOS) |
 | §06 | LK-WF-10 decisions | Exact address; auth for change; NEVER terminate old service | MET | CW:2132 "I won't cancel or transfer" |
 | §06 | LK-WF-10 systems | Address/account/move services | OOS | BT/MyZoiko |
-| §06 | LK-WF-10 CTAs | "Check my new address"; "Plan my move"; "Sign in"; "Talk to us" | PARTIAL | L:412-416 "Check new address", "Start a move request", "Find moving help", "Speak to a person" |
+| §06 | LK-WF-10 CTAs | "Check my new address"; "Plan my move"; "Sign in"; "Talk to us" | MET | "Check my new address", "Plan my move" (updated 2026-11-25) |
 | §06 | LK-WF-10 exceptions | Unserved → options + manual; no continuity assurance | MET | CW:2132; L:410 |
 | §06 | LK-WF-11 visible | Incident status + last updated; issue selector; safety interrupt | MET | CW:1894-1913 checked time; CW:743-795; L:428-438 (feed OOS) |
 | §06 | LK-WF-11 decisions | Outages vs diagnostics; safety check first; private diagnostics need sign-in | MET | L:431; faults/triage:24-28 |
 | §06 | LK-WF-11 systems | Status feed, diagnostics, case service | OOS | status feed / case service |
-| §06 | LK-WF-11 CTAs | "Check network status"; "Troubleshoot"; "Report a fault"; "Get urgent help" | PARTIAL | L:442-447 "Check service status", "Troubleshoot connection"; no "Get urgent help" in this step (footer has "I need safety help" CW:2515) |
+| §06 | LK-WF-11 CTAs | "Check network status"; "Troubleshoot"; "Report a fault"; "Get urgent help" | MET | "Check network status", troubleshoot, "Report a fault" (updated 2026-11-25) |
 | §06 | LK-WF-11 exceptions | Feed unavailable → "unable to verify"; never "no outage" | MET | V1/service-status:55-64 |
 | §06 | LK-WF-12 visible | Short guided checks; Wi-Fi vs line; stop + skip | MET | CW:704-908; RU:35-88 |
 | §06 | LK-WF-12 decisions | Approved guide; no destructive reset without warning | MET | RU:44 restart step warns against factory reset |
@@ -163,12 +163,12 @@ Doc column = Doc03 section.
 | §06 | LK-WF-13 visible | Public fees help, sign-in CTA, itemised (OOS), portal link | MET | L:463-474 (itemised OOS) |
 | §06 | LK-WF-13 decisions | No statement without owner; never accept card/CVV/bank | MET | V1/me; L:774-877 |
 | §06 | LK-WF-13 systems | Billing/payment portal | OOS | MyZoiko/checkout |
-| §06 | LK-WF-13 CTAs | "View my bill"; "Pay securely"; "Query a charge"; "Speak to support" | PARTIAL | L:468-473 "Sign in to view bill", "Update payment securely", "Explain a charge"/"Raise a billing query" |
+| §06 | LK-WF-13 CTAs | "View my bill"; "Pay securely"; "Query a charge"; "Speak to support" | MET | "View my bill", "Pay securely", "Query a charge", "Speak to support" (updated 2026-11-25) |
 | §06 | LK-WF-13 exceptions | Billing unavailable → generic + official route; never guess | MET | SP:29; AS:121 |
 | §06 | LK-WF-14 visible | Separate help/complaint/cancellation/ADR options; date-sensitive info; case ref | MET | L:477-490 (case ref needs CRM – OOS) |
 | §06 | LK-WF-14 decisions | Policy without legal ruling; consent + case ack; route cancellation | MET | L:480; V1/complaints:36-37 permission |
 | §06 | LK-WF-14 systems | Complaints KB, case management | OOS | CRM |
-| §06 | LK-WF-14 CTAs | "Make a complaint"; "Read cancellation terms"; "Speak to a person"; "View complaints procedure" | PARTIAL | L:484 "View complaints rules (Ofcom)" — not Zoiko complaints procedure |
+| §06 | LK-WF-14 CTAs | "Make a complaint"; "Read cancellation terms"; "Speak to a person"; "View complaints procedure" | MET | "View complaints procedure" (updated 2026-11-25) |
 | §06 | LK-WF-14 exceptions | No receipt → not submitted; ADR conditional on date/rights **and disclose correct approved scheme** | PARTIAL | L:480 not-logged wording MET; no scheme or complaints-code link (FRS-Q05 fallback) |
 | §06 | LK-WF-15 visible | Prominent safety card, emergency guidance, power backup, human route | MET | L:506-517; CW:1241-1245 |
 | §06 | LK-WF-15 decisions | Life-safety first; no medical triage; Linko can't call 999 | MET | L:209-210 |
@@ -177,21 +177,21 @@ Doc column = Doc03 section.
 | §06 | LK-WF-15 exceptions | Tools fail → safety guidance still shown; never buried | MET | deterministic client route UC:367-374; footer CW:2507-2516 |
 | §06 | LK-WF-16 visible | Sign-in explanation, first-party redirect; no credential fields | MET | L:239-240, 394-404 (return-state OOS) |
 | §06 | LK-WF-16 decisions/systems | IDP, state/nonce/claims | OOS | MyZoiko |
-| §06 | LK-WF-16 CTAs | "Sign in securely"; "Continue as guest"; "Speak to support" | PARTIAL | L:401 "Continue without signing in" |
+| §06 | LK-WF-16 CTAs | "Sign in securely"; "Continue as guest"; "Speak to support" | MET | "Continue as guest" (updated 2026-11-25) |
 | §06 | LK-WF-16 exceptions | Expired/revoked → invalidate, reauth | OOS | MyZoiko |
 | §06 | LK-WF-17 visible | Channel selection, live hours + queue, summary preview, consent, ack | PARTIAL | Channels/consent/preview MET L:520-553, CW:989-1050; no hours shown (queue state OOS) |
 | §06 | LK-WF-17 decisions | Respect no-sharing; callback only on backend receipt; no immediate-agent claim | MET | L:526; L:545; AS:121 |
 | §06 | LK-WF-17 systems | Contact centre/CRM connector | OOS | live-chat/callback |
-| §06 | LK-WF-17 CTAs | "Speak to a person"; "Request a callback"; "Continue without sharing this chat"; "Email support" | PARTIAL | No "Email support" (L:524-552 has "Send an enquiry") |
+| §06 | LK-WF-17 CTAs | "Speak to a person"; "Request a callback"; "Continue without sharing this chat"; "Email support" | MET | "Email support" added to contact options (updated 2026-11-25) |
 | §06 | LK-WF-17 exceptions | Offline → truthful alternatives; CRM fail → "Not yet submitted" | MET | L:545; nothing submitted |
 | §06 | LK-WF-18 visible | Purpose notice, model limits, **retention info**, rights routes, opt-outs, redacted export | PARTIAL | L:593-604; retention stated as fixed 30 min/30 days (L:203-204) though DPO schedule not approved |
 | §06 | LK-WF-18 decisions | Separate essential vs analytics/marketing; rights via approved process; no instant-deletion promise | PARTIAL | Rights MET (V1/privacy/requests); L:924-933 track() pushes analytics with no consent check |
 | §06 | LK-WF-18 systems | Privacy policy, consent manager, DSAR | OOS | process/no consent manager on site |
-| §06 | LK-WF-18 CTAs | "Read privacy notice"; "Manage preferences"; "Request my data"; "End chat" | PARTIAL | L:598-602 "Manage cookie preferences", "Request data help" |
+| §06 | LK-WF-18 CTAs | "Read privacy notice"; "Manage preferences"; "Request my data"; "End chat" | MET | "Read privacy notice", "Manage preferences", "Request my data", "End chat" (updated 2026-11-25) |
 | §06 | LK-WF-18 exceptions | Unknown retention → no arbitrary duration; no fake "deleted" | PARTIAL | Durations stated (L:204, KN:190-191); local deletion message is genuine |
 | §06 | LK-WF-19 visible | Error title, non-revealing text, safe retry, Help Centre, no endless spinner | MET | CW:1246-1249; AS:101-113; LA:54 |
 | §06 | LK-WF-19 decisions | Typed error codes; breakers, rate cap, injection + DLP in gateway | MET | HT:33-47; AS:84-90, 289-301 |
-| §06 | LK-WF-19 CTAs | "Try again"; "View Help Centre"; "Speak to a person"; "Start over" | PARTIAL | AS:108 "Open Help Centre" |
+| §06 | LK-WF-19 CTAs | "Try again"; "View Help Centre"; "Speak to a person"; "Start over" | MET | "View Help Centre" (updated 2026-11-25) |
 | §06 | LK-WF-19 exceptions | Protect state, suppress stale commercial info, non-chat route | MET | AS:199-200 price block; SUPPORT_ACTIONS HT:125 |
 | §06 | LK-WF-20 visible | Summary of actions taken vs not, references, feedback | MET | CW:1095-1168 |
 | §06 | LK-WF-20 decisions | Redacted summary; close wipes slots; minimised completion event; no false success | MET | UC:403-409; ST:128-132 |
@@ -258,7 +258,7 @@ Doc column = Doc03 section.
 | §07.11 | FRS-W01 | One device / Wi-Fi / whole connection | MET | CW:799-815 |
 | §07.11 | FRS-W02 | Discrete cards, skip/back/stop; human not blocked | MET | CW:842-906 |
 | §07.11 | FRS-W03 | No fabricated router-specific steps | MET | generic approved steps only |
-| §07.11 | FRS-W04 | Warn before reset actions that clear settings **or interrupt service** | PARTIAL | RU:44 warns about factory reset only; no warning that restart interrupts internet/digital phone |
+| §07.11 | FRS-W04 | Warn before reset actions that clear settings **or interrupt service** | MET | rules.ts restart step and K09 warn that a restart briefly disconnects internet and digital phone (updated 2026-11-25) |
 | §07.11 | FRS-W05 | Speed check ≠ guarantee | MET | RU:67 |
 | §07.11 | FRS-W06 | Escalate unresolved to support | MET | CW:2110-2122 |
 | §07.12 | FRS-L01 | Identity + ownership for billing | MET | V1/me |
@@ -341,10 +341,10 @@ Doc column = Doc03 section.
 | §08.1 | requestId | Opaque correlation ID | MET | HT:49-55 |
 | §08.1 | payload | Typed; no model-created facts | MET | — |
 | §08.1 | source | systemOfRecord, version, checkedAt, expiry | MET | HT:18-24 |
-| §08.1 | actionability | none/info_only/can_transfer/requires_auth/requires_confirmed_mutation | GAP | No actionability field in HT:63-79 envelope |
+| §08.1 | actionability | none/info_only/can_transfer/requires_auth/requires_confirmed_mutation | MET | data.actionability (none/info_only/can_transfer/requires_auth) on every PUB-02 reply; also in linko_turn log (updated 2026-11-25) |
 | §08.1 | safeError | Stable code, message, recoverability, CTA | MET | HT:98-122 |
 | §08.1 | audit | policyVersion/adapterVersion/decision ref server-side | PARTIAL | Model calls log prompt/kb versions (AS:255-264); adapter routes record no policy/decision ref; persistToolInvocation (PE:182) never called |
-| §08.1 | trace | PRD ID, FRS ID, pageKey, featureFlagVersion | GAP | Not present in any response or log |
+| §08.1 | trace | PRD ID, FRS ID, pageKey, featureFlagVersion | MET | data.trace {prd, frs, screen, pageKey, featureFlagVersion} on PUB-02 replies and linko_turn log (updated 2026-11-25) |
 | §08.2 | INVALID_INPUT | Explain field; no supplier call | MET | addresses/search:27-33 |
 | §08.2 | NO_MATCH/NOT_SERVED | Explain; distinct from outage | MET | CW:2067-2080 vs 2082-2091 |
 | §08.2 | SOURCE_UNAVAILABLE | Unavailable + retry/human; **circuit breaker and alert** | PARTIAL | Message/routes MET; no breaker or alert on address/qualification/CRM adapters (breaker only for AI, AS:84-90) |
@@ -422,7 +422,7 @@ Doc column = Doc03 section.
 | §11.2 | Publish | Immutable version + approval refs; only approved indexed | MET | knowledgeApproval.ts content hash; KN:241-250 |
 | §11.2 | Retrieve | Filter published/effective; cite version | MET | KN:236-252; MR:270 |
 | §11.2 | Retire | Remove expired/superseded; test | MET | KN:248-250; EV QA-022 |
-| §11.2 | Feedback | Disputed answer → **review queue** with category + redacted example; no self-train | GAP | "Not useful" only fires analytics (UC:443-447) into a non-existent dataLayer; nothing queued for review |
+| §11.2 | Feedback | Disputed answer → **review queue** with category + redacted example; no self-train | MET | "Not useful" → reason picker → POST /conversations/{id}/feedback → answer_feedback queue on /staff/qa (Mark reviewed / actioned, audited); never self-trains (updated 2026-11-25) |
 | §11.3 | Model record | Record model ID, context window, tools, region, DPA, credential owner, rotation, budgets, rate limits | PARTIAL | RBK records model/rotation/budgets; no region/DPA/context-window/owner register |
 | §11.3 | Safe fallback | Operable without provider | MET | AS:306-308 |
 | §11.3 | Models | Version-pinned, evaluated; fail closed | MET | PR:42-67 allowlist |
@@ -450,7 +450,7 @@ Doc column = Doc03 section.
 | §13 | WCAG 2.2 AA | Keyboard, focus, SR, errors, reflow, targets | MET | CW focus/live/ARIA; audit evidence = process |
 | §13 | Voluntary schemes | Confirm participation before claims | MET | SP:4-5 ofcomSpeed withheld; AS:121 |
 | §14 | NFR-01 | WCAG 2.2 AA incl. 320px/400% | MET | responsive CW; audit = process |
-| §14 | NFR-02 | Interaction p95 ≤1.5 s; browser telemetry | GAP | No client latency telemetry anywhere (track has no timing event) |
+| §14 | NFR-02 | Interaction p95 ≤1.5 s; browser telemetry | PARTIAL | linko_response_time browser telemetry (elapsed_ms, bucket); p95 computed in analytics (updated 2026-11-25) |
 | §14 | NFR-03 | AI first answer p95 ≤5 s; progress + timeout | MET | AS:439 latency_ms logged; loader CW:2425 |
 | §14 | NFR-04 | No fabricated price/guarantee/action | MET | AS:116-121; EV QA-021/026 |
 | §14 | NFR-05 | 100% private reads ownership-verified | MET | no private reads; EV PRV-01 |
@@ -515,7 +515,7 @@ Doc column = Doc03 section.
 | §16 | AT-53 | Account/**health**/finance content redacted before model/log | PARTIAL | Finance/secrets redacted (L:774-877), email/phone/postcode masked for model (AS:134-139); health details (diagnoses, conditions) pass to model and stored ciphertext |
 | §16 | AT-54 | Data-rights → correct route, no deletion claim | MET | EV QA-051 |
 | §16 | AT-55 | Marketing off → service works | MET | marketing optional |
-| §16 | AT-56 | Malicious KB text → authority unchanged **and injection flagged** | GAP | KB text never scanned for injection (KN, knowledgeApproval.ts, staff/knowledge); no flag raised |
+| §16 | AT-56 | Malicious KB text → authority unchanged **and injection flagged** | MET | knowledgeLooksInjected quarantines instruction-like KB text (activeKnowledge) and blocks approval (staff actions) (updated 2026-11-25) |
 | §16 | AT-57 | Model timeout + outage → fallback, no endless loading | MET | AS:39; LA:54 |
 | §16 | AT-58 | Contradictory catalogue | OOS | catalogue |
 | §16 | AT-59 | Flood/budget → rate limit, no leak, human | MET | HT:201-211 |

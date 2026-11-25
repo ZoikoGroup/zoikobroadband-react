@@ -9,6 +9,7 @@ import { apiError, envelope, limit, newCorrelationId, nowIso, readJson, SUPPORT_
 import { forgetEligibility, getConversation, rememberAddress } from "@/app/lib/linko-api/store";
 import { persistCandidate, persistEnquiry, persistToolInvocation } from "@/app/lib/linko-db/persist";
 import { sha256 } from "@/app/lib/linko-db/db";
+import { TEST_SOURCE, testAddresses, testSupplierEnabled } from "@/app/lib/linko-api/testSupplier";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -35,7 +36,10 @@ export async function POST(req: NextRequest) {
   }
 
   let data: { success?: boolean; addresses?: { id?: string; display?: string; districtCode?: string }[] } | null = null;
-  try {
+  // Development without BT credentials: clearly labelled test premises instead of an error (Doc02 §13.2).
+  const testMode = testSupplierEnabled();
+  if (testMode) data = { success: true, addresses: testAddresses(postcode) };
+  else try {
     const res = await fetch(new URL("/api/BritishTelecom/search-address", req.url), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,10 +78,12 @@ export async function POST(req: NextRequest) {
 
   return envelope(
     cid,
-    "CONFIRMED",
+    testMode ? "INDICATIVE" : "CONFIRMED",
     { postcode, matches },
     {
-      sourceEvidence: { source: "address_adapter", checkedAt: nowIso(), status: "VERIFIED" },
+      sourceEvidence: testMode
+        ? { source: TEST_SOURCE, checkedAt: nowIso(), status: "INDICATIVE" }
+        : { source: "address_adapter", checkedAt: nowIso(), status: "VERIFIED" },
       nextActions: matches.length
         ? []
         : [{ type: "HUMAN", label: "Ask our team to check my address" }, { type: "LINK", label: "Try the availability checker", href: "/check-availability" }],

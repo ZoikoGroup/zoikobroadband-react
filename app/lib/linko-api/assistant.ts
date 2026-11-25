@@ -2,8 +2,9 @@
  * Linko answer engine (used by PUB-02 /v1/linko/conversations/{id}/messages).
  * Pipeline (Doc12): intake + redaction → deterministic routing → gates → model → verify.
  */
-import { getSystemPrompt } from "@/app/lib/chatbot/systemPrompt";
-import { KB_VERSION, activeKnowledge, contentHash, kbReady } from "@/app/lib/chatbot/knowledge";
+import { getSystemPrompt, promptTemplateHash } from "@/app/lib/chatbot/systemPrompt";
+import { checkPrompt } from "@/app/lib/chatbot/promptRegistry";
+import { KB_VERSION, activeKnowledge, contentHash, kbReady, sourceInfo, type SourceInfo } from "@/app/lib/chatbot/knowledge";
 import { welcomeActions } from "@/app/lib/chatbot/linko";
 import { callProvider, countInputTokens, providerConfig } from "./providers";
 import { aiOverrideActive, persistEvent, persistModelInvocation } from "@/app/lib/linko-db/persist";
@@ -26,6 +27,62 @@ import {
 // Kill switch fails closed (Doc08 §10.2): the model is used only when explicitly enabled.
 const AI_ENABLED = process.env.LINKO_AI_ENABLED === "true";
 export const PROMPT_VERSION = "linko-prompt-2026-11-23";
+
+const IS_PRODUCTION = (process.env.LINKO_ENVIRONMENT || process.env.NODE_ENV) === "production";
+
+/* ───────────── Verified-answer cache (Doc14 cost control, Doc02 NFR-01 latency) ─────────────
+ * The same opening question ("What is an ONT?") gets the same verified answer for a few hours,
+ * without another model call. Only safe cases are cached:
+ *  - the visitor's FIRST question (no earlier turns that could change the meaning)
+ *  - nothing was redacted and no safety flag is set
+ *  - the answer passed every output gate, cited knowledge, and was "answered"
+ * The key includes the prompt template fingerprint and the exact knowledge text in use, so any
+ * prompt edit, knowledge approval, withdrawal or expiry changes the key and old answers drop out.
+ * The cache is still subject to the kill switch, staff fallback and prompt registry (checked first). */
+const CACHE_TTL_MS = Number(process.env.LINKO_ANSWER_CACHE_TTL_MS || 6 * 60 * 60 * 1000);
+const CACHE_MAX = 500;
+type CachedAnswer = { at: number; answer: LinkoAnswer & { sources?: VerifiedAnswer["sources"] } };
+const answerCache: Map<string, CachedAnswer> =
+  ((globalThis as { __linkoAnswerCache?: Map<string, CachedAnswer> }).__linkoAnswerCache ??= new Map());
+function normaliseQuestion(q: string) {
+  return q
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/[^\p{L}\p{N}' ]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function cacheKey(question: string) {
+  const kb = activeKnowledge()
+    .map((k) => `${k.id}#${contentHash(k.text)}`)
+    .join(",");
+  return contentHash(`${PROMPT_VERSION}|${promptTemplateHash()}|${contentHash(kb)}|${normaliseQuestion(question)}`) + ":" + normaliseQuestion(question).length;
+}
+function cacheGet(key: string) {
+  const hit = answerCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_TTL_MS) {
+    answerCache.delete(key);
+    return null;
+  }
+  return structuredClone(hit.answer);
+}
+function cachePut(key: string, answer: CachedAnswer["answer"]) {
+  if (answerCache.size >= CACHE_MAX) answerCache.delete(answerCache.keys().next().value!);
+  answerCache.set(key, { at: Date.now(), answer: structuredClone(answer) });
+}
+let warnedPrompt = false;
+/** Doc14 AT14-015: in production an unregistered prompt template never reaches the provider. */
+function promptAllowed(): boolean {
+  const c = checkPrompt(PROMPT_VERSION, promptTemplateHash());
+  if (!c.registered && !warnedPrompt) {
+    warnedPrompt = true;
+    console.warn(
+      JSON.stringify({ event: "linko_prompt_unregistered", prompt_version: PROMPT_VERSION, expected: c.expected, actual: c.actual, blocking: IS_PRODUCTION }),
+    );
+  }
+  return c.registered || !IS_PRODUCTION;
+}
 const MAX_TURNS = Number(process.env.LINKO_MAX_TURNS || 30); // user messages per conversation
 const DAILY_TOKEN_BUDGET = Number(process.env.LINKO_DAILY_TOKEN_BUDGET || 2_000_000);
 const MONTHLY_TOKEN_BUDGET = Number(process.env.LINKO_MONTHLY_TOKEN_BUDGET || 30_000_000); // Doc14 §06 per month
@@ -105,7 +162,7 @@ export function degraded(status: LinkoAnswer["status"], message: string = COPY.d
     message,
     actions: [
       { kind: "command", label: "Try again", command: "retry", primary: true },
-      { kind: "link", label: "Open Help Centre", href: "/get-help" },
+      { kind: "link", label: "View Help Centre", href: "/get-help" },
       { kind: "flow", label: "Speak to a person", flow: "handoff" },
       { kind: "command", label: "Start over", command: "restart" },
     ],
@@ -114,11 +171,11 @@ export function degraded(status: LinkoAnswer["status"], message: string = COPY.d
 
 // Unsupported commercial figures: prices, discounts and speed figures (Doc06 01.1 #02).
 export const PRICE_RE =
-  /£\s?\d|\b\d+(?:\.\d{1,2})?\s?(?:pounds?|quid|GBP|p|pence)\b|\b\d+(?:\.\d{1,2})?\s?(?:a|per|\/)\s?(?:month|mo|year|yr)\b|\b\d+(?:\.\d{1,2})?\s?(?:pm|p\/m|monthly)\b|\b\d{1,3}\s?%\s?(?:off|discount)|\b\d+(?:\.\d+)?\s?(?:Mbps|Gbps|Mb\/s|Gb\/s)\b/i;
+  /£\s?\d|\b\d+(?:\.\d{1,2})?\s?(?:pounds?|quid|GBP|p|pence)\b|\b\d+(?:\.\d{1,2})?\s?(?:a|per|\/)\s?(?:month|mo|year|yr)\b|\b\d+\.\d{1,2}\s?pm\b|\b\d+(?:\.\d{1,2})?\s?(?:p\/m|monthly)\b|\b\d{1,3}\s?%\s?(?:off|discount)|\b\d+(?:\.\d+)?\s?(?:Mbps|Gbps|Mb\/s|Gb\/s)\b/i;
 
 // Doc06 §03 prohibited claims + claimed actions the assistant can't perform (Doc08 §08.1 post-model gate).
 export const PROHIBITED_RE =
-  /\bunlimited\b|\bno (?:data )?caps?\b|\b24\/7\b|\b24 hours a day\b|round[- ]the[- ]clock|\bguarantee(?:d|s)?\b|free installation|no set[- ]?up fee|\bPCI\b|bank[- ]grade|\b(?:will|does|do|always|still|definitely)\s+work\s+(?:in|during)\s+a\s+power\s+cut\b|\bworks\s+(?:in|during)\s+a\s+power\s+cut\b|automatic(?:ally)? compensat|(?:ofcom[- ])?approved (?:our )?speeds|\b\d{1,2}[- ]?months?\b|\bI(?:'ve| have) (?:booked|logged|submitted|cancelled|canceled|arranged|placed|scheduled)\b|\byour (?:order|appointment|engineer(?: visit)?|complaint|cancellation) (?:is|has been) (?:booked|confirmed|scheduled|logged|submitted|placed)\b|\bI(?:'ve| have) (?:escalated|raised|passed|forwarded|sent|reported|requested|transferred)\b|\b(?:an? (?:adviser|agent|engineer)|someone|we) will (?:call|contact|ring) you\b|\bwithin \d+ (?:hours?|minutes?|working days?|days?)\b|\btransferring you\b|\byou are now (?:speaking|connected)\b|\binstant(?:ly)? connect|Communications Ombudsman|CISAS|Ombudsman Services|entitled to (?:a )?(?:refund|compensation|credit)|\bSLA\b|static IP|dedicated (?:line|connectivity)|\b99\.\d+\s?%|one touch switch[^.]{0,40}\b(?:all|every|business)\b|\b(?:do|perform|try|carry out)\s+a\s+factory reset|(?:press|hold)\s+(?:down\s+)?the reset (?:button|pin)|\b(?:arrive|deliver|install|visit|fixed|repaired)\w*\b[^.]{0,30}\b(?:on|by)\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|tomorrow))/i;
+  /\bunlimited\b|\byou can (?:use|bring|connect|keep) your own router\b|\b(?:any|most|all) (?:compatible |third[- ]party )?routers? (?:will|should) work\b|\bno (?:data )?caps?\b|\b24\/7\b|\b24 hours a day\b|round[- ]the[- ]clock|\bguarantee(?:d|s)?\b|free installation|no set[- ]?up fee|\bPCI\b|bank[- ]grade|\b(?:will|does|do|always|still|definitely)\s+work\s+(?:in|during)\s+a\s+power\s+cut\b|\bworks\s+(?:in|during)\s+a\s+power\s+cut\b|automatic(?:ally)? compensat|(?:ofcom[- ])?approved (?:our )?speeds|\b\d{1,2}[- ]?months?\b|\bI(?:'ve| have) (?:booked|logged|submitted|cancelled|canceled|arranged|placed|scheduled)\b|\byour (?:order|appointment|engineer(?: visit)?|complaint|cancellation) (?:is|has been) (?:booked|confirmed|scheduled|logged|submitted|placed)\b|\bI(?:'ve| have) (?:escalated|raised|passed|forwarded|sent|reported|requested|transferred)\b|\b(?:an? (?:adviser|agent|engineer)|someone|we) will (?:call|contact|ring) you\b|\bwithin \d+ (?:hours?|minutes?|working days?|days?)\b|\btransferring you\b|\byou are now (?:speaking|connected)\b|\binstant(?:ly)? connect|Communications Ombudsman|CISAS|Ombudsman Services|entitled to (?:a )?(?:refund|compensation|credit)|\bSLA\b|static IP|dedicated (?:line|connectivity)|\b99\.\d+\s?%|one touch switch[^.]{0,40}\b(?:works?|applies|covers?|available) (?:for |to |with |on )?(?:all|every|any)\b|\b(?:do|perform|try|carry out)\s+a\s+factory reset|(?:press|hold)\s+(?:down\s+)?the reset (?:button|pin)|\b(?:arrive|deliver|install|visit|fixed|repaired)\w*\b[^.]{0,30}\b(?:on|by)\s+(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*|(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|tomorrow))/i;
 
 // GR-12-075: the model must never echo its instructions (case-sensitive section labels + prompt phrases).
 const LEAK_RE = /\b(?:ROLE|SCOPE|TRUST|EVIDENCE|PRICES|PROHIBITED CLAIMS|PRIVACY|ACTIONS|SAFETY|HUMAN|AUTHORITY|STYLE|OUTPUT)\s*:|ROUTE KEYS|KNOWLEDGE \(each|#\s*\[K\d{2}\]/;
@@ -138,7 +195,7 @@ export function minimiseForModel(text: string) {
     .replace(/\b([A-PR-UWYZ][A-HK-Y]?\d[A-Z\d]?)\s?\d[ABD-HJLNP-UW-Z]{2}\b/gi, "$1 [rest of postcode removed]");
 }
 
-export type VerifiedAnswer = LinkoAnswer & { sources: { id: string; title: string; source: string }[]; blocked?: string };
+export type VerifiedAnswer = LinkoAnswer & { sources: SourceInfo[]; blocked?: string };
 
 /** Doc12 "verify" step: schema, route allowlist, sources, no price figures, no prohibited claims, no leaked secrets.
  * Exported for the evaluation harness (scripts/linko-eval.ts). */
@@ -164,7 +221,9 @@ export function validateModelOutput(raw: string, today?: string): VerifiedAnswer
   message = message
     .replace(/https?:\/\/\S+/g, "")
     .replace(/(?<![@\w])(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|co\.uk|org|net|uk|io|info|app|xyz|online|site)\b(?:\/\S*)?/gi, "")
-    .replace(/[ \t]{2,}/g, " ");
+    .replace(/[ \t]{2,}/g, " ")
+    // The model occasionally misspells the brand ("Zozo's broadband") — always show the real name.
+    .replace(/\b(?:Zozo|Zoika|Zioko|Zoko|Zoikko|Zokio|Ziko|Zoico)(?=\b)/g, "Zoiko");
 
   // Never echo the instructions (GR-12-075).
   if (LEAK_RE.test(message) || LEAK_PHRASE_RE.test(message)) {
@@ -191,7 +250,7 @@ export function validateModelOutput(raw: string, today?: string): VerifiedAnswer
     for (const id of o.sources.slice(0, 3)) {
       const want = typeof id === "string" ? id.replace(/[[\]]/g, "").trim() : "";
       const k = current.find((x) => x.id === want) ?? null;
-      if (k && !sources.some((x) => x.id === k.id)) sources.push({ id: k.id, title: k.title.replace(/\s*\(.*$/, ""), source: k.source });
+      if (k && !sources.some((x) => x.id === k.id)) sources.push(sourceInfo(k));
     }
   }
 
@@ -287,6 +346,35 @@ export async function generateAnswer(
   if (routed === "safetyCheck") return { answer: flowAnswer("safetyCheck", "safety", redacted), http: 200 };
   if (routed) return { answer: flowAnswer(routed, routed === "accessibility" ? "handoff" : "answered", redacted), http: 200 };
 
+  // A bare greeting gets the welcome straight away — no model call needed.
+  if (/^\s*(?:hi|hii+|hello|hey|hiya|good (?:morning|afternoon|evening)|hi there|hello there)[\s!.,]*(?:linko)?[\s!.]*$/i.test(latest)) {
+    return {
+      answer: {
+        status: "answered",
+        flow: "welcome",
+        message: "Hello. I can help you check availability, plans, orders or support. What would you like to do?",
+        actions: [...welcomeActions("/"), { kind: "flow", label: "Speak to a person", flow: "handoff" }],
+        redacted,
+      },
+      http: 200,
+    };
+  }
+
+  // Products outside Linko's scope (K17) get a clear "not here" answer instead of a clarifying question.
+  if (/\b(?:tv|television)\b[^.?!]{0,20}\b(?:packages?|channels?|bundles?|services?|subscriptions?)\b|\b(?:sky tv|sky glass|netflix|now tv|freeview)\b|\bmobile (?:phones?|contracts?|plans?|sims?)\b|\bsim[- ]?(?:cards?|only|plans?)?\b|\b(?:energy|electricity|gas) (?:tariffs?|supply|supplier)\b|\binsurance\b/i.test(latest) && !/\b(?:telecare|alarm|power cut|emergency)\b/i.test(latest)) {
+    return {
+      answer: {
+        status: "answered",
+        flow: "welcome",
+        message:
+          "I can't help with that here. I can help with Zoiko Broadband's fibre broadband, digital phone lines, bundles, business connectivity, orders and support.",
+        actions: [...welcomeActions("/"), { kind: "flow", label: "Speak to a person", flow: "handoff" }],
+        redacted,
+      },
+      http: 200,
+    };
+  }
+
   // Once a telecare / emergency-line risk is disclosed, restart / reset advice is never given (Doc09 CW-07-T02).
   if (opts.safetyFlag && RESTART_RE.test(latest)) return { answer: flowAnswer("safety", "safety", redacted), http: 200 };
 
@@ -309,8 +397,20 @@ export async function generateAnswer(
   // 3. Availability, budget and circuit-breaker checks.
   // Preflight (Doc14 AT14-010/003): an unapproved model or a key from another environment never reaches the provider.
   // A staff "Activate fallback" override (Doc10 HS-WF-10-24) also disables the model, until it expires or is ended.
-  if (!AI_ENABLED || !provider.keyPresent || !provider.allowlisted || !provider.environmentOk || !kbReady() || breaker.latched || aiOverrideActive()) {
+  if (!AI_ENABLED || !provider.keyPresent || !provider.allowlisted || !provider.environmentOk || !promptAllowed() || !kbReady() || breaker.latched || aiOverrideActive()) {
     return { answer: { ...degraded("provider_unavailable"), redacted }, http: 503 };
+  }
+
+  // A verified answer to the same first question is reused — also while the provider is rate-limiting us.
+  const cacheable = messages.filter((m) => m.role === "user").length === 1 && redacted.length === 0 && !opts.safetyFlag;
+  const key = cacheable ? cacheKey(latest) : null;
+  if (key) {
+    const hit = cacheGet(key);
+    if (hit) {
+      console.info(JSON.stringify({ event: "linko_answer_cache_hit", ...logBase }));
+      if (opts.sessionId) persistEvent(opts.sessionId, "ANSWER_CACHE_HIT", null, {});
+      return { answer: { ...hit, redacted }, http: 200 };
+    }
   }
   if ((opts.userTurns ?? messages.filter((m) => m.role === "user").length) > MAX_TURNS) {
     return {
@@ -358,7 +458,11 @@ export async function generateAnswer(
   }
   budget.reserved += reserve;
   try {
-    return await callAndVerify();
+    const result = await callAndVerify();
+    if (key && result.http === 200 && result.answer.status === "answered" && !result.answer.flow && (result.answer.sources?.length ?? 0) > 0) {
+      cachePut(key, result.answer);
+    }
+    return result;
   } finally {
     budget.reserved = Math.max(0, budget.reserved - reserve);
   }
@@ -465,7 +569,11 @@ export async function generateAnswer(
     return { answer: { ...degraded("invalid", "I can't verify that information just now, so I won't guess. You can try again or use the support options."), redacted }, http: 200 };
   }
   const { blocked, ...clean } = answer;
-  void blocked;
+  // Doc01 LK-WF-19 / §8.1 Safety: model_guardrail_triggered, with a reason code only (never the text).
+  if (blocked) {
+    console.warn(JSON.stringify({ event: "linko_guardrail_triggered", reason: blocked, ...logBase }));
+    if (opts.sessionId) persistEvent(opts.sessionId, "GUARDRAIL_TRIGGERED", null, { reason: blocked });
+  }
   return { answer: { ...clean, redacted }, http: 200 };
   }
 }
@@ -476,8 +584,9 @@ export function aiHealth() {
   return {
     aiEnabled: (() => {
       const p = providerConfig();
-      return AI_ENABLED && p.keyPresent && p.allowlisted && p.environmentOk && kbReady() && !breaker.latched && !aiOverrideActive();
+      return AI_ENABLED && p.keyPresent && p.allowlisted && p.environmentOk && promptAllowed() && kbReady() && !breaker.latched && !aiOverrideActive();
     })(),
+    promptRegistered: checkPrompt(PROMPT_VERSION, promptTemplateHash()).registered,
     provider: providerConfig().name,
     model: providerConfig().model,
     latched: breaker.latched ?? null,
