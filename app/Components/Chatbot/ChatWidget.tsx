@@ -2422,6 +2422,8 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
   const headerStatus = offline
     ? "AI assistant · Offline"
+    : view === "history"
+      ? "AI assistant · Chat history"
     : lastAssistant?.tone === "error"
       ? "AI assistant · Limited service"
       : screen === "Human escalation and callback"
@@ -2456,30 +2458,23 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
             >
               <ChevronLeft size={22} aria-hidden />
             </button>
-            {/* Doc07 figure 1: gold circular O (placeholder until Brand supplies the approved asset). */}
+            {/* Doc07 figure 1: gold circular O beside "Linko | Zoiko Broadband" on every screen size
+                (placeholder O until Brand supplies the approved asset). */}
+            <span className="inline-flex md:hidden">
+              <LinkoMark size={32} />
+            </span>
             <span className="hidden md:inline-flex">
-              <LinkoMark size={36} />
+              <LinkoMark size={38} />
             </span>
             <div className="min-w-0 flex-1">
-              <h2 id="linko-title" ref={headingRef} tabIndex={-1} className="text-[17px] font-bold leading-snug outline-none">
-                <span className="md:hidden">{ASSISTANT.name}</span>
-                <span className="hidden md:inline">
-                  {view === "history" ? (
-                    <>
-                      {ASSISTANT.name} <span className="font-normal text-white/70">/</span>{" "}
-                      <span className="text-[15px]">Chat history</span>
-                    </>
-                  ) : screen ? (
-                    <>
-                      {ASSISTANT.name} <span className="font-normal text-white/70">/</span>{" "}
-                      <span className="line-clamp-2 inline text-[15px]">{screen}</span>
-                    </>
-                  ) : (
-                    <>
-                      {ASSISTANT.name} <span className="font-normal text-white/70">|</span> Zoiko Broadband
-                    </>
-                  )}
+              <h2 id="linko-title" ref={headingRef} tabIndex={-1} className="truncate text-[17px] font-bold leading-snug outline-none md:text-[18px]">
+                {ASSISTANT.name}
+                <span className="hidden min-[400px]:inline">
+                  {" "}
+                  <span className="font-normal text-white/70">|</span> Zoiko Broadband
                 </span>
+                {/* The current step is still announced to screen-reader users (Doc07 C03). */}
+                {view === "history" ? <span className="sr-only">, Chat history</span> : screen ? <span className="sr-only">, {screen}</span> : null}
               </h2>
               <p className="text-[13px] text-white/80">{headerStatus}</p>
             </div>
@@ -2652,7 +2647,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
               e.preventDefault();
               submit();
             }}
-            className="px-5 pt-3 md:px-6"
+            className="px-5 pt-3 md:px-6 md:pt-2"
           >
             <label htmlFor="linko-input" className="sr-only">
               Message Linko
@@ -2667,7 +2662,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
                 This looks like {draftSensitive.join(" and ")}. Please don&apos;t share it here — it will be removed before sending.
               </p>
             )}
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-2 md:pl-3 md:focus-within:outline md:focus-within:outline-2 md:focus-within:outline-offset-2 md:focus-within:outline-[#C49A45] linko-dark:md:border-slate-600 linko-dark:md:bg-slate-800">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:gap-2 md:rounded-xl md:border md:border-[#B8C4D6] md:bg-[#F7F9FC] md:p-1.5 md:pl-3 md:focus-within:outline md:focus-within:outline-2 md:focus-within:outline-offset-2 md:focus-within:outline-[#C49A45] linko-dark:md:border-slate-600 linko-dark:md:bg-slate-800">
               <textarea
                 id="linko-input"
                 ref={inputRef}
@@ -2688,17 +2683,17 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
                 maxLength={2000}
                 placeholder={COPY.composerPlaceholder}
                 aria-describedby={draftSensitive.length ? "linko-dlp-warning linko-input-hint" : "linko-input-hint"}
-                className={`max-h-32 min-h-12 w-full flex-1 resize-none rounded-lg border border-[#B8C4D6] bg-white px-4 py-3 text-[16px] text-[#1E2A44] placeholder:text-[#8A97AB] md:min-h-10 md:rounded-none md:border-0 md:bg-transparent md:px-1 md:py-2 md:text-[15px] md:outline-none linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white md:linko-dark:bg-transparent ${T.focus} md:focus-visible:outline-none`}
+                className={`max-h-32 min-h-12 w-full flex-1 resize-none rounded-lg border border-[#B8C4D6] bg-white px-4 py-3 text-[16px] text-[#1E2A44] placeholder:text-[#8A97AB] md:min-h-9 md:rounded-none md:border-0 md:bg-transparent md:px-1 md:py-1.5 md:text-[15px] md:outline-none linko-dark:border-slate-600 linko-dark:bg-slate-900 linko-dark:text-white md:linko-dark:bg-transparent ${T.focus} md:focus-visible:outline-none`}
               />
               <button
                 type="submit"
                 disabled={!input.trim() || isLoading || offline}
-                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-80 md:min-h-10 md:w-auto md:px-5 md:text-[14px] linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] ${T.focus}`}
+                className={`min-h-12 w-full shrink-0 rounded-lg px-6 text-[15px] font-bold text-white ${T.header} hover:bg-[#1B3A63] disabled:cursor-not-allowed disabled:opacity-80 md:min-h-9 md:w-auto md:px-5 md:text-[14px] linko-dark:bg-[#F6C140] linko-dark:text-[#15213D] ${T.focus}`}
               >
                 Send
               </button>
             </div>
-            <p id="linko-input-hint" className={`mt-2 flex justify-between gap-2 text-[13px] ${T.muted}`}>
+            <p id="linko-input-hint" className={`mt-2 flex justify-between gap-2 text-[13px] md:mt-1 md:text-[12px] ${T.muted}`}>
               <span>{COPY.footerDisclaimer}</span>
               {remaining < 200 && <span aria-live="polite">{remaining} characters left</span>}
             </p>
@@ -2707,7 +2702,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
           {/* C18 Privacy links + persistent human route */}
           <nav
             aria-label="Linko privacy and human help"
-            className="mx-5 mt-3 flex flex-wrap items-center gap-x-1.5 border-t border-[#D5DCE6] pb-3 pt-2 text-[13px] md:mx-6 linko-dark:border-slate-700"
+            className="mx-5 mt-3 flex flex-wrap items-center gap-x-1.5 border-t border-[#D5DCE6] pb-3 pt-2 text-[13px] md:mx-6 md:mt-1.5 md:pb-1.5 md:pt-0.5 linko-dark:border-slate-700"
           >
             <button
               type="button"
@@ -2715,17 +2710,17 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
                 setView("chat");
                 chat.startFlow("safety");
               }}
-              className={`order-last ml-auto inline-flex min-h-11 items-center gap-1 rounded px-0.5 text-[#B42318] hover:underline linko-dark:text-red-300 ${T.focus}`}
+              className={`order-last ml-auto inline-flex min-h-11 items-center md:min-h-8 gap-1 rounded px-0.5 text-[#B42318] hover:underline linko-dark:text-red-300 ${T.focus}`}
             >
               <ShieldAlert size={14} aria-hidden /> Safety help
             </button>
-            <button type="button" onClick={() => { setView("chat"); chat.startFlow("privacy"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("privacy"); }} className={`min-h-11 rounded px-0.5 hover:underline md:min-h-8 ${T.link} ${T.focus}`}>
               Privacy
             </button>
             <span aria-hidden className={T.muted}>
               ·
             </span>
-            <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+            <button type="button" onClick={() => { setView("chat"); chat.startFlow("handoff"); }} className={`min-h-11 rounded px-0.5 hover:underline md:min-h-8 ${T.link} ${T.focus}`}>
               Talk to a person
             </button>
             {!atStart && (
@@ -2733,7 +2728,7 @@ export default function ChatWidget({ startOpen = false }: { startOpen?: boolean 
                 <span aria-hidden className={T.muted}>
                   ·
                 </span>
-                <button type="button" onClick={() => { setView("chat"); chat.startFlow("end"); }} className={`min-h-11 rounded px-0.5 hover:underline ${T.link} ${T.focus}`}>
+                <button type="button" onClick={() => { setView("chat"); chat.startFlow("end"); }} className={`min-h-11 rounded px-0.5 hover:underline md:min-h-8 ${T.link} ${T.focus}`}>
                   End chat
                 </button>
               </>
