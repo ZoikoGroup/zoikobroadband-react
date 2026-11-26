@@ -166,7 +166,7 @@ export const NAV: NavItem[] = [
         links: [
           { label: "Home digital phone", href: "/digital-lines" },
           { label: "Broadband and phone bundles", href: "/bundles" },
-          { label: "Keep your home number", href: "/digital-lines" },
+          { label: "Keep your home number", href: "/digital-keep-your-number" },
           { label: "Equipment and setup", href: "/setup-installation" },
           { label: "Home phone FAQs", href: "/get-help" },
         ],

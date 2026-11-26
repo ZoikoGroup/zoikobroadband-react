@@ -50,7 +50,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Home Digital Phone", href: "/digital-lines" },
       { name: "Business VoIP", href: "/digital-lines" },
       { name: "Cloud Phone Solutions", href: "/cloud-phone-solutions" },
-      { name: "Keep Your Number", href: "/keep-your-phone-number" },
+      { name: "Keep Your Number", href: "/digital-keep-your-number" },
       { name: "Emergency Calling Guide", href: "/digital-lines" },
     ],
   },
