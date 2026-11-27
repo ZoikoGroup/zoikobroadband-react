@@ -176,10 +176,10 @@ export const NAV: NavItem[] = [
         icon: Briefcase,
         links: [
           { label: "Business VoIP", href: "/digital-lines" },
-          { label: "Cloud phone solutions", href: "/digital-lines" },
-          { label: "Call features and options", href: "/digital-lines" },
+          { label: "Cloud phone solutions", href: "/cloud-phone-solutions" },
+          { label: "Call features and options", href: "/business-calling-features" },
           { label: "Business number transfer", href: "/digital-lines" },
-          { label: "Request a voice quote", href: "/business-broadband" },
+          { label: "Request a voice quote", href: "/digital-request-a-business-quote" },
         ],
       },
       {
