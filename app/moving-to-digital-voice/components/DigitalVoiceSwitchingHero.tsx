@@ -57,8 +57,8 @@ export default function DigitalVoiceSwitchingHero() {
             </div>
 
             {/* Heading */}
-            <h1 className="text-4xl sm:text-5xl lg:text-[54px] font-extrabold text-white tracking-tight leading-[1.08]">
-              Switching safely to digital voice
+            <h1 className="text-4xl sm:text-5xl lg:text-[46px] font-extrabold text-white tracking-tight leading-[1.08]">
+              Moving to Digital Voice
             </h1>
 
             {/* Description */}
