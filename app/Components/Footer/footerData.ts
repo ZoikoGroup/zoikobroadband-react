@@ -47,11 +47,11 @@ export const FOOTER_SECTIONS: FooterSection[] = [
     title: "Digital Lines",
     icon: Phone,
     links: [
-      { name: "Home Digital Phone", href: "/digital-lines" },
+      { name: "Home Digital Phone", href: "/home-digital-phone" },
       { name: "Business VoIP", href: "/digital-lines" },
       { name: "Cloud Phone Solutions", href: "/cloud-phone-solutions" },
       { name: "Keep Your Number", href: "/digital-keep-your-number" },
-      { name: "Emergency Calling Guide", href: "/digital-lines" },
+      { name: "Emergency Calling Guide", href: "/emergency-calling-guidance" },
     ],
   },
   {
@@ -87,7 +87,7 @@ export const FOOTER_SECTIONS: FooterSection[] = [
       { name: "Moving Home", href: "/moving-home" },
       { name: "How Switching Works", href: "/setup-installation" },
       { name: "Keep Your Number", href: "/keep-your-phone-number" },
-      { name: "Installation & Set-up", href: "/setup-installation" },
+      { name: "Installation & Set-up", href: "/installation-setup" },
     ],
   },
   {

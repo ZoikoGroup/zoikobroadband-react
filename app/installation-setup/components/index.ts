@@ -1,0 +1,11 @@
+export { default as InstallationAndSetupHero } from "./InstallationAndSetupHero";
+export { default as InstallationSetupNavAndAlert } from "./InstallationSetupNavAndAlert";
+export { default as WhatKindOfSetup } from "./WhatKindOfSetup";
+export { default as PrepareSafetyCheckSection } from "./PrepareSafetyCheckSection";
+export { default as HowYourSetupHappens } from "./HowYourSetupHappens";
+export { default as VerifyItsWorkingSection } from "./VerifyItsWorkingSection";
+export { default as TroubleshootingAndRecovery } from "./TroubleshootingAndRecovery";
+export { default as SetupAssistedSupport } from "./SetupAssistedSupport";
+export { default as InstallationSetupFaqSection } from "./InstallationSetupFaqSection";
+export { default as SetupRelatedGuides } from "./SetupRelatedGuides";
+export { default as SetupDigitalVoiceSafelyCta } from "./SetupDigitalVoiceSafelyCta";
