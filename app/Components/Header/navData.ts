@@ -164,7 +164,7 @@ export const NAV: NavItem[] = [
         title: "Home digital phone",
         icon: House,
         links: [
-          { label: "Home digital phone", href: "/digital-lines" },
+          { label: "Home digital phone", href: "/home-digital-phone" },
           { label: "Broadband and phone bundles", href: "/bundles" },
           { label: "Keep your home number", href: "/digital-keep-your-number" },
           { label: "Equipment and setup", href: "/setup-installation" },
@@ -176,10 +176,10 @@ export const NAV: NavItem[] = [
         icon: Briefcase,
         links: [
           { label: "Business VoIP", href: "/digital-lines" },
-          { label: "Cloud phone solutions", href: "/digital-lines" },
-          { label: "Call features and options", href: "/digital-lines" },
+          { label: "Cloud phone solutions", href: "/cloud-phone-solutions" },
+          { label: "Call features and options", href: "/business-calling-features" },
           { label: "Business number transfer", href: "/digital-lines" },
-          { label: "Request a voice quote", href: "/business-broadband" },
+          { label: "Request a voice quote", href: "/digital-request-a-business-quote" },
         ],
       },
       {
@@ -204,7 +204,7 @@ export const NAV: NavItem[] = [
         "Emergency access guidance",
         "Number transfer checks before you switch",
       ],
-      link: { label: "Read emergency calling guidance", href: "/digital-lines" },
+      link: { label: "Read emergency calling guidance", href: "/emergency-calling-guidance" },
     },
     footer: {
       kind: "cta",

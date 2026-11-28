@@ -1,0 +1,12 @@
+export { default as BusinessCallingFeaturesHero } from "./BusinessCallingFeaturesHero";
+export { default as BusinessFeaturesNavAndNotice } from "./BusinessFeaturesNavAndNotice";
+export { default as BusinessFeaturesByGoalSection } from "./BusinessFeaturesByGoalSection";
+export { default as BusinessCallingFeaturesCatalogue } from "./BusinessCallingFeaturesCatalogue";
+export { default as HowCallFeaturesAreChargedSection } from "./HowCallFeaturesAreChargedSection";
+export { default as DevicesAndServiceCompatibilitySection } from "./DevicesAndServiceCompatibilitySection";
+export { default as VoiceAvailabilityAndEmergencyCallsBanner } from "./VoiceAvailabilityAndEmergencyCallsBanner";
+export { default as CallerIdentityScreeningRecordingSection } from "./CallerIdentityScreeningRecordingSection";
+export { default as RequestTailoredQuoteSection } from "./RequestTailoredQuoteSection";
+export { default as BusinessCallingFeaturesFaqSection } from "./BusinessCallingFeaturesFaqSection";
+export { default as BusinessCallingRelatedPages } from "./BusinessCallingRelatedPages";
+export { default as BusinessCallingCtaBanner } from "./BusinessCallingCtaBanner";
